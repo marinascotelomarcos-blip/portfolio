@@ -438,38 +438,83 @@ function buildMail() {
   return { object: root };
 }
 
-/* ---------- The room: each object is a way into the site ---------- */
+/* ---------- A hologram portrait: a photo (or a placeholder bust) as a projected image ---------- */
+function buildPortrait(opts) {
+  const W = 384, H = 512;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  function bust() {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    const grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#ffffff'); grd.addColorStop(1, '#8a8a8a');
+    g.fillStyle = grd;
+    g.beginPath(); g.ellipse(W / 2, 175, 82, 100, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(40, H); g.bezierCurveTo(50, 340, 130, 318, W / 2, 318); g.bezierCurveTo(254, 318, 334, 340, 344, H); g.closePath(); g.fill();
+    g.fillStyle = '#000'; g.fillRect(W / 2 - 24, 262, 48, 26);
+    g.fillStyle = '#fff'; g.font = '700 54px ui-monospace, Menlo, monospace'; g.textAlign = 'center'; g.fillText('MMC', W / 2, 470);
+    tex.needsUpdate = true;
+  }
+  bust();
+  if (opts.portrait) {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.max(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
+      g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.drawImage(img, (W - w) / 2, (H - h) * 0.2, w, h); tex.needsUpdate = true;
+    };
+    img.src = opts.portrait;
+  }
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { map: { value: tex }, time: { value: 0 }, dark: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `
+      uniform sampler2D map; uniform float time; uniform float dark; varying vec2 vUv;
+      void main(){
+        vec2 uv = vUv;
+        float glitch = step(0.985, fract(sin(floor(time*7.0)*91.7)*437.5)) * (fract(sin(floor(uv.y*40.0)*12.9+time)*43758.5)-0.5) * 0.04;
+        vec3 c = texture2D(map, uv + vec2(glitch, 0.0)).rgb;
+        float lum = dot(c, vec3(0.299, 0.587, 0.114));
+        float scan = 0.62 + 0.38 * sin(uv.y * 260.0 - time * 3.2);
+        float sweep = smoothstep(0.0, 0.08, 1.0 - abs(fract(uv.y - time * 0.12) - 0.5) * 2.0) * 0.35;
+        vec2 d = (uv - vec2(0.5, 0.5)) * vec2(1.9, 1.35);
+        float mask = smoothstep(1.0, 0.55, length(d));
+        float flick = 0.9 + 0.1 * sin(time * 23.0) * sin(time * 7.0);
+        vec3 ink = mix(vec3(0.03, 0.42, 0.48), vec3(0.45, 0.97, 1.0), dark);
+        float a = (0.1 + pow(lum, 0.9) * 0.9 + sweep) * scan * mask * flick;
+        gl_FragColor = vec4(ink * (0.7 + lum * 0.6 + sweep), clamp(a, 0.0, 1.0));
+      }`,
+  });
+  const root = new THREE.Group();
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.53), mat); root.add(quad);
+  const frame = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.05, 2.7)),
+    new THREE.LineBasicMaterial({ color: 0x3bb8be, transparent: true, opacity: 0.45 }));
+  root.add(frame);
+  root.userData.update = (t) => { mat.uniforms.time.value = t * 0.001; mat.uniforms.dark.value = document.documentElement.dataset.mode === 'dark' ? 1 : 0; };
+  return { object: root };
+}
+
+/* ---------- The cover: objects float free around the page, each one is a way into the site ---------- */
 function buildRoom(opts) {
   const root = new THREE.Group();
-  const target = new THREE.Vector3(0, 0.55, 0);
-  const slabMat = new THREE.MeshStandardMaterial({ color: 0xe6eae8, roughness: 0.85 });
-  const slabGeo = new THREE.ExtrudeGeometry(roundedShape(9.8, 5.4, 0.5), { depth: 0.45, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3, curveSegments: 16 });
-  slabGeo.rotateX(-Math.PI / 2); slabGeo.translate(0, -0.45, 0);
-  root.add(new THREE.Mesh(slabGeo, slabMat));
-  const outline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(roundedShape(9.1, 4.7, 0.4).getPoints(24).map((p) => new THREE.Vector3(p.x, 0.045, -p.y))),
-    new THREE.LineBasicMaterial({ color: 0x3bb8be, transparent: true, opacity: 0.55 }));
-  root.add(outline);
-  const plinthMat = new THREE.MeshStandardMaterial({ color: 0xcfd8d6, roughness: 0.7 });
+  const target = new THREE.Vector3(0, 2.0, 0);
 
+  // pos: x, y (height), z. top: label height above the object.
   const defs = [
-    { id: 'cards', make: () => buildLogo(opts), pos: [-2.9, 0.5], scale: 0.6, lift: 1.05, rot: 0.25, top: 2.35 },
-    { id: 'phone', make: () => buildPhone(), pos: [-0.9, -1.1], scale: 1.05, lift: 1.05, rot: 0.15, top: 2.7 },
-    { id: 'mail', make: () => buildMail(), pos: [0.7, 1.6], scale: 1.1, lift: 0.8, rot: 0.15, top: 1.7 },
-    { id: 'globe', make: () => buildGlobe(opts), pos: [2.4, -0.4], scale: 0.85, lift: 1.2, rot: 0, top: 2.7 },
+    { id: 'cards', make: () => buildLogo(opts), pos: [-3.5, 3.5, -0.8], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0 },
+    { id: 'phone', make: () => buildPhone(), pos: [-1.5, 1.35, 1.4], scale: 1.05, rot: 0.15, top: 1.6, ph: 1.7 },
+    { id: 'mail', make: () => buildMail(), pos: [0.9, 3.7, 0.6], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1 },
+    { id: 'globe', make: () => buildGlobe(opts), pos: [3.5, 2.5, -0.6], scale: 0.85, rot: 0, top: 1.45, ph: 4.4 },
   ];
   const hits = [];
   const st = defs.map((d) => {
-    const group = new THREE.Group(); group.position.set(d.pos[0], 0, d.pos[1]); root.add(group);
-    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.22, 0.14, 48), plinthMat); plinth.position.y = 0.07; group.add(plinth);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x3bb8be, transparent: true, opacity: 0.35 });
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.17, 0.014, 8, 80), ringMat); ring.rotation.x = Math.PI / 2; ring.position.y = 0.145; group.add(ring);
+    const group = new THREE.Group(); group.position.set(d.pos[0], 0, d.pos[2]); root.add(group);
     const made = d.make();
-    const inner = new THREE.Group(); inner.rotation.y = d.rot; inner.scale.setScalar(d.scale); inner.position.y = 0.14 + d.lift; group.add(inner);
+    const inner = new THREE.Group(); inner.rotation.y = d.rot; inner.scale.setScalar(d.scale); inner.position.y = d.pos[1]; group.add(inner);
     inner.add(made.object);
-    const hit = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 2.8, 16), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
-    hit.position.y = 1.2; hit.userData.id = d.id; group.add(hit); hits.push(hit);
-    return { ...d, group, inner, ringMat, made, h: 0, vel: 0, baseY: inner.position.y };
+    const hit = new THREE.Mesh(new THREE.SphereGeometry(1.35, 12, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hit.position.y = d.pos[1]; hit.userData.id = d.id; group.add(hit); hits.push(hit);
+    return { ...d, group, inner, hit, made, h: 0, vel: 0, baseY: d.pos[1] };
   });
 
   let ctx = null, camera = null, dir = new THREE.Vector3(0.22, 0.6, 0.85).normalize(), dist = 16;
@@ -481,16 +526,15 @@ function buildRoom(opts) {
 
   root.userData.update = (t, ptr) => {
     if (!ctx) return;
-    const dark = document.documentElement.dataset.mode === 'dark';
-    slabMat.color.setHex(dark ? 0x16222a : 0xe6eae8); plinthMat.color.setHex(dark ? 0x25363f : 0xcfd8d6);
     const sway = ctx.still ? 0 : Math.sin(t * 0.00035) * 0.07 + ptr.x * 0.1;
     root.rotation.y += ((yawT + sway) - root.rotation.y) * (ctx.still ? 1 : 0.08);
     const hover = canvasHover || labelHover;
     st.forEach((s) => {
       const goal = s.id === hover ? 1 : 0;
       s.h += (goal - s.h) * (ctx.still ? 1 : 0.16);
-      s.inner.scale.setScalar(s.scale * (1 + 0.12 * s.h)); s.inner.position.y = s.baseY + 0.14 * s.h;
-      s.ringMat.opacity = 0.3 + 0.7 * s.h;
+      const fl = ctx.still ? 0 : Math.sin(t * 0.0011 + s.ph) * 0.22;
+      s.inner.scale.setScalar(s.scale * (1 + 0.12 * s.h)); s.inner.position.y = s.baseY + fl + 0.14 * s.h; s.hit.position.y = s.inner.position.y;
+      if (!ctx.still) { s.group.position.x = s.pos[0] + Math.sin(t * 0.0006 + s.ph) * 0.18; s.group.position.z = s.pos[2] + Math.cos(t * 0.0005 + s.ph) * 0.18; }
       if (s !== dragSt) { // a dragged object keeps spinning, then settles back to its pose
         s.inner.rotation.y += s.vel; s.vel *= 0.94;
         if (Math.abs(s.vel) < 0.0004) { s.vel = 0; s.inner.rotation.y += wrapPi(s.rot - s.inner.rotation.y) * 0.03; }
@@ -508,7 +552,7 @@ function buildRoom(opts) {
     const w = ctx.el.clientWidth, h = ctx.el.clientHeight;
     st.forEach((s) => {
       const a = labels[s.id]; if (!a) return;
-      v.set(s.pos[0], s.top, s.pos[1]).applyMatrix4(root.matrixWorld).project(camera);
+      v.set(s.group.position.x, s.inner.position.y + s.top, s.group.position.z).applyMatrix4(root.matrixWorld).project(camera);
       a.style.transform = 'translate(' + ((v.x * 0.5 + 0.5) * w) + 'px,' + ((-v.y * 0.5 + 0.5) * h) + 'px) translate(-50%,-100%)';
       a.classList.toggle('hot', s.id === hover);
     });
@@ -517,7 +561,7 @@ function buildRoom(opts) {
 
   return {
     object: root, camera: { fov: 28 },
-    fit(cam, aspect) { camera = cam; const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)); dist = Math.max(12, 10.6 / (2 * half * aspect)); place(); },
+    fit(cam, aspect) { camera = cam; const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)); dist = Math.max(13, 11.4 / (2 * half * aspect)); place(); },
     init(c) {
       ctx = c; camera = c.camera;
       c.el.querySelectorAll('[data-station]').forEach((a) => {

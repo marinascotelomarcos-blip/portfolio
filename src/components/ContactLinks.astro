@@ -1,8 +1,8 @@
 ---
 import { LOGOS } from '../lib/logos';
 import { EMAIL, LINKEDIN, GITHUB, INSTAGRAM, PHONE, PHONE_TEL, type Lang } from '../lib/content';
-interface Props { lang: Lang }
-const { lang } = Astro.props;
+interface Props { lang: Lang; big?: boolean }
+const { lang, big } = Astro.props;
 const links = [
   { id: 'mail', href: `mailto:${EMAIL}`, sub: EMAIL, ext: false },
   { id: 'linkedin', href: LINKEDIN, sub: 'marcos-mariñas-cotelo', ext: true },
@@ -11,7 +11,7 @@ const links = [
   { id: 'phone', href: PHONE_TEL, sub: PHONE, ext: false },
 ];
 ---
-<ul class="tiles contact-tiles">
+<ul class:list={['tiles', 'contact-tiles', big && 'cx-big']}>
   {links.map((l, i) => {
     const g = LOGOS[l.id];
     return (

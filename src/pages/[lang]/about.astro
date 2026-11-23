@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Credentials from '../../components/Credentials.astro';
 import LogoGrid from '../../components/LogoGrid.astro';
 import { T, LANGS, type Lang } from '../../lib/content';
 import { TOOL_IDS, METHOD_IDS } from '../../lib/logos';
@@ -11,6 +12,8 @@ const a = T[lang].about;
   <div class="wrap hero">
     <h1 class="display">{a.title}</h1>
     <p class="lede">{a.lede}</p>
+
+    <Credentials lang={lang} />
 
     <h2 class="sec">{a.storyTitle}</h2>
     <div class="prose">{a.story.map((p) => <p>{p}</p>)}</div>
@@ -38,6 +41,5 @@ const a = T[lang].about;
     <h2 class="sec">{a.toolsTitle}</h2>
     <LogoGrid ids={TOOL_IDS} lang={lang} label={a.tools[0].label} />
     <LogoGrid ids={METHOD_IDS} lang={lang} label={a.tools[1].label} />
-    <p class="prose" style="margin-top:28px"><span class="mono muted">{a.tools[2].label}</span><br />{a.tools[2].items}</p>
   </div>
 </Base>

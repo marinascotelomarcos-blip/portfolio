@@ -95,7 +95,7 @@ const base = `/${lang}`;
             io.unobserve(e.target);
             const el = e.target as HTMLElement;
             import('../lib/scenes.js')
-              .then(({ mount }) => mount(el, el.dataset.scene as string, { visited: JSON.parse(el.dataset.visited || '[]'), mapUrl: '/world.svg' }))
+              .then(({ mount }) => mount(el, el.dataset.scene as string, { visited: JSON.parse(el.dataset.visited || '[]'), mapUrl: '/world.svg', portrait: el.dataset.portrait || '' }))
               .catch(() => { el.hidden = true; });
           });
         }, { rootMargin: '200px' });

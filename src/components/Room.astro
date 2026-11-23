@@ -3,15 +3,35 @@ import { VISITED, T, type Lang } from '../lib/content';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const h = T[lang].home;
+const en = lang === 'en';
+const chips = [
+  { t: 'Developer', k: 'dev', href: `/${lang}/projects/cinco-vidas/` },
+  { t: en ? 'Data & Business' : 'Datos y negocio', k: 'data', href: `/${lang}/projects/dashboard/` },
+  { t: en ? 'Projects' : 'Proyectos', k: 'proj', href: `/${lang}/#projects` },
+  { t: 'Game Designer', k: 'game', href: `/${lang}/projects/cinco-vidas/` },
+  { t: en ? 'Operations' : 'Operaciones', k: 'ops', href: `/${lang}/about/` },
+  { t: en ? 'Systems' : 'Sistemas', k: 'sys', href: `/${lang}/#route` },
+];
 ---
 <div class="room-wrap">
-  <div class="scene scene-room" data-scene="room" data-visited={JSON.stringify(VISITED)}>
-    <canvas aria-hidden="true"></canvas>
-    <nav class="room-labels" aria-label={lang === 'en' ? 'Projects and sections' : 'Proyectos y secciones'}>
-      {h.room.map((r) => (
-        <a data-station={r.id} href={r.href}><b>{r.label}</b><span>{r.status}</span></a>
-      ))}
-    </nav>
+  <div class="stage">
+    <div class="stage-grid" aria-hidden="true"></div>
+    <div class="scene scene-room" data-scene="room" data-visited={JSON.stringify(VISITED)}>
+      <canvas aria-hidden="true"></canvas>
+      <nav class="room-labels" aria-label={en ? 'Projects and sections' : 'Proyectos y secciones'}>
+        {h.room.map((r) => (
+          <a data-station={r.id} href={r.href}><b>{r.label}</b><span>{r.status}</span></a>
+        ))}
+      </nav>
+    </div>
+    <a class="stage-fig" href={`/${lang}/about/`} aria-label={en ? 'About me' : 'Sobre mí'}>
+      <span class="ring" aria-hidden="true"></span>
+      <img src="/img/marcos-character.jpg" alt={en ? 'Illustration of Marcos: curly hair, amber glasses, cream knit and trousers' : 'Ilustración de Marcos: pelo rizado, gafas ámbar, jersey y pantalón crema'} width="683" height="1024" loading="eager" decoding="async" />
+      <span class="fig-tag mono">{en ? 'About me →' : 'Sobre mí →'}</span>
+    </a>
+    <ul class="chips" aria-label={en ? 'What I do' : 'Qué hago'}>
+      {chips.map((c, i) => <li class={`chip-${c.k}`} style={`--d:${i}`}><a href={c.href}>{c.t}</a></li>)}
+    </ul>
   </div>
   <p class="room-hint mono">{h.roomHint}</p>
 </div>
