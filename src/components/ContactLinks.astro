@@ -1,0 +1,41 @@
+---
+import { LOGOS } from '../lib/logos';
+import { EMAIL, LINKEDIN, GITHUB, INSTAGRAM, PHONE, PHONE_TEL, type Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const links = [
+  { id: 'mail', href: `mailto:${EMAIL}`, sub: EMAIL, ext: false },
+  { id: 'linkedin', href: LINKEDIN, sub: 'marcos-mariñas-cotelo', ext: true },
+  { id: 'github', href: GITHUB, sub: 'marinascotelomarcos-blip', ext: true },
+  ...(INSTAGRAM ? [{ id: 'instagram', href: INSTAGRAM, sub: INSTAGRAM.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@').replace(/\/$/, ''), ext: true }] : []),
+  { id: 'phone', href: PHONE_TEL, sub: PHONE, ext: false },
+];
+---
+<ul class="tiles contact-tiles">
+  {links.map((l, i) => {
+    const g = LOGOS[l.id];
+    return (
+      <li style="display:contents">
+        <a class="tile" style={`--c:${g.hex};--i:${i}`} href={l.href} data-tile aria-label={`${g.name[lang]}: ${l.sub}`} {...(l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+          <span class="tile-ico" aria-hidden="true">
+            {g.kind === 'brand' && <svg viewBox="0 0 24 24" fill="currentColor"><path d={g.path} /></svg>}
+            {g.kind === 'glyph' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{g.paths.map((d) => <path d={d} pathLength="1" />)}</svg>}
+            {g.kind === 'mono' && <svg viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.6" /><text x="12" y="15.6" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="system-ui, sans-serif">{g.text}</text></svg>}
+          </span>
+          <span class="tile-name">{g.name[lang]}<small class="tile-sub">{l.sub}</small></span>
+        </a>
+      </li>
+    );
+  })}
+</ul>
+<script>
+  document.querySelectorAll<HTMLElement>('.contact-tiles [data-tile]').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.setProperty('--ry', (x * 14).toFixed(1) + 'deg'); el.style.setProperty('--rx', (-y * 14).toFixed(1) + 'deg');
+      el.style.setProperty('--mx', ((x + 0.5) * 100).toFixed(0) + '%'); el.style.setProperty('--my', ((y + 0.5) * 100).toFixed(0) + '%');
+    });
+    el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
+  });
+</script>

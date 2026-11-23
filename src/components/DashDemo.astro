@@ -1,0 +1,74 @@
+---
+import { SCREENS, T, type Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = T[lang].dash;
+const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
+---
+<div class="demo" data-demo>
+  <div>
+    <div class="fn-list" role="tablist" aria-label={d.fnTitle} aria-orientation="vertical">
+      {d.fns.map((f, i) => (
+        <button class="fn" role="tab" id={`tab-${f.id}`} aria-selected={i === 0 ? 'true' : 'false'} aria-controls={`scr-${f.id}`} tabindex={i === 0 ? 0 : -1} data-id={f.id}>
+          <b>{f.name}</b><span>{f.line}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+  <div class="phone-col">
+    <div class="sticky">
+      <div class="app" aria-label={d.demoTitle}>
+        <div class="app-screen">
+          <div class="app-status"><span>9:41</span><span>●●●</span></div>
+          <div class="app-body">
+            {d.fns.map((f, i) => {
+              const s = SCREENS[f.id];
+              return (
+                <section class="screen" id={`scr-${f.id}`} role="tabpanel" aria-labelledby={`tab-${f.id}`} data-tab={s.tab} hidden={i !== 0}>
+                  <h4>{s.title}</h4>
+                  {s.blocks.map((b) => {
+                    if (b.t === 'next') return <div class="a-next"><small>{b.label}</small><b>{b.title}</b><span>{b.sub}</span></div>;
+                    if (b.t === 'stats') return <div class="a-stats">{b.items.map(([l, v]) => <div><b>{v}</b><span>{l}</span></div>)}</div>;
+                    if (b.t === 'chips') return <div class="a-chips">{b.items.map((c) => <span>{c}</span>)}</div>;
+                    if (b.t === 'bars') return (<>{b.head && <div class="a-head">{b.head}</div>}<ul class="a-list a-bars">{b.rows.map(([l, p, v]) => <li style="display:block"><div class="row2"><span>{l}</span><span class="r">{v}</span></div><div class="a-bar"><i style={`width:${p}%`}></i></div></li>)}</ul></>);
+                    return (<>{b.head && <div class="a-head">{b.head}</div>}<ul class="a-list">{b.rows.map((r) => (
+                      <li class:list={[r.tone === 'uie' && 'uie', r.tone === 'mute' && 'mute', r.done && 'done']}>
+                        <span class="dot"></span><span class="t">{r.a}</span>
+                        {r.tag && <span class:list={['a-tag', r.tone === 'warn' && 'warn', r.tone === 'ok' && 'ok']}>{r.tag}</span>}
+                        {r.b && <span class="r">{r.b}</span>}
+                      </li>))}</ul></>);
+                  })}
+                </section>
+              );
+            })}
+          </div>
+          <div class="app-tabs" aria-hidden="true">
+            {tabs.map((tb) => <span data-tabname={tb} aria-current={tb === 'Hoy' ? 'true' : undefined}>{tb}</span>)}
+          </div>
+        </div>
+      </div>
+      <p class="demo-note">{d.demoNote}</p>
+    </div>
+  </div>
+</div>
+<script is:inline>
+  (function () {
+    var root = document.querySelector('[data-demo]'); if (!root) return;
+    var tabs = [].slice.call(root.querySelectorAll('[role=tab]'));
+    var bar = [].slice.call(root.querySelectorAll('[data-tabname]'));
+    function show(id, focus) {
+      tabs.forEach(function (t) { var on = t.dataset.id === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
+      root.querySelectorAll('.screen').forEach(function (s) {
+        var on = s.id === 'scr-' + id; s.hidden = !on;
+        if (on) { s.parentNode.scrollTop = 0; bar.forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tabname === s.dataset.tab)); }); }
+      });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { show(t.dataset.id); });
+      t.addEventListener('keydown', function (e) {
+        var n = e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : null;
+        if (n === null) return; e.preventDefault(); n = (n + tabs.length) % tabs.length; show(tabs[n].dataset.id, true);
+      });
+    });
+  })();
+</script>

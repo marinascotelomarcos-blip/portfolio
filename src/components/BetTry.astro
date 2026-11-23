@@ -1,0 +1,48 @@
+---
+import { T, type Lang } from '../lib/content';
+interface Props { lang: Lang; heading?: string }
+const { lang, heading } = Astro.props;
+const tr = T[lang].cv.tryit;
+---
+<section class="bet" data-bet data-bad={tr.bad} data-none={tr.none} data-good={tr.good} data-trick={tr.trick} data-tricks={tr.tricks}>
+  <h2 class="sec">{heading ?? tr.title}</h2>
+  <p class="prose">{tr.lede}</p>
+  <div class="bet-board">
+    <div><span class="mono muted">{tr.cards}</span><b class="bet-big" data-cards>–</b></div>
+    <div><span class="mono muted">{tr.others}</span><p data-others class="bet-others">–</p></div>
+    <div><span class="mono muted">{tr.you}</span><div class="bet-choices" data-choices role="group" aria-label={tr.you}></div></div>
+  </div>
+  <p class="bet-msg" data-msg role="status" aria-live="polite"></p>
+  <button class="btn" type="button" data-again>{tr.again}</button>
+</section>
+<script>
+  const root = document.querySelector<HTMLElement>('[data-bet]');
+  if (root) {
+    const q = (s: string) => root.querySelector<HTMLElement>(s)!;
+    const names = ['Rosalía', 'Maruxa', 'Brais'];
+    const fmt = (s: string, o: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_m, k) => String(o[k]));
+    const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+    function round() {
+      const cards = rnd(2, 5);
+      const bets = names.map(() => rnd(0, Math.min(cards, 2)));
+      const sum = bets.reduce((a, b) => a + b, 0);
+      const blocked = cards - sum >= 0 && cards - sum <= cards ? cards - sum : -1;
+      q('[data-cards]').textContent = String(cards);
+      q('[data-others]').textContent = names.map((n, i) => n + ' ' + bets[i]).join(' · ');
+      const box = q('[data-choices]'); box.innerHTML = '';
+      for (let b = 0; b <= cards; b++) {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'chip'; btn.textContent = String(b);
+        if (b === blocked) { btn.disabled = true; btn.classList.add('no'); }
+        btn.addEventListener('click', () => {
+          box.querySelectorAll('.chip').forEach((c) => c.classList.remove('on')); btn.classList.add('on');
+          q('[data-msg]').textContent = fmt(root!.dataset.good!, { b, t: b === 1 ? root!.dataset.trick! : root!.dataset.tricks! });
+        });
+        box.appendChild(btn);
+      }
+      q('[data-msg]').textContent = blocked >= 0 ? fmt(root!.dataset.bad!, { n: blocked, c: cards }) : fmt(root!.dataset.none!, { s: sum, c: cards });
+    }
+    q('[data-again]').addEventListener('click', round);
+    round();
+  }
+</script>

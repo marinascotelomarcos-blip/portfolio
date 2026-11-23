@@ -1,0 +1,9 @@
+---
+import raw from '../lib/world.svg?raw';
+import { VISITED } from '../lib/content';
+const visited = new Set(VISITED);
+const svg = raw
+  .replace(/<svg[^>]*>/, '<svg viewBox="0 0 1000 445" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="World map" focusable="false">')
+  .replace(/<path d="([^"]*)" data-c="([A-Z]{2})"[^>]*\/>/g, (_m, d, c) => `<path d="${d}"${visited.has(c) ? ' class="visited"' : ''}/>`);
+---
+<div class="world" set:html={svg} />

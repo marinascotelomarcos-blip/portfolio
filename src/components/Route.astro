@@ -1,0 +1,165 @@
+---
+import { VISITED, T, EMAIL, CV, type Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const h = T[lang].home;
+const a = T[lang].about;
+const ui = h.routeUi;
+const rn = h.routeNext;
+
+// Everything below comes from content.ts (route, education and experience); nothing is added here.
+const [cal, san, cor, poz, next] = h.route;
+const edu = a.edu; // 0 UIE, 1 Erasmus, 2 Peleteiro, 3 Monterey Bay
+const exp = a.exp; // 0 GESTEMCO, 1 ALEXCLA, 2 Pescados Océano, 3 Paca Hostelería
+const short = ['GESTEMCO', 'ALEXCLA', 'Pescados Océano', 'Paca Hostelería'];
+
+type Item = { kind: 'study' | 'work' | 'next'; when: string; title: string; line: string; text?: string; node: string; lat?: number; lon?: number };
+const work = (i: number): Item => ({ kind: 'work', when: exp[i].when, title: exp[i].role, line: exp[i].org, text: exp[i].what, node: short[i] });
+const items: Item[] = [
+  { kind: 'study', when: cal.when, title: cal.where, line: edu[3].org, text: edu[3].title, node: cal.where, lat: cal.lat, lon: cal.lon },
+  { kind: 'study', when: san.when, title: san.where, line: edu[2].org, text: edu[2].title, node: san.where, lat: san.lat, lon: san.lon },
+  { kind: 'study', when: cor.when, title: cor.where, line: edu[0].org, text: edu[0].title + ' · ' + edu[0].when, node: cor.where, lat: cor.lat, lon: cor.lon },
+  work(3),
+  work(2),
+  work(1),
+  { kind: 'study', when: edu[1].when, title: poz.where, line: edu[1].org, text: edu[1].title, node: poz.where, lat: poz.lat, lon: poz.lon },
+  work(0),
+  { kind: 'next', when: next.when, title: next.where, line: next.what, node: next.where },
+];
+const kindLabel = { study: ui.study, work: ui.work, next: ui.next };
+const stops = items.map((i) => (i.lat !== undefined ? { lat: i.lat, lon: i.lon } : null));
+const kinds = items.map((i) => i.kind);
+---
+<div class="tour" data-tour>
+  <div class="tour-card-wrap">
+    {items.map((it, i) => (
+      <article class="stop-card" id={`stop-${i}`} role="tabpanel" aria-labelledby={`node-${i}`} data-kind={it.kind} hidden={i !== 0}>
+        <span class="stop-kind mono">{kindLabel[it.kind]} · <span class="tnum">{it.when}</span></span>
+        {it.kind === 'next' ? (
+          <>
+            <h3>{rn.headline}</h3>
+            <p class="stop-line">{rn.lede}</p>
+            <div class="next-count"><b class="next-days tnum" data-days data-done={rn.now}>0</b><span class="mono">{rn.days}</span></div>
+            <ul class="next-chips">{rn.chips.map((c) => <li>{c}</li>)}</ul>
+          </>
+        ) : (
+          <>
+            <h3>{it.title}</h3>
+            <p class="stop-line">{it.line}</p>
+            {it.text && <p class="stop-text">{it.text}</p>}
+          </>
+        )}
+      </article>
+    ))}
+    <div class="tour-controls">
+      <button class="tc" type="button" data-prev aria-label={ui.prev}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
+      </button>
+      <button class="tc" type="button" data-play aria-pressed="false" aria-label={ui.play} data-play-label={ui.play} data-pause-label={ui.pause}>
+        <svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.2v13.6L19 12z" /></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" /></svg>
+      </button>
+      <button class="tc" type="button" data-next aria-label={ui.nextStop}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" /></svg>
+      </button>
+      <span class="tour-hint mono">{ui.hint}</span>
+    </div>
+  </div>
+  <div class="tour-globe">
+    <div class="scene scene-route" data-scene="route" data-step="0" data-stops={JSON.stringify(stops)} data-kinds={JSON.stringify(kinds)} data-visited={JSON.stringify(VISITED)} aria-hidden="true"><canvas></canvas></div>
+  </div>
+</div>
+<div class="tour-track-wrap" data-tour-track>
+  <div class="track" style={`--n:${items.length}`}>
+   <div class="track-in" role="tablist" aria-label={ui.stops}>
+    <div class="track-line" aria-hidden="true">
+      <i class="track-fill"></i>
+      <span class="plane"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 11.2l18.4-8.1c.9-.4 1.7.5 1.3 1.4l-8.3 18.2c-.4.9-1.7.8-2-.1l-2.1-6.6-6.6-2.1c-.9-.3-1-1.6-.1-2z" /></svg></span>
+    </div>
+    {items.map((it, i) => (
+      <button class:list={['node', i === 0 && 'on']} type="button" role="tab" id={`node-${i}`} aria-controls={`stop-${i}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-i={i} data-kind={it.kind}>
+        <i class="dot"></i>
+        <span class="nw">{it.when}</span>
+        <b class="nn">{it.node}</b>
+      </button>
+    ))}
+   </div>
+  </div>
+</div>
+<script>
+  const root = document.querySelector<HTMLElement>('[data-tour]');
+  const trackWrap = document.querySelector<HTMLElement>('[data-tour-track]');
+  if (root && trackWrap) {
+    const scene = root.querySelector<HTMLElement>('[data-scene]')!;
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('.stop-card'));
+    const nodes = Array.from(trackWrap.querySelectorAll<HTMLButtonElement>('.node'));
+    const track = trackWrap.querySelector<HTMLElement>('.track')!;
+    const line = trackWrap.querySelector<HTMLElement>('.track-line')!;
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-play]')!;
+    const N = nodes.length;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let cur = 0, playing = false, visible = false, hovering = false, timer = 0, started = false;
+
+    function show(i: number) {
+      cur = (i + N) % N;
+      scene.dataset.step = String(cur);
+      cards.forEach((c, k) => { c.hidden = k !== cur; });
+      nodes.forEach((n, k) => {
+        n.setAttribute('aria-selected', String(k === cur));
+        n.tabIndex = k === cur ? 0 : -1;
+        n.classList.toggle('past', k < cur);
+      });
+      line.style.setProperty('--p', String(cur / (N - 1)));
+      line.dataset.kind = nodes[cur].dataset.kind || '';
+      track.scrollTo({ left: nodes[cur].offsetLeft - track.clientWidth / 2 + nodes[cur].clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
+    }
+    function tick() {
+      window.clearTimeout(timer);
+      if (playing && visible && !hovering) timer = window.setTimeout(() => { show(cur + 1); tick(); }, 3200);
+    }
+    function setPlaying(v: boolean) {
+      playing = v;
+      playBtn.setAttribute('aria-pressed', String(v));
+      playBtn.setAttribute('aria-label', v ? playBtn.dataset.pauseLabel! : playBtn.dataset.playLabel!);
+      tick();
+    }
+    const user = (i: number) => { setPlaying(false); show(i); };
+
+    nodes.forEach((n, k) => {
+      n.addEventListener('click', () => user(k));
+      n.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); user(cur + 1); nodes[cur].focus(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); user(cur - 1); nodes[cur].focus(); }
+      });
+    });
+    root.querySelector('[data-prev]')!.addEventListener('click', () => user(cur - 1));
+    root.querySelector('[data-next]')!.addEventListener('click', () => user(cur + 1));
+    playBtn.addEventListener('click', () => setPlaying(!playing));
+    [root, trackWrap].forEach((el) => {
+      el.addEventListener('pointerenter', () => { hovering = true; tick(); });
+      el.addEventListener('pointerleave', () => { hovering = false; tick(); });
+    });
+    new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      if (visible && !started && !reduce) { started = true; setPlaying(true); } else tick();
+    }, { threshold: 0.35 }).observe(root);
+    show(0);
+  }
+</script>
+<script>
+  const dEl = document.querySelector<HTMLElement>('[data-days]');
+  const card = dEl ? (dEl.closest('.stop-card') as HTMLElement | null) : null;
+  if (dEl && card) {
+    const left = Math.max(0, Math.ceil((new Date(2027, 0, 1).getTime() - Date.now()) / 86400000));
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const run = () => {
+      if (left === 0) { dEl.textContent = dEl.dataset.done || ''; return; }
+      if (reduce) { dEl.textContent = String(left); return; }
+      const t0 = performance.now();
+      const step = (t: number) => { const k = Math.min(1, (t - t0) / 1000); dEl.textContent = String(Math.round(left * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    };
+    dEl.textContent = String(left);
+    new MutationObserver(() => { if (!card.hidden) run(); }).observe(card, { attributes: true, attributeFilter: ['hidden'] });
+  }
+</script>

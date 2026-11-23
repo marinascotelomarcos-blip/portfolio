@@ -1,0 +1,13 @@
+---
+import type { Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const items = lang === 'en'
+  ? ['201 commits in six weeks', '7 game modes, one engine', 'Node.js with no dependencies', 'rooms saved to the database every 2.5 s', 'end-to-end tests with bots', 'scheduled agents report every morning', 'demo data only: nothing private here', 'internship from January 2027']
+  : ['201 commits en seis semanas', '7 modos de juego, un motor', 'Node.js sin dependencias', 'salas guardadas en la base de datos cada 2,5 s', 'pruebas de extremo a extremo con bots', 'agentes programados que informan cada mañana', 'solo datos de demostración: nada privado aquí', 'prácticas desde enero de 2027'];
+---
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    {[0, 1].map(() => <ul>{items.map((t) => <li><span class="p">&gt;</span> {t}</li>)}</ul>)}
+  </div>
+</div>

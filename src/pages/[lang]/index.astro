@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import Room from '../../components/Room.astro';
+import Route from '../../components/Route.astro';
+import { T, LANGS, EMAIL, CV, type Lang } from '../../lib/content';
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const h = T[lang].home;
+---
+<Base lang={lang} path="/" current="home">
+  <div class="wrap hero">
+    <h1 class="display">{h.name}</h1>
+    <div class="hero-grid">
+      <div class="intro-seq">
+        <p class="lede">{h.headline}</p>
+        <p class="intro">{h.intro}</p>
+        <div class="actions" style="justify-content:flex-start;margin-top:28px">
+          <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
+          <a class="btn" href={CV} download>{h.cv}</a>
+        </div>
+      </div>
+      <Room lang={lang} />
+    </div>
+
+    <h2 class="sec" id="projects">{h.projectsTitle}</h2>
+    <ul class="ledger">
+      {h.projects.map((p) => (
+        <li style="display:contents">
+          <a class="row" href={`/${lang}/projects/${p.slug}/`}>
+            <div>
+              <h3>{p.name}<span class="go" aria-hidden="true">→</span></h3>
+              <p>{p.line}</p>
+            </div>
+            <div class="meta mono">
+              <span class:list={['state', p.slug === 'dashboard' && 'priv']}>{p.status}</span>
+              <span class="muted">{p.since}</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="sec" id="route">{h.routeTitle}</h2>
+    <Route lang={lang} />
+
+    <section class="close">
+      <div>
+        <h2>{h.closeTitle}</h2>
+        <p>{h.closeText}</p>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
+        <a class="btn" href={CV} download>{h.cv}</a>
+      </div>
+    </section>
+  </div>
+</Base>

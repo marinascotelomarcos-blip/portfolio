@@ -1,0 +1,143 @@
+---
+import { T, type Lang } from '../lib/content';
+import { CVV, ICONS, MODES } from '../lib/cv-visual';
+interface Props { lang: Lang; part: 'stats' | 'phones' | 'origin' | 'rules' | 'modes' | 'decisions' | 'hood' | 'future' }
+const { lang, part } = Astro.props;
+const v = CVV[lang];
+const cv = T[lang].cv;
+const rounds = [5, 4, 3, 2, 1];
+const ico = (k: string) => ICONS[k];
+---
+{part === 'stats' && (
+  <ul class="cvv-stats" data-cvv-stats>
+    {v.stats.map((s) => (
+      <li><b class="cvv-num tnum" data-n={s.n} data-plus={s.plus ? '1' : ''}>{s.n}{s.plus ? '+' : ''}</b><span>{s.l}</span></li>
+    ))}
+  </ul>
+)}
+
+{part === 'phones' && (
+  <>
+    <h2 class="sec">{v.phonesTitle}</h2>
+    <div class="cvv-phones">
+      {cv.shots.map((s, i) => (
+        <figure class:list={['cvv-phone', i === 1 && 'main']}>
+          <div class="phone-frame"><img src={s.src} alt={s.alt} width="390" height="844" loading="lazy" /></div>
+          <figcaption>{s.cap}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </>
+)}
+
+{part === 'origin' && (
+  <>
+    <h2 class="sec">{v.originTitle}</h2>
+    <ul class="cvv-cards three">
+      {v.origin.map((o, i) => (
+        <li style={`--i:${i}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico(o.i)} /></svg>
+          <b>{o.t}</b><span>{o.d}</span>
+        </li>
+      ))}
+    </ul>
+  </>
+)}
+
+{part === 'rules' && (
+  <>
+    <h2 class="sec">{v.rulesTitle}</h2>
+    <ul class="cvv-chips">{v.chips.map((c) => <li>{c}</li>)}</ul>
+    <p class="mono muted cvv-label">{v.roundsLabel}</p>
+    <ol class="cvv-rounds">
+      {rounds.map((n, k) => (
+        <li class:list={[n === 1 && 'blind']} style={`--k:${k}`}>
+          <span class="stack" aria-hidden="true">{Array.from({ length: n }).map((_, j) => <i style={`--j:${j}`}></i>)}</span>
+          <b class="tnum">{n}</b>
+          {n === 1 && <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico('eyeoff')} /></svg>}
+        </li>
+      ))}
+    </ol>
+    <p class="cvv-blind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico('eyeoff')} /></svg>{v.blind}</p>
+    <ol class="cvv-steps">
+      {v.steps.map((s, i) => (
+        <li style={`--i:${i}`}>
+          <span class="cvv-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico(s.i)} /></svg></span>
+          <b>{s.t}</b><span>{s.d}</span>
+        </li>
+      ))}
+    </ol>
+  </>
+)}
+
+{part === 'modes' && (
+  <>
+    <h2 class="sec">{v.modesTitle}</h2>
+    <ul class="cvv-modes">
+      {MODES.map((m, i) => (
+        <li style={`--c:${m.color};--i:${i}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={m.d} /></svg>
+          <b>{m.name}</b>
+        </li>
+      ))}
+    </ul>
+  </>
+)}
+
+{part === 'decisions' && (
+  <>
+    <h2 class="sec">{v.decTitle}</h2>
+    <ul class="cvv-cards five">
+      {v.dec.map((d, i) => (
+        <li style={`--i:${i}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico(d.i)} /></svg>
+          <b>{d.t}</b><span>{d.d}</span>
+        </li>
+      ))}
+    </ul>
+  </>
+)}
+
+{part === 'hood' && (
+  <>
+    <h2 class="sec">{v.hoodTitle}</h2>
+    <ul class="cvv-hood">
+      {v.hood.map((h) => (
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico(h.i)} /></svg>{h.t}</li>
+      ))}
+    </ul>
+    <p class="cvv-who">{v.who}</p>
+  </>
+)}
+
+{part === 'future' && (
+  <div class="cvv-future">
+    <span class="cvv-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ico('store')} /></svg></span>
+    <div><b>{v.futureTitle}</b><p>{v.future}</p></div>
+    <div class="cvv-future-actions">
+      <a class="btn" href="https://github.com/marinascotelomarcos-blip/cinco-vidas" rel="noopener">{cv.future.github} →</a>
+    </div>
+  </div>
+)}
+
+<script>
+  const stats = document.querySelector<HTMLElement>('[data-cvv-stats]');
+  if (stats) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nums = Array.from(stats.querySelectorAll<HTMLElement>('[data-n]'));
+    if (!reduce) {
+      const io = new IntersectionObserver((es) => {
+        if (!es[0].isIntersecting) return;
+        io.disconnect();
+        const t0 = performance.now();
+        const step = (t: number) => {
+          const k = Math.min(1, (t - t0) / 1100), e = 1 - Math.pow(1 - k, 3);
+          nums.forEach((el) => { const n = Number(el.dataset.n); el.textContent = Math.round(n * e) + (el.dataset.plus && k === 1 ? '+' : ''); });
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, { threshold: 0.4 });
+      io.observe(stats);
+    }
+  }
+</script>

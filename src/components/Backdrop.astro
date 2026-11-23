@@ -1,0 +1,13 @@
+---
+---
+<div class="bg-fx" aria-hidden="true"><i class="bg-grid"></i><i class="bg-code"></i><i class="bg-glow"></i><i class="bg-spot"></i></div>
+<script>
+  const root = document.documentElement;
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let raf = 0, x = 0, y = 0;
+    window.addEventListener('pointermove', (e) => {
+      x = e.clientX; y = e.clientY;
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; root.style.setProperty('--px', x + 'px'); root.style.setProperty('--py', y + 'px'); });
+    }, { passive: true });
+  }
+</script>

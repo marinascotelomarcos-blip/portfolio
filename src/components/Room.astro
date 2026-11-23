@@ -1,0 +1,17 @@
+---
+import { VISITED, T, type Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const h = T[lang].home;
+---
+<div class="room-wrap">
+  <div class="scene scene-room" data-scene="room" data-visited={JSON.stringify(VISITED)}>
+    <canvas aria-hidden="true"></canvas>
+    <nav class="room-labels" aria-label={lang === 'en' ? 'Projects and sections' : 'Proyectos y secciones'}>
+      {h.room.map((r) => (
+        <a data-station={r.id} href={r.href}><b>{r.label}</b><span>{r.status}</span></a>
+      ))}
+    </nav>
+  </div>
+  <p class="room-hint mono">{h.roomHint}</p>
+</div>

@@ -1,0 +1,67 @@
+---
+import Base from '../../../layouts/Base.astro';
+import DashDemo from '../../../components/DashDemo.astro';
+import Scene from '../../../components/Scene.astro';
+import BetTry from '../../../components/BetTry.astro';
+import CvVisuals from '../../../components/CvVisuals.astro';
+import LogoGrid from '../../../components/LogoGrid.astro';
+import { STACK } from '../../../lib/logos';
+import { T, LANGS, GAME_URL, type Lang } from '../../../lib/content';
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) => ['cinco-vidas', 'dashboard'].map((slug) => ({ params: { lang, slug } })));
+}
+const lang = Astro.params.lang as Lang;
+const slug = Astro.params.slug as 'cinco-vidas' | 'dashboard';
+const t = T[lang];
+const c = t.common;
+const isCV = slug === 'cinco-vidas';
+const page = isCV ? t.cv : t.dash;
+---
+<Base lang={lang} title={page.title} description={page.lede} path={`/projects/${slug}/`} current="projects">
+  <div class="wrap hero">
+    <div class="case-head">
+      <div>
+        <h1 class="display">{page.title}</h1>
+        <p class="lede" style="max-width:30ch">{page.lede}</p>
+
+        <dl class="facts">
+          <dt class="mono">{c.status}</dt><dd>{page.facts.status}</dd>
+          <dt class="mono">{c.role}</dt><dd>{page.facts.role}</dd>
+          {!isCV && (<><dt class="mono">{c.stack}</dt><dd>{page.facts.stack}</dd></>)}
+          <dt class="mono">{c.since}</dt><dd class="tnum">{page.facts.since}</dd>
+        </dl>
+        <LogoGrid ids={STACK[slug]} lang={lang} label={c.built} />
+        {isCV && <div class="actions" style="justify-content:flex-start;margin-top:28px"><a class="btn primary" href={GAME_URL} rel="noopener">{t.cv.play} →</a></div>}
+      </div>
+      <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />
+    </div>
+
+    {isCV && (
+      <>
+        <CvVisuals lang={lang} part="stats" />
+        <CvVisuals lang={lang} part="phones" />
+        <CvVisuals lang={lang} part="origin" />
+        <CvVisuals lang={lang} part="rules" />
+        <BetTry lang={lang} />
+        <CvVisuals lang={lang} part="modes" />
+        <CvVisuals lang={lang} part="decisions" />
+        <CvVisuals lang={lang} part="hood" />
+        <h2 class="sec">{t.cv.future.title}</h2>
+        <CvVisuals lang={lang} part="future" />
+      </>
+    )}
+
+    {!isCV && (
+      <>
+        <h2 class="sec">{t.dash.demoTitle}</h2>
+        <DashDemo lang={lang} />
+        <h2 class="sec">{t.dash.howTitle}</h2>
+        <ul class="bullets">{t.dash.how.map((u) => <li>{u}</li>)}</ul>
+        <h2 class="sec">{t.dash.privTitle}</h2>
+        <p class="prose">{t.dash.priv}</p>
+      </>
+    )}
+
+    <p style="margin-top:clamp(56px,8vw,96px)"><a href={`/${lang}/#projects`}>← {c.back}</a></p>
+  </div>
+</Base>

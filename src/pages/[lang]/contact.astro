@@ -1,0 +1,27 @@
+---
+import Base from '../../layouts/Base.astro';
+import Scene from '../../components/Scene.astro';
+import ContactLinks from '../../components/ContactLinks.astro';
+import { T, LANGS, EMAIL, LINKEDIN, CV, type Lang } from '../../lib/content';
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const c = T[lang].contact;
+---
+<Base lang={lang} title={c.title} path="/contact/" current="contact">
+  <div class="wrap hero">
+    <div class="case-head">
+      <div>
+        <h1 class="display">{c.title}</h1>
+        <p class="lede" style="max-width:28ch">{c.lede}</p>
+      </div>
+      <Scene kind="globe" class="case-scene" />
+    </div>
+    <div style="margin-top:clamp(32px,5vw,56px)"><ContactLinks lang={lang} /></div>
+    <ul class="contact-list" style="margin-top:clamp(32px,5vw,56px)">
+      <li><span class="mono muted">{c.email}</span><a href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
+      <li><span class="mono muted">{c.linkedin}</span><a href={LINKEDIN} rel="noopener">linkedin.com/in/marcos-mariñas-cotelo</a></li>
+      <li><span class="mono muted">{c.cv}</span><div><a href={CV} download>Marcos-Marinas-CV-ES.pdf</a><small>{c.cvNote}</small></div></li>
+    </ul>
+    <p class="muted" style="margin-top:28px">{c.looking}</p>
+  </div>
+</Base>

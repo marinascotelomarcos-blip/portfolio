@@ -1,0 +1,106 @@
+---
+import '../styles/global.css';
+import Backdrop from '../components/Backdrop.astro';
+import Ticker from '../components/Ticker.astro';
+import { T, type Lang } from '../lib/content';
+
+interface Props { lang: Lang; title?: string; description?: string; path?: string; current?: 'home' | 'about' | 'contact' | 'projects' }
+const { lang, title, description, path = '/', current } = Astro.props;
+const t = T[lang];
+const other: Lang = lang === 'en' ? 'es' : 'en';
+const pageTitle = title ? `${title} — Marcos Mariñas Cotelo` : t.meta.title;
+const desc = description ?? t.meta.description;
+const base = `/${lang}`;
+---
+<!doctype html>
+<html lang={t.htmlLang} data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={desc} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:type" content="website" />
+    <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#e8edec" />
+    <script is:inline>
+      try { var m = localStorage.getItem('mmc-mode'); if (m === 'dark' || m === 'light') document.documentElement.dataset.mode = m; } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <Backdrop />
+    <a class="skip" href="#main">{lang === 'en' ? 'Skip to content' : 'Saltar al contenido'}</a>
+    <header class="wrap top">
+      <a class="brand" href={`${base}/`} title="Marcos Mariñas Cotelo" aria-label={lang === 'en' ? 'Marcos Mariñas Cotelo — home' : 'Marcos Mariñas Cotelo — inicio'}>MMC</a>
+      <nav aria-label={lang === 'en' ? 'Main' : 'Principal'}>
+        <a href={`${base}/#projects`} aria-current={current === 'projects' ? 'page' : undefined}>{t.nav.projects}</a>
+        <a href={`${base}/about/`} aria-current={current === 'about' ? 'page' : undefined}>{t.nav.about}</a>
+        <a href={`${base}/contact/`} aria-current={current === 'contact' ? 'page' : undefined}>{t.nav.contact}</a>
+      </nav>
+    </header>
+
+    <Ticker lang={lang} />
+    <main id="main"><slot /></main>
+
+    <div class="statusbar">
+      <div class="wrap">
+        <div class="left">
+          <span class="sb-status mono">A Coruña · UTC+1</span>
+        </div>
+        <div class="right">
+          <button class="sb" type="button" id="mode-toggle" aria-pressed="false">
+            {t.bar.mode}: <span class="on" id="mode-label">{t.bar.reading}</span>
+          </button>
+          <a class="sb" href={`/${other}${path}`} hreflang={other} lang={other}>{t.bar.lang}</a>
+        </div>
+      </div>
+    </div>
+
+
+    <script is:inline define:vars={{ labels: { reading: t.bar.reading, system: t.bar.system } }}>
+      (function () {
+        var root = document.documentElement;
+        var label = document.getElementById('mode-label');
+        var btn = document.getElementById('mode-toggle');
+        function paint() {
+          var dark = root.dataset.mode === 'dark';
+          label.textContent = dark ? labels.system : labels.reading;
+          btn.setAttribute('aria-pressed', String(dark));
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#0a0f12' : '#e8edec');
+        }
+        function setMode(next, x, y) {
+          var apply = function () { root.dataset.mode = next; try { localStorage.setItem('mmc-mode', next); } catch (e) {} paint(); };
+          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (!document.startViewTransition || reduce) { apply(); return; }
+          var t = document.startViewTransition(apply);
+          t.ready.then(function () {
+            var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+            root.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + r + 'px at ' + x + 'px ' + y + 'px)'] },
+              { duration: 650, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' });
+          }).catch(function () {});
+        }
+        btn.addEventListener('click', function () { var r = btn.getBoundingClientRect(); setMode(root.dataset.mode === 'dark' ? 'light' : 'dark', r.left + r.width / 2, r.top + r.height / 2); });
+        paint();
+      })();
+    </script>
+      <script>
+      const els = document.querySelectorAll<HTMLElement>('[data-scene]');
+      if (els.length) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            io.unobserve(e.target);
+            const el = e.target as HTMLElement;
+            import('../lib/scenes.js')
+              .then(({ mount }) => mount(el, el.dataset.scene as string, { visited: JSON.parse(el.dataset.visited || '[]'), mapUrl: '/world.svg' }))
+              .catch(() => { el.hidden = true; });
+          });
+        }, { rootMargin: '200px' });
+        els.forEach((el) => io.observe(el));
+      }
+    </script>
+  </body>
+</html>

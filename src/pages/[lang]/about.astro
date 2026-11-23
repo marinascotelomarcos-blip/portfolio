@@ -1,0 +1,43 @@
+---
+import Base from '../../layouts/Base.astro';
+import LogoGrid from '../../components/LogoGrid.astro';
+import { T, LANGS, type Lang } from '../../lib/content';
+import { TOOL_IDS, METHOD_IDS } from '../../lib/logos';
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const a = T[lang].about;
+---
+<Base lang={lang} title={a.title} path="/about/" current="about">
+  <div class="wrap hero">
+    <h1 class="display">{a.title}</h1>
+    <p class="lede">{a.lede}</p>
+
+    <h2 class="sec">{a.storyTitle}</h2>
+    <div class="prose">{a.story.map((p) => <p>{p}</p>)}</div>
+
+    <h2 class="sec">{a.expTitle}</h2>
+    <ul class="xp">
+      {a.exp.map((e) => (
+        <li>
+          <span class="when mono tnum">{e.when}</span>
+          <div><b>{e.role}</b><span class="org">{e.org}</span><p>{e.what}</p></div>
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="sec">{a.eduTitle}</h2>
+    <ul class="xp">
+      {a.edu.map((e) => (
+        <li>
+          <span class="when mono tnum">{e.when}</span>
+          <div><b>{e.title}</b><span class="org">{e.org}</span></div>
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="sec">{a.toolsTitle}</h2>
+    <LogoGrid ids={TOOL_IDS} lang={lang} label={a.tools[0].label} />
+    <LogoGrid ids={METHOD_IDS} lang={lang} label={a.tools[1].label} />
+    <p class="prose" style="margin-top:28px"><span class="mono muted">{a.tools[2].label}</span><br />{a.tools[2].items}</p>
+  </div>
+</Base>

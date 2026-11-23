@@ -1,0 +1,6 @@
+---
+import { VISITED } from '../lib/content';
+interface Props { kind: 'cards' | 'logo' | 'globe' | 'outside' | 'phone'; class?: string }
+const { kind, class: cls } = Astro.props;
+---
+<div class:list={['scene', `scene-${kind}`, cls]} data-scene={kind} data-visited={kind === 'globe' ? JSON.stringify(VISITED) : undefined} aria-hidden="true"><canvas></canvas></div>

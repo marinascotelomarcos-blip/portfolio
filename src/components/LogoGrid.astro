@@ -1,0 +1,38 @@
+---
+import { LOGOS } from '../lib/logos';
+import type { Lang } from '../lib/content';
+interface Props { ids: string[]; lang: Lang; label?: string }
+const { ids, lang, label } = Astro.props;
+---
+<div class="logos">
+  {label && <p class="mono muted logos-label">{label}</p>}
+  <ul class="tiles">
+    {ids.map((id, i) => {
+      const l = LOGOS[id];
+      return (
+        <li class="tile" style={`--c:${l.hex};--i:${i}`} data-tile>
+          <span class="tile-ico" aria-hidden="true">
+            {l.kind === 'brand' && <svg viewBox="0 0 24 24" fill="currentColor"><path d={l.path} /></svg>}
+            {l.kind === 'glyph' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{l.paths.map((d) => <path d={d} pathLength="1" />)}</svg>}
+            {l.kind === 'mono' && <svg viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.6" /><text x="12" y="15.6" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" font-family="system-ui, sans-serif">{l.text}</text></svg>}
+          </span>
+          <span class="tile-name">{l.name[lang]}</span>
+        </li>
+      );
+    })}
+  </ul>
+</div>
+<script>
+  document.querySelectorAll<HTMLElement>('[data-tile]').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.setProperty('--ry', (x * 16).toFixed(1) + 'deg');
+      el.style.setProperty('--rx', (-y * 16).toFixed(1) + 'deg');
+      el.style.setProperty('--mx', ((x + 0.5) * 100).toFixed(0) + '%');
+      el.style.setProperty('--my', ((y + 0.5) * 100).toFixed(0) + '%');
+    });
+    el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
+    el.addEventListener('click', () => { el.classList.remove('spin'); void el.offsetWidth; el.classList.add('spin'); });
+  });
+</script>
