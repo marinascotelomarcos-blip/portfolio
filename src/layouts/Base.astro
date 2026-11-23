@@ -47,7 +47,7 @@ const base = `/${lang}`;
     <div class="statusbar">
       <div class="wrap">
         <div class="left">
-          <span class="sb-status mono">A Coruña · UTC+1</span>
+          <span class="sb-status mono sb-clock" id="sb-clock" aria-label={lang === 'en' ? 'Local time in A Coruña' : 'Hora local en A Coruña'}>A Coruña</span>
         </div>
         <div class="right">
           <button class="sb" type="button" id="mode-toggle" aria-pressed="false">
@@ -59,6 +59,38 @@ const base = `/${lang}`;
     </div>
 
 
+    <div class="rt" id="rt" aria-hidden="true"></div><div class="rt-xy" id="rt-xy" aria-hidden="true"></div>
+    <script is:inline define:vars={{ lang }}>
+      (function () {
+        /* Live clock: A Coruña time, digits roll when they change, and a countdown to January 2027 */
+        var el = document.getElementById('sb-clock'); if (!el) return;
+        var fmt = new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        var prev = '';
+        function build(str) { el.textContent = ''; var chars = Array.from(str); chars.forEach(function (ch) { var sp = document.createElement('span'); sp.className = /\d/.test(ch) ? 'd' : ''; sp.textContent = ch; el.appendChild(sp); }); }
+        function days() { var n = new Date(); var t = new Date('2027-01-01T00:00:00+01:00'); return Math.max(0, Math.ceil((t - n) / 864e5)); }
+        function tick() {
+          var parts = fmt.formatToParts(new Date()).reduce(function (a, p) { a[p.type] = p.value; return a; }, {});
+          var clock = parts.hour + ':' + parts.minute + ':' + parts.second;
+          var head = ('A Coruña · ' + parts.weekday + ' ' + parts.day + ' ' + parts.month).toUpperCase() + ' · ';
+          var tail = '  ·  2027 ' + (lang === 'en' ? 'in ' : 'en ') + days() + (lang === 'en' ? 'd' : ' d');
+          var full = head + clock + tail;
+          if (!prev || prev.length !== full.length) { build(full); prev = full; return; }
+          var kids = el.children;
+          for (var i = 0; i < full.length; i++) { if (full[i] !== prev[i]) { kids[i].textContent = full[i]; if (kids[i].className.indexOf('d') > -1) { kids[i].classList.remove('tick'); void kids[i].offsetWidth; kids[i].classList.add('tick'); } } }
+          prev = full;
+        }
+        tick(); setInterval(tick, 1000);
+      })();
+      (function () {
+        /* Reticle cursor with live coordinates, only for fine pointers and when motion is welcome */
+        if (!window.matchMedia('(pointer: fine)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var rt = document.getElementById('rt'), xy = document.getElementById('rt-xy'); if (!rt || !xy) return;
+        var x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y, shown = false;
+        addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!shown) { shown = true; rx = x; ry = y; rt.classList.add('on'); xy.classList.add('on'); } xy.textContent = 'x:' + String(Math.round(x)).padStart(4, '0') + ' y:' + String(Math.round(y)).padStart(4, '0'); var t = e.target; rt.classList.toggle('hover', !!(t && t.closest && t.closest('a, button, [data-station], [data-tile], .holo'))); }, { passive: true });
+        document.addEventListener('pointerleave', function () { shown = false; rt.classList.remove('on'); xy.classList.remove('on'); });
+        (function loop() { rx += (x - rx) * 0.22; ry += (y - ry) * 0.22; rt.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)'; xy.style.transform = 'translate3d(' + (rx + 22) + 'px,' + (ry + 18) + 'px,0)'; requestAnimationFrame(loop); })();
+      })();
+    </script>
     <script is:inline define:vars={{ labels: { reading: t.bar.reading, system: t.bar.system } }}>
       (function () {
         var root = document.documentElement;

@@ -501,10 +501,10 @@ function buildRoom(opts) {
 
   // pos: x, y (height), z. top: label height above the object.
   const defs = [
-    { id: 'cards', make: () => buildLogo(opts), pos: [-3.5, 3.5, -0.8], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0 },
-    { id: 'phone', make: () => buildPhone(), pos: [-1.5, 1.35, 1.4], scale: 1.05, rot: 0.15, top: 1.6, ph: 1.7 },
-    { id: 'mail', make: () => buildMail(), pos: [0.9, 3.7, 0.6], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1 },
-    { id: 'globe', make: () => buildGlobe(opts), pos: [3.5, 2.5, -0.6], scale: 0.85, rot: 0, top: 1.45, ph: 4.4 },
+    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0 },
+    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7 },
+    { id: 'mail', make: () => buildMail(), pos: [3.5, 3.9, 0.3], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1 },
+    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4 },
   ];
   const hits = [];
   const st = defs.map((d) => {

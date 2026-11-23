@@ -143,7 +143,7 @@ export const T: Record<Lang, Dict> = {
         { title: 'Baccalaureate, Social Sciences', org: 'Colegio Peleteiro, Santiago de Compostela', when: '2022–2023' },
         { title: 'First year of baccalaureate', org: 'Monterey Bay Academy, California', when: '2021–2022' },
       ],
-      toolsTitle: 'Tools and languages',
+      toolsTitle: 'Tools and methods',
       tools: [
         { label: 'Tools', items: 'Excel and Solver, Power BI, n8n, Microsoft Dynamics AX, A3Con, A3Nom, R' },
         { label: 'Methods', items: 'Process improvement (A3, Lean, 5S), MRP, Kanban, ABC/XYZ, EOQ/ROP, demand forecasting' },
@@ -317,7 +317,7 @@ export const T: Record<Lang, Dict> = {
         { title: '2.º Bachillerato, Ciencias Sociales', org: 'Colegio Peleteiro, Santiago de Compostela', when: '2022–2023' },
         { title: '1.º Bachillerato', org: 'Monterey Bay Academy, California', when: '2021–2022' },
       ],
-      toolsTitle: 'Herramientas e idiomas',
+      toolsTitle: 'Herramientas y métodos',
       tools: [
         { label: 'Herramientas', items: 'Excel y Solver, Power BI, n8n, Microsoft Dynamics AX, A3Con, A3Nom, R' },
         { label: 'Métodos', items: 'Mejora de procesos (A3, Lean, 5S), MRP, Kanban, ABC/XYZ, EOQ/ROP, previsión de demanda' },

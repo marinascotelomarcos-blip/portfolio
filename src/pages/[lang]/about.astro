@@ -13,8 +13,6 @@ const a = T[lang].about;
     <h1 class="display">{a.title}</h1>
     <p class="lede">{a.lede}</p>
 
-    <Credentials lang={lang} />
-
     <h2 class="sec">{a.storyTitle}</h2>
     <div class="prose">{a.story.map((p) => <p>{p}</p>)}</div>
 
@@ -37,6 +35,8 @@ const a = T[lang].about;
         </li>
       ))}
     </ul>
+
+    <Credentials lang={lang} />
 
     <h2 class="sec">{a.toolsTitle}</h2>
     <LogoGrid ids={TOOL_IDS} lang={lang} label={a.tools[0].label} />

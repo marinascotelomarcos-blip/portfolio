@@ -1,14 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Room from '../../components/Room.astro';
-import Credentials from '../../components/Credentials.astro';
-import { CREDS } from '../../lib/creds';
 import Route from '../../components/Route.astro';
 import { T, LANGS, EMAIL, CV, type Lang } from '../../lib/content';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
 const h = T[lang].home;
-const k = CREDS[lang];
 ---
 <Base lang={lang} path="/" current="home">
   <div class="wrap hero">
@@ -23,12 +20,6 @@ const k = CREDS[lang];
         </div>
       </div>
       <Room lang={lang} />
-    </div>
-
-    <h2 class="sec">{k.portalTitle}</h2>
-    <div class="portals">
-      <a class="portal" href={`/${lang}/about/`}><span class="k mono">{k.portalAbout.k}</span><h3>{k.portalAbout.t}<span class="go" aria-hidden="true">→</span></h3><p>{k.portalAbout.d}</p></a>
-      <a class="portal" href={`/${lang}/contact/`}><span class="k mono">{k.portalContact.k}</span><h3>{k.portalContact.t}<span class="go" aria-hidden="true">→</span></h3><p>{k.portalContact.d}</p></a>
     </div>
 
     <h2 class="sec" id="projects">{h.projectsTitle}</h2>
@@ -48,8 +39,6 @@ const k = CREDS[lang];
         </li>
       ))}
     </ul>
-
-    <Credentials lang={lang} />
 
     <h2 class="sec" id="route">{h.routeTitle}</h2>
     <Route lang={lang} />
