@@ -65,6 +65,11 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
     }
     tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { show(t.dataset.id); });
+      /* With a mouse, resting on a function switches the phone straight to it; touch and keyboard keep tap / arrow keys. */
+      /* A short pause before switching, cancelled if the pointer leaves, so crossing items on the way to the phone changes nothing. */
+      var hoverT = 0;
+      t.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'mouse') return; clearTimeout(hoverT); hoverT = setTimeout(function () { if (t.getAttribute('aria-selected') !== 'true') show(t.dataset.id); }, 140); });
+      t.addEventListener('pointerleave', function () { clearTimeout(hoverT); });
       t.addEventListener('keydown', function (e) {
         var n = e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : null;
         if (n === null) return; e.preventDefault(); n = (n + tabs.length) % tabs.length; show(tabs[n].dataset.id, true);
