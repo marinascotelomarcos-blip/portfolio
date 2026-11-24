@@ -32,6 +32,7 @@ const kinds = items.map((i) => i.kind);
 ---
 <div class="tour" data-tour>
   <div class="tour-card-wrap">
+    <div class="stops">
     {items.map((it, i) => (
       <article class="stop-card" id={`stop-${i}`} role="tabpanel" aria-labelledby={`node-${i}`} data-kind={it.kind} hidden={i !== 0}>
         <span class="stop-kind mono">{kindLabel[it.kind]} · <span class="tnum">{it.when}</span></span>
@@ -51,6 +52,7 @@ const kinds = items.map((i) => i.kind);
         )}
       </article>
     ))}
+    </div>
     <div class="tour-controls">
       <button class="tc" type="button" data-prev aria-label={ui.prev}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
