@@ -226,7 +226,7 @@ export const T: Record<Lang, Dict> = {
       flowHint: 'Pick a flow and watch the request travel.',
       replay: 'Replay',
       fallback: 'If n8n takes over 6 s, the site uses its own file',
-      n8nNote: 'n8n free trial ended: flows saved, forms off',
+      n8nNote: 'Flows tested and working; switched off now that the n8n free trial has ended',
       flows: [
         { id: 'cita', name: 'Repair booking', nodes: [
           { ic: 'form', t: 'Web form', s: 'Name, date, hour' },
@@ -478,7 +478,7 @@ export const T: Record<Lang, Dict> = {
       flowHint: 'Elige un flujo y mira viajar la petición.',
       replay: 'Repetir',
       fallback: 'Si n8n tarda más de 6 s, la web usa su propio archivo',
-      n8nNote: 'Prueba gratuita de n8n terminada: flujos guardados, formularios apagados',
+      n8nNote: 'Flujos probados y funcionando; apagados al terminar la prueba gratuita de n8n',
       flows: [
         { id: 'cita', name: 'Cita de reparación', nodes: [
           { ic: 'form', t: 'Formulario', s: 'Nombre, día, hora' },
