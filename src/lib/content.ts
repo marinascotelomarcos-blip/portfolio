@@ -77,11 +77,13 @@ type Dict = {
     title: string; lede: string;
     facts: { status: string; role: string; stack: string; since: string };
     imgAlt: string; visit: string; repo: string;
-    ideaTitle: string; idea: string[];
-    siteTitle: string; site: { t: string; d: string }[];
-    decTitle: string; dec: { t: string; d: string }[];
-    n8nTitle: string; n8n: string;
-    whoTitle: string; who: string;
+    piecesTitle: string; piecesHint: string; pieces: { img: string; name: string; line: string }[];
+    matsTitle: string; mats: { img: string; name: string }[];
+    flowTitle: string; flowHint: string; replay: string; fallback: string; n8nNote: string;
+    flows: { id: string; name: string; nodes: { t: string; s?: string }[]; alt?: { t: string; s?: string } }[];
+    siteTitle: string; site: string[];
+    decTitle: string; dec: string[];
+    who: string;
   };
   eng: {
     title: string; lede: string; paras: string[];
@@ -188,41 +190,57 @@ export const T: Record<Lang, Dict> = {
       lede: 'A smart watch you repair piece by piece. The company is made up; the website and its automations are real work.',
       facts: {
         status: 'Course project · website online',
-        role: 'Group 6, Innovation and Digital Transformation (UIE). Website and n8n automations, built with AI',
-        stack: 'HTML, CSS and vanilla JavaScript; n8n and Google Sheets behind the forms',
+        role: 'Group 6 (UIE). Website and n8n automations, built with AI',
+        stack: 'HTML, CSS and JavaScript; n8n and Google Sheets behind the forms',
         since: '11 Nov 2026',
       },
-      imgAlt: 'Cover of the CICLO Watches website: the logo, the slogan and a modular watch',
+      imgAlt: 'A modular CICLO watch with its pieces',
       visit: 'Visit the website', repo: 'Code on GitHub',
-      ideaTitle: 'The idea',
-      idea: [
-        'CICLO sells smart watches made of recycled material. Case, bezel, back, strap and battery are changed separately: if a strap breaks you change the strap, not the watch.',
-        'It is a company invented for a university course, written like a funding proposal. Nothing is sold, and every price, stock level and batch on the site is made up. The site says so.',
+      piecesTitle: 'Five pieces, one watch', piecesHint: 'Break a strap, change the strap.',
+      pieces: [
+        { img: 'pieza-caja', name: 'Case', line: 'Recycled aluminium' },
+        { img: 'pieza-esfera', name: 'Bezel and back', line: 'Six recycled finishes' },
+        { img: 'pieza-correas', name: 'Strap', line: 'Cotton, vegan leather or neoprene' },
+        { img: 'pieza-bateria', name: 'Battery', line: 'Swap it, keep the watch' },
       ],
-      siteTitle: 'What the website has',
-      site: [
-        { t: 'Models and pieces', d: 'Four models and the pieces that fit each one, with prices.' },
-        { t: 'Configurator', d: 'Pick model, bezel, back and strap and see the look and the total. Stock is meant to come from a Google Sheet through n8n, with a local file as backup.' },
-        { t: 'Traceability', d: 'Type the batch code engraved on a piece and see its material and origin, with invented data. A page lists what the company promises and what it does not yet.' },
-        { t: 'Repair booking and contact', d: 'The booking form checks the slot is free, saves it in a sheet and emails a confirmation. The contact form and a chat assistant work the same way.' },
+      matsTitle: 'Materials',
+      mats: [
+        { img: 'material-aluminio', name: 'Aluminium' },
+        { img: 'material-plastico', name: 'Plastic' },
+        { img: 'material-madera', name: 'Wood' },
+        { img: 'material-correa', name: 'Strap fabric' },
       ],
+      flowTitle: 'The automations behind the forms',
+      flowHint: 'Pick a flow and watch the request travel.',
+      replay: 'Replay',
+      fallback: 'If n8n takes over 6 s, the site uses its own file',
+      n8nNote: 'n8n free trial ended: flows saved, forms off',
+      flows: [
+        { id: 'cita', name: 'Repair booking', nodes: [
+          { t: 'Web form', s: 'Name, date, hour' },
+          { t: 'Valid?', s: 'With consent' },
+          { t: 'Slot free?', s: 'Reads the sheet' },
+          { t: 'Saves it', s: 'Google Sheets' },
+          { t: 'Confirms', s: 'Email via Gmail' },
+        ], alt: { t: 'Slot taken', s: 'Asks for another hour' } },
+        { id: 'stock', name: 'Stock', nodes: [
+          { t: 'Configurator', s: 'Asks for stock' },
+          { t: 'n8n', s: 'Reads the sheet' },
+          { t: 'Builds the answer', s: 'Units per piece' },
+          { t: 'On screen', s: 'Sold out marked' },
+        ] },
+      ],
+      siteTitle: 'On the website',
+      site: ['Models and prices', 'Configurator', 'Traceability by batch code', 'Repair booking', 'Contact and assistant'],
       decTitle: 'Details I cared about',
-      dec: [
-        { t: 'Fail soft', d: 'If the automation does not answer in six seconds, the configurator uses its own stock file instead of breaking.' },
-        { t: 'No real data', d: 'Every figure that is invented is labelled as invented, on the page where it appears.' },
-        { t: 'Honest claims', d: 'Traceability says plainly what is a prototype and what is not promised yet.' },
-        { t: 'Accessible', d: 'Skip link, visible focus, readable contrast, reduced motion, and menus checked from 360 to 1440 px.' },
-      ],
-      n8nTitle: 'About n8n',
-      n8n: 'The automations ran on a free trial of n8n, which has ended, so the forms are off today. The workflows are saved and can be imported again; the site keeps working with its backup data.',
-      whoTitle: 'Who did what',
-      who: 'It is a group project: the business case, models and report are the group’s. I built the website and the automations, working with Claude Code, and I decided what each page says.',
+      dec: ['Fails soft', 'Invented data is labelled', 'No empty promises', 'Accessible, 360 to 1440 px'],
+      who: 'Group project. The business case and the report are the group’s; I built the website and the automations with Claude Code.',
     },
     eng: {
       title: 'What is Business Engineering?',
       lede: 'Short version: engineering applied to how companies run.',
       paras: [
-        'Most engineers design a product. A business engineer designs the way a company works: how an order becomes a delivery, how much stock to keep, how to produce without waste, which numbers to watch.',
+        'Engineering applied to how a company runs: how an order becomes a delivery, how much stock to keep, how to produce without waste. Half engineering, half business.',
         'It sits between engineering and business. Engineering brings method and numbers; business brings the question, which is what the company needs. The goal is simple: a company that works better, costs less and surprises nobody.',
       ],
       learnTitle: 'What I study, in plain words',
@@ -417,41 +435,57 @@ export const T: Record<Lang, Dict> = {
       lede: 'Un reloj inteligente que se repara por piezas. La empresa es inventada; la web y sus automatizaciones son trabajo real.',
       facts: {
         status: 'Proyecto de clase · web online',
-        role: 'Grupo 6, Gestión de la Innovación y Transformación Digital (UIE). Web y automatizaciones en n8n, hechas con IA',
-        stack: 'HTML, CSS y JavaScript sin librerías; n8n y Google Sheets detrás de los formularios',
+        role: 'Grupo 6 (UIE). Web y automatizaciones en n8n, hechas con IA',
+        stack: 'HTML, CSS y JavaScript; n8n y Google Sheets detrás de los formularios',
         since: '11 nov 2026',
       },
-      imgAlt: 'Portada de la web de CICLO Watches: el logo, el lema y un reloj modular',
+      imgAlt: 'Un reloj modular CICLO con sus piezas',
       visit: 'Ver la web', repo: 'Código en GitHub',
-      ideaTitle: 'La idea',
-      idea: [
-        'CICLO vende relojes inteligentes de material reciclado. Caja, bisel, trasera, correa y batería se cambian por separado: si se rompe la correa, cambias la correa, no el reloj.',
-        'Es una empresa inventada para una asignatura de la universidad, planteada como una propuesta de financiación. No se vende nada, y todos los precios, existencias y lotes de la web son inventados. La web lo dice.',
+      piecesTitle: 'Cinco piezas, un reloj', piecesHint: 'Si se rompe la correa, cambias la correa.',
+      pieces: [
+        { img: 'pieza-caja', name: 'Caja', line: 'Aluminio reciclado' },
+        { img: 'pieza-esfera', name: 'Bisel y trasera', line: 'Seis acabados reciclados' },
+        { img: 'pieza-correas', name: 'Correa', line: 'Algodón, cuero vegano o neopreno' },
+        { img: 'pieza-bateria', name: 'Batería', line: 'La cambias y sigues' },
       ],
-      siteTitle: 'Qué tiene la web',
-      site: [
-        { t: 'Modelos y piezas', d: 'Cuatro modelos y las piezas que encajan en cada uno, con precios.' },
-        { t: 'Configurador', d: 'Eliges modelo, bisel, trasera y correa y ves cómo queda y el total. El stock está pensado para leerse de una hoja de Google a través de n8n, con un archivo local de respaldo.' },
-        { t: 'Trazabilidad', d: 'Escribes el código de lote grabado en una pieza y ves su material y su origen, con datos inventados. Una página cuenta lo que la empresa promete y lo que aún no.' },
-        { t: 'Cita de reparación y contacto', d: 'El formulario de cita comprueba que el hueco esté libre, lo apunta en una hoja y envía un correo de confirmación. El formulario de contacto y un asistente de chat funcionan igual.' },
+      matsTitle: 'Materiales',
+      mats: [
+        { img: 'material-aluminio', name: 'Aluminio' },
+        { img: 'material-plastico', name: 'Plástico' },
+        { img: 'material-madera', name: 'Madera' },
+        { img: 'material-correa', name: 'Tela de correa' },
       ],
+      flowTitle: 'Las automatizaciones detrás de los formularios',
+      flowHint: 'Elige un flujo y mira viajar la petición.',
+      replay: 'Repetir',
+      fallback: 'Si n8n tarda más de 6 s, la web usa su propio archivo',
+      n8nNote: 'Prueba gratuita de n8n terminada: flujos guardados, formularios apagados',
+      flows: [
+        { id: 'cita', name: 'Cita de reparación', nodes: [
+          { t: 'Formulario', s: 'Nombre, día, hora' },
+          { t: '¿Datos válidos?', s: 'Con consentimiento' },
+          { t: '¿Hueco libre?', s: 'Lee la hoja' },
+          { t: 'Lo apunta', s: 'Google Sheets' },
+          { t: 'Confirma', s: 'Correo por Gmail' },
+        ], alt: { t: 'Hueco ocupado', s: 'Pide otra hora' } },
+        { id: 'stock', name: 'Stock', nodes: [
+          { t: 'Configurador', s: 'Pide el stock' },
+          { t: 'n8n', s: 'Lee la hoja' },
+          { t: 'Arma la respuesta', s: 'Unidades por pieza' },
+          { t: 'En pantalla', s: 'Agotado marcado' },
+        ] },
+      ],
+      siteTitle: 'En la web',
+      site: ['Modelos y precios', 'Configurador', 'Trazabilidad por lote', 'Cita de reparación', 'Contacto y asistente'],
       decTitle: 'Detalles que cuidé',
-      dec: [
-        { t: 'Que falle sin romperse', d: 'Si la automatización no contesta en seis segundos, el configurador usa su propio archivo de stock en vez de romperse.' },
-        { t: 'Sin datos reales', d: 'Cada cifra inventada está marcada como inventada, en la página donde sale.' },
-        { t: 'Promesas honestas', d: 'La trazabilidad dice claro qué es prototipo y qué todavía no se promete.' },
-        { t: 'Accesible', d: 'Enlace para saltar al contenido, foco visible, contraste legible, movimiento reducido y menús revisados de 360 a 1440 px.' },
-      ],
-      n8nTitle: 'Sobre n8n',
-      n8n: 'Las automatizaciones corrieron en una prueba gratuita de n8n que ya terminó, así que hoy los formularios están apagados. Los flujos están guardados y se pueden importar otra vez; la web sigue funcionando con sus datos de respaldo.',
-      whoTitle: 'Quién hizo qué',
-      who: 'Es un proyecto de grupo: el modelo de negocio, los modelos de reloj y el informe son del grupo. Yo hice la web y las automatizaciones, trabajando con Claude Code, y decidí qué dice cada página.',
+      dec: ['Falla sin romperse', 'Lo inventado está marcado', 'Sin promesas vacías', 'Accesible, de 360 a 1440 px'],
+      who: 'Proyecto de grupo. El modelo de negocio y el informe son del grupo; la web y las automatizaciones las hice yo con Claude Code.',
     },
     eng: {
       title: '¿Qué es la Ingeniería de la Empresa?',
       lede: 'En corto: ingeniería aplicada a cómo funciona una empresa.',
       paras: [
-        'La mayoría de los ingenieros diseñan un producto. Un ingeniero de la empresa diseña cómo trabaja una empresa: cómo un pedido se convierte en una entrega, cuánto stock tener, cómo producir sin desperdicio, qué números vigilar.',
+        'Ingeniería aplicada a cómo funciona una empresa: cómo un pedido llega a ser una entrega, cuánto stock tener, cómo producir sin desperdicio. Mitad ingeniería, mitad negocio.',
         'Está entre la ingeniería y los negocios. La ingeniería aporta método y números; los negocios, la pregunta: qué necesita la empresa. El objetivo es simple: una empresa que funcione mejor, cueste menos y no dé sorpresas.',
       ],
       learnTitle: 'Qué estudio, en cristiano',

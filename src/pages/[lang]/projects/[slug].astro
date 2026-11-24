@@ -4,6 +4,7 @@ import DashDemo from '../../../components/DashDemo.astro';
 import Scene from '../../../components/Scene.astro';
 import BetTry from '../../../components/BetTry.astro';
 import CvVisuals from '../../../components/CvVisuals.astro';
+import CicloVisuals from '../../../components/CicloVisuals.astro';
 import LogoGrid from '../../../components/LogoGrid.astro';
 import { STACK } from '../../../lib/logos';
 import { T, LANGS, GAME_URL, type Lang } from '../../../lib/content';
@@ -38,7 +39,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
         {isCV && <div class="actions" style="justify-content:flex-start;margin-top:28px"><a class="btn primary" href={GAME_URL} rel="noopener">{t.cv.play} →</a></div>}
       </div>
       {isCiclo
-        ? <img class="case-img" src="/img/ciclo-og.png" alt={t.ciclo.imgAlt} width="1200" height="630" />
+        ? <img class="case-img case-hero" src="/img/ciclo/CICLO_hero_modular_4x5.webp" alt={t.ciclo.imgAlt} width="480" height="565" />
         : <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />}
     </div>
 
@@ -57,20 +58,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
       </>
     )}
 
-    {isCiclo && (
-      <>
-        <h2 class="sec">{t.ciclo.ideaTitle}</h2>
-        <div class="prose">{t.ciclo.idea.map((p) => <p>{p}</p>)}</div>
-        <h2 class="sec">{t.ciclo.siteTitle}</h2>
-        <ul class="bullets">{t.ciclo.site.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
-        <h2 class="sec">{t.ciclo.decTitle}</h2>
-        <ul class="bullets">{t.ciclo.dec.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
-        <h2 class="sec">{t.ciclo.n8nTitle}</h2>
-        <p class="prose">{t.ciclo.n8n}</p>
-        <h2 class="sec">{t.ciclo.whoTitle}</h2>
-        <p class="prose">{t.ciclo.who}</p>
-      </>
-    )}
+    {isCiclo && <CicloVisuals lang={lang} />}
 
     {!isCV && !isCiclo && (
       <>

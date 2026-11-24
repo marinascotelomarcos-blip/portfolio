@@ -21,11 +21,8 @@ const e = T[lang].eng;
     </div>
     <section id="eng" class="eng">
       <h2 class="sec">{e.title}</h2>
-      <p class="eng-lede">{e.lede}</p>
-      <div class="prose">{e.paras.map((p) => <p>{p}</p>)}</div>
-      <h3 class="mono eng-sub">{e.learnTitle}</h3>
-      <ul class="bullets">{e.learn.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
-      <p class="prose eng-ex"><b>{e.exTitle}.</b> {e.ex}</p>
+      <p class="prose">{e.paras[0]}</p>
+      <ul class="eng-chips">{e.learn.map((u) => <li class="mono">{u.t}</li>)}</ul>
     </section>
 
     <h2 class="sec">{a.storyTitle}</h2>

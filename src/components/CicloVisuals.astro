@@ -1,0 +1,80 @@
+---
+import { T, type Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const c = T[lang].ciclo;
+---
+<section class="cv-pieces">
+  <h2 class="sec">{c.piecesTitle}</h2>
+  <p class="muted cv-hint">{c.piecesHint}</p>
+  <ul class="pieces">
+    {c.pieces.map((p, i) => (
+      <li style={`--i:${i}`} tabindex="0">
+        <img src={`/img/ciclo/${p.img}.webp`} alt="" loading="lazy" width="830" height="830" />
+        <span class="pc-name">{p.name}</span>
+        <span class="pc-line mono">{p.line}</span>
+      </li>
+    ))}
+  </ul>
+  <ul class="mats" aria-label={c.matsTitle}>
+    {c.mats.map((m) => (
+      <li><img src={`/img/ciclo/${m.img}.webp`} alt="" loading="lazy" /><span class="mono">{m.name}</span></li>
+    ))}
+  </ul>
+</section>
+
+<section class="cv-flow" data-flow>
+  <h2 class="sec">{c.flowTitle}</h2>
+  <div class="flow-bar">
+    <div class="flow-tabs" role="tablist">
+      {c.flows.map((f, i) => <button class="flow-tab mono" role="tab" data-tab={f.id} aria-selected={i === 0 ? 'true' : 'false'}>{f.name}</button>)}
+    </div>
+    <button class="flow-replay mono" type="button">↻ {c.replay}</button>
+  </div>
+  <p class="muted cv-hint">{c.flowHint}</p>
+  {c.flows.map((f, i) => (
+    <div class="flow" data-flow-id={f.id} hidden={i !== 0}>
+      <ol class="flow-row">
+        {f.nodes.map((n, k) => (
+          <li class="fnode" style={`--k:${k}`}>
+            <b>{n.t}</b>
+            {n.s && <span class="mono">{n.s}</span>}
+          </li>
+        ))}
+      </ol>
+      {f.alt && (
+        <p class="flow-alt mono"><span class="dot" aria-hidden="true"></span>{f.alt.t} → {f.alt.s}</p>
+      )}
+      {f.id === 'stock' && <p class="flow-alt mono"><span class="dot warn" aria-hidden="true"></span>{c.fallback}</p>}
+    </div>
+  ))}
+  <p class="flow-note mono">{c.n8nNote}</p>
+</section>
+
+<section class="cv-chips">
+  <h2 class="sec">{c.siteTitle}</h2>
+  <ul class="eng-chips">{c.site.map((u) => <li class="mono">{u}</li>)}</ul>
+  <h2 class="sec">{c.decTitle}</h2>
+  <ul class="eng-chips">{c.dec.map((u) => <li class="mono">{u}</li>)}</ul>
+  <p class="prose cv-who">{c.who}</p>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-flow]').forEach((root) => {
+    const tabs = root.querySelectorAll<HTMLButtonElement>('.flow-tab');
+    const flows = root.querySelectorAll<HTMLElement>('.flow');
+    const play = () => {
+      const f = root.querySelector<HTMLElement>('.flow:not([hidden])');
+      if (!f) return;
+      f.classList.remove('run'); void f.offsetWidth; f.classList.add('run');
+    };
+    tabs.forEach((t) => t.addEventListener('click', () => {
+      tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+      flows.forEach((f) => { f.hidden = f.dataset.flowId !== t.dataset.tab; });
+      play();
+    }));
+    root.querySelector('.flow-replay')?.addEventListener('click', play);
+    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { play(); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(root);
+  });
+</script>

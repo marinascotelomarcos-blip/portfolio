@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1000" width="1100" height="1000" role="img" aria-labelledby="t">
+<title id="t">Ciclo del material: mar, tierra, materiales y tu muñeca</title>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#D4F25C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<clipPath id="c1"><circle cx="330" cy="260" r="120"/></clipPath>
+<clipPath id="c2"><circle cx="770" cy="260" r="120"/></clipPath>
+<clipPath id="c3"><circle cx="330" cy="720" r="120"/></clipPath>
+</defs>
+<rect width="1100" height="1000" fill="#1C1D1D"/>
+<g fill="none" stroke="#D4F25C" stroke-width="3" marker-end="url(#a)" stroke-linecap="round">
+<path d="M470 260H625"/>
+<path d="M860 395Q930 490 880 560" />
+<path d="M625 720H470"/>
+<path d="M240 580Q190 490 240 400"/>
+</g>
+<!-- Mar -->
+<circle cx="330" cy="260" r="120" fill="#152623"/>
+<g clip-path="url(#c1)" fill="none" stroke="#7FD3C7" stroke-width="5" stroke-linecap="round" opacity=".9"><path d="M190 230q35-26 70 0t70 0t70 0t70 0"/><path d="M190 275q35-26 70 0t70 0t70 0t70 0"/><path d="M190 320q35-26 70 0t70 0t70 0t70 0"/></g>
+<circle cx="330" cy="260" r="120" fill="none" stroke="#D4F25C" stroke-width="3"/>
+<!-- Tierra -->
+<circle cx="770" cy="260" r="120" fill="#2A1B12"/>
+<g clip-path="url(#c2)" fill="none" stroke="#F08A4B" stroke-width="5" stroke-linecap="round"><circle cx="770" cy="260" r="90"/><circle cx="770" cy="260" r="62"/><circle cx="770" cy="260" r="34"/><circle cx="770" cy="260" r="9" fill="#F08A4B"/></g>
+<circle cx="770" cy="260" r="120" fill="none" stroke="#D4F25C" stroke-width="3"/>
+<!-- Materiales -->
+<circle cx="330" cy="720" r="120" fill="#181919"/>
+<g clip-path="url(#c3)" fill="none" stroke="#A3A39E" stroke-width="5" stroke-linejoin="round"><path d="M330 640l55 32v64l-55 32l-55-32v-64z"/><path d="M330 676l24 14v28l-24 14l-24-14v-28z" fill="#A3A39E"/></g>
+<circle cx="330" cy="720" r="120" fill="none" stroke="#D4F25C" stroke-width="3"/>
+<!-- Muñeca -->
+<circle cx="770" cy="720" r="120" fill="#20250F"/>
+<g fill="none" stroke="#D4F25C" stroke-width="5" stroke-linecap="round"><rect x="722" y="672" width="96" height="96" rx="26" fill="#121212"/><path d="M752 672v-40M788 672v-40M752 768v40M788 768v40"/><path d="M770 700v22l16 10"/></g>
+<circle cx="770" cy="720" r="120" fill="none" stroke="#D4F25C" stroke-width="3"/>
+<g font-family="Manrope,Arial,sans-serif" text-anchor="middle">
+<g font-size="38" font-weight="800" fill="#D4F25C"><text x="330" y="440">Mar</text><text x="770" y="440">Tierra</text><text x="330" y="900">Materiales</text><text x="770" y="900">Tu muñeca</text></g>
+<g font-size="26" fill="#F2F1EC"><text x="330" y="480">Plástico reciclado</text><text x="770" y="480">Madera recuperada</text><text x="330" y="940">Aluminio reciclado</text><text x="770" y="940">Un futuro mejor</text></g>
+</g>
+</svg>
