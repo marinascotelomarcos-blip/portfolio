@@ -389,7 +389,7 @@ h2.sec::before { content: '>'; font-family: var(--mono); font-weight: 500; color
 /* Route: a world tour you can scrub, play or step through */
 .tour { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 480px); gap: clamp(20px, 4vw, 56px); align-items: center; }
 .tour-globe .scene { height: clamp(300px, 36vw, 440px); }
-.tour-card-wrap { display: flex; flex-direction: column; gap: 22px; justify-content: center; }
+.tour-card-wrap { display: flex; flex-direction: column; gap: clamp(36px, 4vw, 52px); justify-content: center; }
 .stops { display: grid; }
 .stop-card { grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
 .stop-card:not([hidden]) { animation: cardIn 0.55s var(--ease) both; }
@@ -609,7 +609,7 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 /* ===== Hero: the figure is projected by a hologram base, free of any panel ===== */
 .stage { position: relative; }
 .stage .scene-room { position: relative; z-index: 1; height: clamp(560px, 54vw, 700px); }
-.stage-fig { position: absolute; z-index: 2; left: 50%; bottom: 96px; width: clamp(130px, 14vw, 188px); transform: translateX(-50%); pointer-events: none; }
+.stage-fig { position: absolute; z-index: 2; left: 50%; bottom: 96px; width: clamp(96px, 10vw, 136px); transform: translateX(-50%); pointer-events: none; }
 .stage-fig .fig-link { position: relative; z-index: 2; display: block; pointer-events: auto; cursor: pointer; animation: figBob 6s ease-in-out 2s infinite; }
 .stage-fig img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 14px rgba(59,184,190,0.45)); animation: materialize 2s var(--ease) both, holoFlicker 7s linear 2.4s infinite; }
 .stage-fig .scan { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
@@ -640,7 +640,7 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 @keyframes beamScan { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 -32px; } }
 @keyframes baseIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes ringPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
-@media (max-width: 720px) { .stage .scene-room { height: 480px; } .stage-fig { width: 118px; bottom: 84px; } .stage-fig .motes i { animation-name: riseS; } }
+@media (max-width: 720px) { .stage .scene-room { height: 480px; } .stage-fig { width: 82px; bottom: 84px; } .stage-fig .motes i { animation-name: riseS; } }
 @keyframes riseS { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-200px); } }
 @media (prefers-reduced-motion: reduce) { .stage-fig .fig-link, .stage-fig img, .stage-fig .scan, .stage-fig .beam, .stage-fig .base i, .stage-fig .motes i { animation: none !important; } .stage-fig .beam { opacity: 0.5; } .stage-fig .scan, .stage-fig .motes { display: none; } }
 /* ===== About: file card, numbered story, two timelines, one tile system ===== */
