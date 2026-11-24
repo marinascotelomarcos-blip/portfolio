@@ -47,6 +47,19 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
           </div>
         </div>
       </div>
+      <div class="demo-nav" data-demo-nav>
+        <button type="button" class="dn-btn" data-dn-prev aria-label={lang === 'en' ? 'Previous function' : 'Función anterior'}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
+        </button>
+        <div class="dn-label" aria-live="polite">
+          <b data-dn-name>{d.fns[0].name}</b>
+          <span data-dn-line>{d.fns[0].line}</span>
+          <small class="mono tnum" data-dn-count>1 / {d.fns.length}</small>
+        </div>
+        <button type="button" class="dn-btn" data-dn-next aria-label={lang === 'en' ? 'Next function' : 'Función siguiente'}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" /></svg>
+        </button>
+      </div>
       <p class="demo-note">{d.demoNote}</p>
     </div>
   </div>
@@ -56,12 +69,20 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
     var root = document.querySelector('[data-demo]'); if (!root) return;
     var tabs = [].slice.call(root.querySelectorAll('[role=tab]'));
     var bar = [].slice.call(root.querySelectorAll('[data-tabname]'));
+    var nm = root.querySelector('[data-dn-name]'), ln = root.querySelector('[data-dn-line]'), ct = root.querySelector('[data-dn-count]');
+    function cur() { for (var k = 0; k < tabs.length; k++) if (tabs[k].getAttribute('aria-selected') === 'true') return k; return 0; }
     function show(id, focus) {
+      tabs.forEach(function (t, k) { if (t.dataset.id === id && nm) { nm.textContent = t.querySelector('b').textContent; ln.textContent = t.querySelector('span').textContent; ct.textContent = (k + 1) + ' / ' + tabs.length; } });
       tabs.forEach(function (t) { var on = t.dataset.id === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
       root.querySelectorAll('.screen').forEach(function (s) {
         var on = s.id === 'scr-' + id; s.hidden = !on;
         if (on) { s.parentNode.scrollTop = 0; bar.forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tabname === s.dataset.tab)); }); }
       });
+    }
+    var pv = root.querySelector('[data-dn-prev]'), nx = root.querySelector('[data-dn-next]');
+    if (pv && nx) {
+      pv.addEventListener('click', function () { show(tabs[(cur() - 1 + tabs.length) % tabs.length].dataset.id); });
+      nx.addEventListener('click', function () { show(tabs[(cur() + 1) % tabs.length].dataset.id); });
     }
     tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { show(t.dataset.id); });
