@@ -709,3 +709,16 @@ h2.sec::after { content: ''; flex: 1; height: 1px; margin-left: 18px; background
 .logo-note.in { animation: cardIn 0.4s var(--ease) both; }
 @media (max-width: 980px) { .tiles-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .tiles-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ===== Cursor: a system reticle with live coordinates ===== */
+.rt { position: fixed; z-index: 90; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; opacity: 0; transition: opacity 0.25s, width 0.25s var(--ease), height 0.25s var(--ease), margin 0.25s var(--ease); will-change: transform; }
+.rt.on { opacity: 1; }
+.rt::before { content: ''; position: absolute; inset: 0; border: 1.5px solid var(--teal); border-radius: 50%; border-right-color: transparent; border-left-color: transparent; animation: rtSpin 3.2s linear infinite; }
+.rt::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--teal); }
+.rt.hover { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+.rt.hover::before { border-color: var(--teal); background: color-mix(in oklab, var(--teal) 14%, transparent); border-right-color: var(--teal); border-left-color: var(--teal); animation-duration: 1.2s; }
+.rt-xy { position: fixed; z-index: 90; left: 0; top: 0; pointer-events: none; opacity: 0; font: 0.62rem var(--mono); letter-spacing: 0.06em; color: var(--teal-ink); white-space: nowrap; transition: opacity 0.25s; will-change: transform; }
+.rt-xy.on { opacity: 0.85; }
+@keyframes rtSpin { to { transform: rotate(360deg); } }
+@media (pointer: coarse), (prefers-reduced-motion: reduce) { .rt, .rt-xy { display: none; } }
+
