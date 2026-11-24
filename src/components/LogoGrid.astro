@@ -40,17 +40,24 @@ const { ids, lang, label, row = false, explain = false } = Astro.props;
   document.querySelectorAll<HTMLElement>('[data-explain]').forEach((box) => {
     const note = box.querySelector<HTMLElement>('.logo-note'); if (!note) return;
     const tiles = Array.from(box.querySelectorAll<HTMLElement>('[data-tile]'));
-    const toggle = (el: HTMLElement) => {
-      const open = el.getAttribute('aria-expanded') === 'true';
+    let pinned: HTMLElement | null = null;
+    const show = (el: HTMLElement) => {
       tiles.forEach((t) => { t.setAttribute('aria-expanded', 'false'); t.classList.remove('on'); });
-      if (open) { note.hidden = true; return; }
       el.setAttribute('aria-expanded', 'true'); el.classList.add('on');
       note.textContent = el.dataset.note || ''; note.hidden = false; note.style.setProperty('--c', getComputedStyle(el).getPropertyValue('--c'));
       note.classList.remove('in'); void note.offsetWidth; note.classList.add('in');
     };
+    const hide = () => { tiles.forEach((t) => { t.setAttribute('aria-expanded', 'false'); t.classList.remove('on'); }); note.hidden = true; };
     tiles.forEach((el) => {
-      el.addEventListener('click', () => toggle(el));
-      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(el); } });
+      // Mouse: the note appears on hover, no click needed. Touch and keyboard: tap or Enter toggles it.
+      el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { pinned = null; show(el); } });
+      el.addEventListener('click', (e) => {
+        if ((e as PointerEvent).pointerType === 'mouse') { pinned = el; show(el); return; }
+        if (el.getAttribute('aria-expanded') === 'true') hide(); else show(el);
+      });
+      el.addEventListener('focus', () => show(el));
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (el.getAttribute('aria-expanded') === 'true') hide(); else show(el); } if (e.key === 'Escape') hide(); });
     });
+    box.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !pinned && !box.contains(document.activeElement)) hide(); });
   });
 </script>

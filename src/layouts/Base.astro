@@ -85,12 +85,12 @@ const base = `/${lang}`;
         /* Reticle cursor with live coordinates, only for fine pointers and when motion is welcome */
         if (!window.matchMedia('(pointer: fine)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         var rt = document.getElementById('rt'), xy = document.getElementById('rt-xy'); if (!rt || !xy) return;
-        var x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y, shown = false; var tgt = null;
+        var x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y, shown = false; var tgt = null, lastX = -1, lastY = -1;
         /* Hover state is re-read every frame: the 3D scenes set their pointer cursor one frame after the move. */
         function hot() { var t = tgt; if (!t || !t.closest) return false; var sc = t.closest('[data-scene]'); return !!(t.closest('a, button, [data-station], [data-tile], .holo, .node, .chip, summary, label') || (sc && sc.style.cursor === 'pointer')); }
-        addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!shown) { shown = true; rx = x; ry = y; rt.classList.add('on'); xy.classList.add('on'); document.documentElement.classList.add('rt-active'); } xy.textContent = 'x:' + String(Math.round(x)).padStart(4, '0') + ' y:' + String(Math.round(y)).padStart(4, '0'); tgt = e.target; }, { passive: true });
+        addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!shown) { shown = true; rx = x; ry = y; rt.classList.add('on'); xy.classList.add('on'); document.documentElement.classList.add('rt-active'); } tgt = e.target; }, { passive: true });
         document.addEventListener('pointerleave', function () { shown = false; rt.classList.remove('on'); xy.classList.remove('on'); document.documentElement.classList.remove('rt-active'); });
-        (function loop() { rt.classList.toggle('hover', hot()); rx += (x - rx) * 0.5; ry += (y - ry) * 0.5; rt.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)'; xy.style.transform = 'translate3d(' + (rx + 22) + 'px,' + (ry + 18) + 'px,0)'; requestAnimationFrame(loop); })();
+        (function loop() { rt.classList.toggle('hover', hot()); rx += (x - rx) * 0.5; ry += (y - ry) * 0.5; var lx = Math.round(x), ly = Math.round(y); if (lx !== lastX || ly !== lastY) { lastX = lx; lastY = ly; xy.textContent = 'x:' + String(lx).padStart(4, '0') + ' y:' + String(ly).padStart(4, '0'); } rt.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)'; xy.style.transform = 'translate3d(' + (rx + 22) + 'px,' + (ry + 18) + 'px,0)'; requestAnimationFrame(loop); })();
       })();
     </script>
     <script is:inline define:vars={{ labels: { reading: t.bar.reading, system: t.bar.system } }}>

@@ -2,12 +2,17 @@
 ---
 <div class="bg-fx" aria-hidden="true"><i class="bg-grid"></i><i class="bg-code"></i><i class="bg-glow"></i><i class="bg-spot"></i></div>
 <script>
-  const root = document.documentElement;
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  // The lit grid is a small element that follows the pointer (one 460px box), not a full-screen mask repainted on every move.
+  const spot = document.querySelector<HTMLElement>('.bg-spot');
+  if (spot && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.matchMedia('(pointer: fine)').matches) {
     let raf = 0, x = 0, y = 0;
     window.addEventListener('pointermove', (e) => {
       x = e.clientX; y = e.clientY;
-      if (!raf) raf = requestAnimationFrame(() => { raf = 0; root.style.setProperty('--px', x + 'px'); root.style.setProperty('--py', y + 'px'); });
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        spot.style.setProperty('--sx', (x - 230) + 'px'); spot.style.setProperty('--sy', (y - 230) + 'px');
+        spot.style.setProperty('--bx', (230 - x) + 'px'); spot.style.setProperty('--by', (230 - y) + 'px');
+      });
     }, { passive: true });
   }
 </script>

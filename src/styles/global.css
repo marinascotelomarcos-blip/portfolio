@@ -157,7 +157,7 @@ h2.sec { font-size: clamp(1.3rem, 2.2vw, 1.7rem); letter-spacing: -0.02em; font-
 .contact-list small { display: block; margin-top: 4px; color: var(--ink-2); font-size: 0.9rem; }
 
 /* Dashboard demo */
-.demo { display: grid; grid-template-columns: 1fr 340px; gap: clamp(24px, 5vw, 72px); align-items: start; margin-top: 8px; }
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: clamp(24px, 5vw, 72px); align-items: start; margin-top: 8px; }
 .fn-list { border-top: 1px solid var(--rule); }
 .fn { display: grid; grid-template-columns: 8.5rem 1fr; gap: 4px 20px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule); color: inherit; font: inherit; padding: 14px 10px 14px 0; cursor: pointer; transition: padding 0.3s var(--ease), color 0.2s; }
 .fn b { font-weight: 560; }
@@ -249,7 +249,7 @@ dialog.palette::backdrop { background: rgba(6, 12, 16, 0.5); }
   .actions { justify-content: flex-start; }
   .decisions li, .split { grid-template-columns: 1fr; }
   .xp li { grid-template-columns: 1fr; }
-  .demo { grid-template-columns: 1fr; }
+  .demo { grid-template-columns: minmax(0, 1fr); }
   .demo .phone-col { order: -1; }
   .sticky { position: static; }
   .app { margin-inline: auto; }
@@ -350,10 +350,12 @@ dialog.palette::backdrop { background: rgba(6, 12, 16, 0.5); }
 .bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
 .bg-fx i { position: absolute; inset: 0; display: block; }
 .bg-grid { background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(130% 100% at 50% 0%, #000 35%, transparent 100%); mask-image: radial-gradient(130% 100% at 50% 0%, #000 35%, transparent 100%); }
-.bg-code { background-image: var(--code-tex); background-size: 360px 200px; animation: drift 90s linear infinite; -webkit-mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); }
+.bg-code { -webkit-mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent); }
+/* The texture drifts by transform (compositor) instead of animating background-position, which repainted the whole screen every frame. */
+.bg-code::before { content: ''; position: absolute; left: -360px; top: -200px; right: 0; bottom: 0; background-image: var(--code-tex); background-size: 360px 200px; animation: drift 90s linear infinite; will-change: transform; }
 .bg-glow { background: radial-gradient(60vmax 40vmax at 85% 5%, color-mix(in oklab, var(--teal) 24%, transparent), transparent 70%), radial-gradient(50vmax 40vmax at 5% 95%, color-mix(in oklab, var(--teal) 16%, transparent), transparent 70%); animation: glow 16s ease-in-out infinite alternate; }
-.bg-spot { background-image: linear-gradient(var(--grid-hot) 1px, transparent 1px), linear-gradient(90deg, var(--grid-hot) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(230px circle at var(--px, 70%) var(--py, 25%), #000, transparent 100%); mask-image: radial-gradient(230px circle at var(--px, 70%) var(--py, 25%), #000, transparent 100%); }
-@keyframes drift { to { background-position: 360px 200px; } }
+.bg-spot { inset: auto !important; left: 0; top: 0; width: 460px; height: 460px; background-image: linear-gradient(var(--grid-hot) 1px, transparent 1px), linear-gradient(90deg, var(--grid-hot) 1px, transparent 1px); background-size: 44px 44px; background-position: var(--bx, calc(230px - 70vw)) var(--by, calc(230px - 25vh)); transform: translate3d(var(--sx, calc(70vw - 230px)), var(--sy, calc(25vh - 230px)), 0); will-change: transform; -webkit-mask-image: radial-gradient(closest-side, #000, transparent 100%); mask-image: radial-gradient(closest-side, #000, transparent 100%); }
+@keyframes drift { to { transform: translate3d(360px, 200px, 0); } }
 @keyframes glow { from { transform: translate3d(-2%, 0, 0) scale(1); opacity: 0.8; } to { transform: translate3d(2%, -2%, 0) scale(1.06); opacity: 1; } }
 
 .ticker { background: #0b1820; color: #8fdfe3; border-block: 1px solid #1c3340; overflow: hidden; white-space: nowrap; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.04em; }
@@ -620,13 +622,15 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 .stage-fig img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 14px rgba(59,184,190,0.45)); animation: materialize 2s var(--ease) both, holoFlicker 7s linear 2.4s infinite; }
 .stage-fig .scan { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
   -webkit-mask: url(/img/marcos-character.png) center / 100% 100% no-repeat; mask: url(/img/marcos-character.png) center / 100% 100% no-repeat;
-  background: linear-gradient(to bottom, transparent 42%, rgba(120,235,240,0.85) 50%, transparent 58%) 0 0 / 100% 300% no-repeat, repeating-linear-gradient(0deg, rgba(59,184,190,0.22) 0 1px, transparent 1px 4px);
-  animation: scanUp 4.6s linear 0.4s infinite; }
+  background: repeating-linear-gradient(0deg, rgba(59,184,190,0.22) 0 1px, transparent 1px 4px); overflow: hidden; }
+/* The moving scan band is transformed (compositor), not a background-position animation that repaints through the mask. */
+.stage-fig .scan::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 60%; background: linear-gradient(to bottom, transparent, rgba(120,235,240,0.85) 50%, transparent); animation: scanUp 4.6s linear 0.4s infinite; will-change: transform; }
 .stage-fig .beam { position: absolute; z-index: 1; left: 50%; bottom: 0; width: 170%; height: 122%; transform: translateX(-50%);
-  background: linear-gradient(to top, color-mix(in oklab, var(--teal) 50%, transparent), transparent 90%), repeating-linear-gradient(0deg, transparent 0 7px, color-mix(in oklab, var(--teal) 34%, transparent) 7px 8px);
+  background: linear-gradient(to top, color-mix(in oklab, var(--teal) 50%, transparent), transparent 90%);
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 28%, #000 72%, transparent), linear-gradient(to top, #000 6%, transparent 100%); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, transparent, #000 28%, #000 72%, transparent), linear-gradient(to top, #000 6%, transparent 100%); mask-composite: intersect;
-  opacity: 0; animation: beamIn 1.6s var(--ease) 0.1s both, beamScan 5s linear 1.7s infinite; }
+  opacity: 0; animation: beamIn 1.6s var(--ease) 0.1s both; }
+.stage-fig .beam::before { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: -32px; background: repeating-linear-gradient(0deg, transparent 0 7px, color-mix(in oklab, var(--teal) 34%, transparent) 7px 8px); animation: beamScan 5s linear 1.7s infinite; will-change: transform; }
 .stage-fig .base { position: absolute; z-index: 1; left: 50%; bottom: 0; width: 260%; aspect-ratio: 5 / 1; transform: translate(-50%, 50%); }
 .stage-fig .base.front { z-index: 3; clip-path: inset(50% -10% -10% -10%); }
 .stage-fig .base i { position: absolute; left: 50%; top: 50%; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--teal); box-shadow: 0 0 22px 2px color-mix(in oklab, var(--teal) 75%, transparent), inset 0 0 24px color-mix(in oklab, var(--teal) 45%, transparent); }
@@ -635,22 +639,24 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 .stage-fig .base i:nth-child(3) { width: 48%; height: 48%; background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 55%, transparent), transparent); border: 0; box-shadow: none; animation: baseIn 1.3s var(--ease) 0.2s both; }
 .stage-fig .motes { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; }
 .stage-fig .motes i { position: absolute; left: var(--x); bottom: 0; width: 3px; height: 3px; border-radius: 50%; background: var(--teal-ink); box-shadow: 0 0 8px var(--teal); opacity: 0; animation: rise var(--d) ease-out var(--dl) infinite; }
-.stage-fig .fig-tag { position: absolute; z-index: 4; left: 50%; bottom: -88px; transform: translateX(-50%); pointer-events: auto; white-space: nowrap; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; color: var(--teal-ink); background: var(--bg); border: 1px solid var(--teal); padding: 4px 11px; border-radius: 4px; transition: background 0.2s, color 0.2s; }
+.stage-fig .fig-tag { position: absolute; z-index: 4; left: 50%; bottom: -88px; transform: translateX(-50%); pointer-events: auto; white-space: nowrap; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; color: var(--teal-ink); background: var(--bg); border: 1px solid var(--teal); padding: 9px 14px; border-radius: 4px; transition: background 0.2s, color 0.2s; }
+main { overflow-x: clip; }
+.back-link { display: inline-block; padding: 10px 0; }
 .stage-fig .fig-tag:hover, .stage-fig .fig-link:hover ~ .fig-tag { background: var(--teal); color: var(--on-teal); }
 @keyframes materialize { 0% { clip-path: inset(100% 0 0 0); filter: brightness(3) saturate(0) drop-shadow(0 0 22px #3bb8be); } 60% { clip-path: inset(0 0 0 0); filter: brightness(1.8) saturate(0.4) drop-shadow(0 0 22px #3bb8be); } 100% { clip-path: inset(0 0 0 0); filter: drop-shadow(0 0 14px rgba(59,184,190,0.45)); } }
 @keyframes holoFlicker { 0%, 90%, 100% { opacity: 1; } 91% { opacity: 0.78; } 92% { opacity: 1; } 95% { opacity: 0.88; } 96% { opacity: 1; } }
-@keyframes scanUp { from { background-position: 0 100%, 0 0; } to { background-position: 0 0, 0 0; } }
+@keyframes scanUp { from { transform: translateY(0); } to { transform: translateY(-267%); } }
 @keyframes rise { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-300px); } }
 @keyframes figBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes beamIn { from { opacity: 0; } to { opacity: 0.6; } }
-@keyframes beamScan { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 -32px; } }
+@keyframes beamScan { from { transform: translateY(0); } to { transform: translateY(-32px); } }
 @keyframes baseIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes ringPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
 /* Small screens: the project chips sit under the scene inside .stage, so anchor the figure to the scene's bottom, not the stage's. */
 @media (max-width: 899px) { .stage { --sh: clamp(560px, 54vw, 700px); } .stage-fig { bottom: auto; top: calc(var(--sh) - 84px); transform: translate(-50%, -100%); } }
 @media (max-width: 720px) { .stage { --sh: 480px; } .stage .scene-room { height: 480px; } .stage-fig { width: 82px; } .stage-fig .motes i { animation-name: riseS; } }
 @keyframes riseS { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-200px); } }
-@media (prefers-reduced-motion: reduce) { .stage-fig .fig-link, .stage-fig img, .stage-fig .scan, .stage-fig .beam, .stage-fig .base i, .stage-fig .motes i { animation: none !important; } .stage-fig .beam { opacity: 0.5; } .stage-fig .scan, .stage-fig .motes { display: none; } }
+@media (prefers-reduced-motion: reduce) { .stage-fig .fig-link, .stage-fig img, .stage-fig .scan, .stage-fig .beam, .stage-fig .beam::before, .stage-fig .scan::after, .stage-fig .base i, .stage-fig .motes i { animation: none !important; } .stage-fig .beam { opacity: 0.5; } .stage-fig .scan, .stage-fig .motes { display: none; } }
 /* ===== About: file card, numbered story, two timelines, one tile system ===== */
 .about-head { max-width: 62ch; }
 .about-facts { margin: clamp(28px, 4vw, 44px) 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 clamp(20px, 3vw, 40px); }
@@ -715,6 +721,9 @@ h2.sec::after { content: ''; flex: 1; height: 1px; margin-left: 18px; background
 .tiles-row .tile:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 .logo-note { margin: 12px 0 0; padding: 4px 0 4px 14px; border-left: 2px solid var(--c, var(--teal)); max-width: 64ch; color: var(--ink); font-size: 0.98rem; line-height: 1.5; }
 .logo-note.in { animation: cardIn 0.4s var(--ease) both; }
+/* Reserve the note's height so showing it on hover never shoves the page around. */
+.logos[data-explain] .logo-note[hidden] { display: block; visibility: hidden; }
+@media (min-width: 700px) { .logos[data-explain] .logo-note { min-height: 4.6em; } }
 @media (max-width: 980px) { .tiles-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .tiles-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
