@@ -284,7 +284,7 @@ dialog.palette::backdrop { background: rgba(6, 12, 16, 0.5); }
 .room-wrap { min-width: 0; }
 .scene-room { height: clamp(420px, 44vw, 560px); cursor: grab; touch-action: pan-y; }
 .scene-room canvas { touch-action: pan-y; }
-.room-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.room-labels { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .room-labels a { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; text-decoration: none; color: var(--ink); font-size: 0.82rem; line-height: 1.2; white-space: nowrap; transition: border-color 0.2s, background 0.2s, color 0.2s; will-change: transform; }
 .room-labels a b { font-weight: 560; }
 .room-labels a span { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
@@ -297,7 +297,8 @@ dialog.palette::backdrop { background: rgba(6, 12, 16, 0.5); }
 @media (max-width: 899px) {
   .hero-grid { grid-template-columns: 1fr; }
   .scene-room { height: 330px; }
-  .room-labels { position: static; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; overflow: visible; }
+  .room-labels { position: static; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; overflow: visible; pointer-events: auto; }
+  .room-hint { margin-top: 16px; }
   .room-labels a { position: static; transform: none !important; align-items: flex-start; }
 }
 
@@ -598,7 +599,7 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 .cx-cv { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; padding: 18px 20px; border: 1px dashed var(--teal); border-radius: 12px; }
 .cx-cv b { display: block; font-weight: 560; }
 .cx-cv small { color: var(--ink-2); }
-.cx-globe { position: relative; min-height: 340px; border: 1px solid var(--rule); border-radius: 18px; overflow: hidden; background: radial-gradient(80% 80% at 50% 40%, color-mix(in oklab, var(--teal) 16%, transparent), transparent 75%), color-mix(in oklab, var(--bg-2) 60%, transparent); }
+.cx-globe { position: relative; min-height: 340px; }
 .cx-globe .scene, .cx-globe [data-scene] { position: absolute; inset: 0; width: 100%; height: 100%; }
 .cx-globe .cap { position: absolute; left: 16px; bottom: 14px; font-size: 0.74rem; color: var(--ink-2); }
 @media (max-width: 860px) { .cx { grid-template-columns: 1fr; } .cx-globe { min-height: 300px; order: -1; } }
@@ -640,7 +641,9 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 @keyframes beamScan { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 -32px; } }
 @keyframes baseIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes ringPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
-@media (max-width: 720px) { .stage .scene-room { height: 480px; } .stage-fig { width: 82px; bottom: 84px; } .stage-fig .motes i { animation-name: riseS; } }
+/* Small screens: the project chips sit under the scene inside .stage, so anchor the figure to the scene's bottom, not the stage's. */
+@media (max-width: 899px) { .stage { --sh: clamp(560px, 54vw, 700px); } .stage-fig { bottom: auto; top: calc(var(--sh) - 84px); transform: translate(-50%, -100%); } }
+@media (max-width: 720px) { .stage { --sh: 480px; } .stage .scene-room { height: 480px; } .stage-fig { width: 82px; } .stage-fig .motes i { animation-name: riseS; } }
 @keyframes riseS { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-200px); } }
 @media (prefers-reduced-motion: reduce) { .stage-fig .fig-link, .stage-fig img, .stage-fig .scan, .stage-fig .beam, .stage-fig .base i, .stage-fig .motes i { animation: none !important; } .stage-fig .beam { opacity: 0.5; } .stage-fig .scan, .stage-fig .motes { display: none; } }
 /* ===== About: file card, numbered story, two timelines, one tile system ===== */

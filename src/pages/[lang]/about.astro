@@ -18,10 +18,6 @@ const x = ABOUTX[lang];
         <p class="lede">{a.lede}</p>
       </div>
     </div>
-    <dl class="about-facts" aria-label={x.dossier}>
-      {x.facts.map(([k, v]) => (<div><dt class="mono">{k}</dt><dd>{v}</dd></div>))}
-    </dl>
-
     <h2 class="sec">{a.storyTitle}</h2>
     <ol class="story">{a.story.map((p, i) => <li><span class="mono num tnum">{String(i + 1).padStart(2, '0')}</span><p>{p}</p></li>)}</ol>
 

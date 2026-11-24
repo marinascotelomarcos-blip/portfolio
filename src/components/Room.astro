@@ -9,12 +9,12 @@ const en = lang === 'en';
   <div class="stage">
     <div class="scene scene-room" data-scene="room" data-visited={JSON.stringify(VISITED)}>
       <canvas aria-hidden="true"></canvas>
-      <nav class="room-labels" aria-label={en ? 'Projects and sections' : 'Proyectos y secciones'}>
-        {h.room.map((r) => (
-          <a data-station={r.id} href={r.href}><b>{r.label}</b><span>{r.status}</span></a>
-        ))}
-      </nav>
     </div>
+    <nav class="room-labels" aria-label={en ? 'Projects and sections' : 'Proyectos y secciones'}>
+      {h.room.map((r) => (
+        <a data-station={r.id} href={r.href}><b>{r.label}</b><span>{r.status}</span></a>
+      ))}
+    </nav>
     <div class="stage-fig">
       <span class="beam" aria-hidden="true"></span>
       <a class="fig-link" href={`/${lang}/about/`} aria-label={en ? 'About me' : 'Sobre mí'}>

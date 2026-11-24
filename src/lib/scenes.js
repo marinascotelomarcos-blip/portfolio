@@ -550,11 +550,37 @@ function buildRoom(opts) {
     place(zoom);
     root.updateMatrixWorld(true); camera.updateMatrixWorld(true);
     const w = ctx.el.clientWidth, h = ctx.el.clientHeight;
+    const boxes = [];
     st.forEach((s) => {
       const a = labels[s.id]; if (!a) return;
       v.set(s.group.position.x, s.inner.position.y + s.top, s.group.position.z).applyMatrix4(root.matrixWorld).project(camera);
-      a.style.transform = 'translate(' + ((v.x * 0.5 + 0.5) * w) + 'px,' + ((-v.y * 0.5 + 0.5) * h) + 'px) translate(-50%,-100%)';
+      boxes.push({ a, x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, w: a.offsetWidth, h: a.offsetHeight });
       a.classList.toggle('hot', s.id === hover);
+    });
+    // Labels hang above their object; nudge any that would overlap upward so none is covered.
+    // The character stands in front of the room: keep labels off its silhouette too.
+    const fig = ctx.el.parentElement && ctx.el.parentElement.querySelector('.stage-fig img');
+    if (fig) {
+      const er = ctx.el.getBoundingClientRect(), fr = fig.getBoundingClientRect();
+      const fl = fr.left - er.left - 8, fr2 = fr.right - er.left + 8, ft = fr.top - er.top, fb = fr.bottom - er.top;
+      boxes.forEach((b) => {
+        if (b.x + b.w / 2 > fl && b.x - b.w / 2 < fr2 && b.y > ft && b.y - b.h < fb) {
+          b.x = b.x < (fl + fr2) / 2 ? fl - b.w / 2 : fr2 + b.w / 2;
+        }
+      });
+    }
+    boxes.sort((p, q) => q.y - p.y);
+    boxes.forEach((b, i) => {
+      for (let pass = 0; pass < 4; pass++) {
+        let moved = false;
+        for (let j = 0; j < i; j++) {
+          const o = boxes[j];
+          if (Math.abs(b.x - o.x) < (b.w + o.w) / 2 + 6 && b.y > o.y - o.h - 6 && b.y - b.h < o.y + 6) { b.y = o.y - o.h - 6; moved = true; }
+        }
+        if (!moved) break;
+      }
+      b.y = Math.max(b.y, b.h + 4);
+      b.a.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px) translate(-50%,-100%)';
     });
     ctx.el.style.cursor = canvasHover ? 'pointer' : (drag ? 'grabbing' : 'grab');
   };
@@ -564,7 +590,7 @@ function buildRoom(opts) {
     fit(cam, aspect) { camera = cam; const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)); dist = Math.max(13, 11.4 / (2 * half * aspect)); place(); },
     init(c) {
       ctx = c; camera = c.camera;
-      c.el.querySelectorAll('[data-station]').forEach((a) => {
+      (c.el.closest('.stage') || c.el).querySelectorAll('[data-station]').forEach((a) => {
         labels[a.dataset.station] = a;
         const on = () => { labelHover = a.dataset.station; c.requestFrame(); }, off = () => { labelHover = null; c.requestFrame(); };
         a.addEventListener('mouseenter', on); a.addEventListener('mouseleave', off); a.addEventListener('focus', on); a.addEventListener('blur', off);

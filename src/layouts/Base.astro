@@ -24,9 +24,9 @@ const base = `/${lang}`;
     <meta property="og:type" content="website" />
     <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#e8edec" />
+    <meta name="theme-color" content="#0a0f12" />
     <script is:inline>
-      try { var m = localStorage.getItem('mmc-mode'); if (m === 'dark' || m === 'light') document.documentElement.dataset.mode = m; } catch (e) {}
+      var m = 'dark'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
     </script>
   </head>
   <body>
