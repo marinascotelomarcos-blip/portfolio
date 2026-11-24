@@ -1,16 +1,17 @@
 ---
 import { LOGOS } from '../lib/logos';
+import { EXPLAIN } from '../lib/explain';
 import type { Lang } from '../lib/content';
-interface Props { ids: string[]; lang: Lang; label?: string }
-const { ids, lang, label } = Astro.props;
+interface Props { ids: string[]; lang: Lang; label?: string; row?: boolean; explain?: boolean }
+const { ids, lang, label, row = false, explain = false } = Astro.props;
 ---
-<div class="logos">
+<div class="logos" data-explain={explain ? '' : undefined}>
   {label && <p class="mono muted logos-label">{label}</p>}
-  <ul class="tiles">
+  <ul class={row ? 'tiles tiles-row' : 'tiles'}>
     {ids.map((id, i) => {
       const l = LOGOS[id];
       return (
-        <li class="tile" style={`--c:${l.hex};--i:${i}`} data-tile>
+        <li class="tile" style={`--c:${l.hex};--i:${i}`} data-tile data-note={explain ? EXPLAIN[id]?.[lang] : undefined} role={explain ? 'button' : undefined} tabindex={explain ? 0 : undefined} aria-expanded={explain ? 'false' : undefined}>
           <span class="tile-ico" aria-hidden="true">
             {l.kind === 'brand' && <svg viewBox="0 0 24 24" fill="currentColor"><path d={l.path} /></svg>}
             {l.kind === 'glyph' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{l.paths.map((d) => <path d={d} pathLength="1" />)}</svg>}
@@ -21,6 +22,7 @@ const { ids, lang, label } = Astro.props;
       );
     })}
   </ul>
+  {explain && <p class="logo-note" aria-live="polite" hidden></p>}
 </div>
 <script>
   document.querySelectorAll<HTMLElement>('[data-tile]').forEach((el) => {
@@ -34,5 +36,21 @@ const { ids, lang, label } = Astro.props;
     });
     el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
     el.addEventListener('click', () => { el.classList.remove('spin'); void el.offsetWidth; el.classList.add('spin'); });
+  });
+  document.querySelectorAll<HTMLElement>('[data-explain]').forEach((box) => {
+    const note = box.querySelector<HTMLElement>('.logo-note'); if (!note) return;
+    const tiles = Array.from(box.querySelectorAll<HTMLElement>('[data-tile]'));
+    const toggle = (el: HTMLElement) => {
+      const open = el.getAttribute('aria-expanded') === 'true';
+      tiles.forEach((t) => { t.setAttribute('aria-expanded', 'false'); t.classList.remove('on'); });
+      if (open) { note.hidden = true; return; }
+      el.setAttribute('aria-expanded', 'true'); el.classList.add('on');
+      note.textContent = el.dataset.note || ''; note.hidden = false; note.style.setProperty('--c', getComputedStyle(el).getPropertyValue('--c'));
+      note.classList.remove('in'); void note.offsetWidth; note.classList.add('in');
+    };
+    tiles.forEach((el) => {
+      el.addEventListener('click', () => toggle(el));
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(el); } });
+    });
   });
 </script>

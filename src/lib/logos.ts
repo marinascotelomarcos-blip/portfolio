@@ -41,7 +41,7 @@ export const LOGOS: Record<string, Logo> = {
 };
 
 export const TOOL_IDS = ['excel', 'powerbi', 'n8n', 'r', 'dynamics', 'a3soft'];
-export const METHOD_IDS = ['a3', 'lean', 'mrp', 'kanban', 'abc', 'eoq', 'forecast'];
+export const METHOD_IDS = ['a3', 'lean', 'mrp', 'kanban', 'abc', 'forecast'];
 export const STACK: Record<string, string[]> = {
   'cinco-vidas': ['node', 'turso', 'render', 'claude', 'chatgpt'],
   dashboard: ['cloudflare', 'python', 'claude'],

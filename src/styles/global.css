@@ -697,3 +697,15 @@ h2.sec::after { content: ''; flex: 1; height: 1px; margin-left: 18px; background
 .tour > * { position: relative; }
 
 .creds-tiles .tile-sub { font-family: var(--sans); font-size: 0.74rem; letter-spacing: 0; white-space: normal; overflow-wrap: normal; word-break: normal; }
+
+/* Tools and methods: one row of six, each opens a plain-language note */
+.tiles-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.tiles-row .tile { cursor: pointer; align-items: center; }
+.tiles-row .tile-name { font-size: 0.84rem; }
+.tiles-row .tile.on { border-color: var(--c); }
+.tiles-row .tile.on::before { opacity: 1; }
+.tiles-row .tile:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.logo-note { margin: 12px 0 0; padding: 4px 0 4px 14px; border-left: 2px solid var(--c, var(--teal)); max-width: 64ch; color: var(--ink); font-size: 0.98rem; line-height: 1.5; }
+.logo-note.in { animation: cardIn 0.4s var(--ease) both; }
+@media (max-width: 980px) { .tiles-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .tiles-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
