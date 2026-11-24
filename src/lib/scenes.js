@@ -501,10 +501,10 @@ function buildRoom(opts) {
 
   // pos: x, y (height), z. top: label height above the object.
   const defs = [
-    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0 },
-    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7 },
-    { id: 'mail', make: () => buildMail(), pos: [3.5, 3.9, 0.3], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1 },
-    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4 },
+    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0, a0: 3.5, rx: 3.9, rz: 2.3, sp: 1 },
+    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7, a0: 5.1, rx: 3.5, rz: 2.0, sp: 0.85 },
+    { id: 'mail', make: () => buildMail(), pos: [3.5, 3.9, 0.3], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1, a0: 0.4, rx: 3.9, rz: 2.4, sp: 1.1 },
+    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4, a0: 1.9, rx: 4.1, rz: 2.2, sp: 0.9 },
   ];
   const hits = [];
   const st = defs.map((d) => {
@@ -514,7 +514,7 @@ function buildRoom(opts) {
     inner.add(made.object);
     const hit = new THREE.Mesh(new THREE.SphereGeometry(1.35, 12, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
     hit.position.y = d.pos[1]; hit.userData.id = d.id; group.add(hit); hits.push(hit);
-    return { ...d, group, inner, hit, made, h: 0, vel: 0, baseY: d.pos[1] };
+    return { ...d, group, inner, hit, made, h: 0, vel: 0, baseY: d.pos[1], a0: d.a0, rx: d.rx, rz: d.rz, sp: d.sp };
   });
 
   let ctx = null, camera = null, dir = new THREE.Vector3(0.22, 0.6, 0.85).normalize(), dist = 16;
@@ -534,7 +534,7 @@ function buildRoom(opts) {
       s.h += (goal - s.h) * (ctx.still ? 1 : 0.16);
       const fl = ctx.still ? 0 : Math.sin(t * 0.0011 + s.ph) * 0.22;
       s.inner.scale.setScalar(s.scale * (1 + 0.12 * s.h)); s.inner.position.y = s.baseY + fl + 0.14 * s.h; s.hit.position.y = s.inner.position.y;
-      if (!ctx.still) { s.group.position.x = s.pos[0] + Math.sin(t * 0.0006 + s.ph) * 0.18; s.group.position.z = s.pos[2] + Math.cos(t * 0.0005 + s.ph) * 0.18; }
+      { const an = s.a0 + (ctx.still ? 0 : t * 0.00022 * s.sp); s.group.position.x = Math.cos(an) * s.rx; s.group.position.z = Math.sin(an) * s.rz; } // orbit around the figure
       if (s !== dragSt) { // a dragged object keeps spinning, then settles back to its pose
         s.inner.rotation.y += s.vel; s.vel *= 0.94;
         if (Math.abs(s.vel) < 0.0004) { s.vel = 0; s.inner.rotation.y += wrapPi(s.rot - s.inner.rotation.y) * 0.03; }
