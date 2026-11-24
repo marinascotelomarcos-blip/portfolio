@@ -41,7 +41,6 @@ const kinds = items.map((i) => i.kind);
             <h3>{rn.headline}</h3>
             <p class="stop-line">{rn.lede}</p>
             <div class="next-count"><b class="next-days tnum" data-days data-done={rn.now}>0</b><span class="mono">{rn.days}</span></div>
-            <ul class="next-chips">{rn.chips.map((c) => <li>{c}</li>)}</ul>
           </>
         ) : (
           <>

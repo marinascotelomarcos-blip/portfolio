@@ -664,6 +664,7 @@ export function mount(el, kind, opts = {}) {
     }
     if (built.object.userData.update) built.object.userData.update(t, ptr);
     renderer.render(scene, camera);
+    if (!window.__mmcScene) { window.__mmcScene = 1; window.dispatchEvent(new Event('mmc:scene')); }
     if (visible && !still) raf = requestAnimationFrame(frame);
   }
   requestFrame = () => { if (!raf) raf = requestAnimationFrame(frame); };

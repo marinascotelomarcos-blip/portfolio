@@ -70,13 +70,13 @@ ul, ol { padding: 0; list-style: none; }
 /* Header */
 .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-block: 22px; flex-wrap: wrap; }
 .brand { font-weight: 600; text-decoration: none; letter-spacing: -0.01em; }
-.top nav { display: flex; gap: clamp(14px, 3vw, 28px); font-size: 0.95rem; }
+.top nav { display: flex; align-items: center; gap: clamp(14px, 3vw, 28px); font-size: 0.95rem; }
 .top nav a { text-decoration: none; color: var(--ink-2); padding-block: 4px; border-bottom: 1px solid transparent; }
 .top nav a:hover, .top nav a[aria-current='page'] { color: var(--ink); border-bottom-color: var(--teal); }
 
 /* Type */
 .display { font-size: clamp(2.6rem, 7.6vw, 6rem); line-height: 1; letter-spacing: -0.04em; font-weight: 520; text-wrap: balance; }
-.lede { font-size: clamp(1.35rem, 2.8vw, 2.1rem); line-height: 1.22; letter-spacing: -0.02em; font-weight: 400; color: var(--teal-ink); text-wrap: balance; max-width: 22ch; }
+.lede { font-size: clamp(1.7rem, 3.5vw, 2.85rem); line-height: 1.12; letter-spacing: -0.032em; font-weight: 520; color: var(--teal-ink); text-wrap: balance; max-width: 19ch; }
 .prose { max-width: 66ch; color: var(--ink); }
 .prose p + p { margin-top: 1em; }
 .muted { color: var(--ink-2); }
@@ -606,10 +606,10 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 .cx-cv { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; padding: 18px 20px; border: 1px dashed var(--teal); border-radius: 12px; }
 .cx-cv b { display: block; font-weight: 560; }
 .cx-cv small { color: var(--ink-2); }
-.cx-globe { position: relative; min-height: 340px; }
+.cx-globe { position: relative; min-height: 340px; align-self: start; height: clamp(340px, 34vw, 440px); }
 .cx-globe .scene, .cx-globe [data-scene] { position: absolute; inset: 0; width: 100%; height: 100%; }
 .cx-globe .cap { position: absolute; left: 16px; bottom: 14px; font-size: 0.74rem; color: var(--ink-2); }
-@media (max-width: 860px) { .cx { grid-template-columns: 1fr; } .cx-globe { min-height: 300px; order: -1; } }
+@media (max-width: 860px) { .cx { grid-template-columns: 1fr; } .cx-globe { min-height: 300px; height: 300px; order: -1; } }
 @media (max-width: 480px) { .cx-big { grid-template-columns: 1fr; } header.top nav a[href$="/about/"], header.top nav a[href$="/contact/"] { padding: 6px 12px; } }
 
 
@@ -617,7 +617,7 @@ header.top nav a[aria-current="page"] { outline: 2px solid var(--teal); outline-
 /* ===== Hero: the figure is projected by a hologram base, free of any panel ===== */
 .stage { position: relative; }
 .stage .scene-room { position: relative; z-index: 1; height: clamp(560px, 54vw, 700px); }
-.stage-fig { position: absolute; z-index: 2; left: 50%; bottom: 96px; width: clamp(96px, 10vw, 136px); transform: translateX(-50%); pointer-events: none; }
+.stage-fig { position: absolute; z-index: 2; left: 50%; bottom: 96px; width: clamp(104px, 11vw, 152px); transform: translateX(-50%); pointer-events: none; }
 .stage-fig .fig-link { position: relative; z-index: 2; display: block; pointer-events: auto; cursor: pointer; animation: figBob 6s ease-in-out 2s infinite; }
 .stage-fig img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 14px rgba(59,184,190,0.45)); animation: materialize 2s var(--ease) both, holoFlicker 7s linear 2.4s infinite; }
 .stage-fig .scan { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
@@ -735,10 +735,19 @@ h2.sec::after { content: ''; flex: 1; height: 1px; margin-left: 18px; background
 .rt-active input, .rt-active textarea { cursor: text !important; }
 .rt::before { content: ''; position: absolute; inset: 0; border: 1.5px solid var(--teal); border-radius: 50%; border-right-color: transparent; border-left-color: transparent; animation: rtSpin 3.2s linear infinite; }
 .rt::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--teal); }
-.rt.hover { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+.rt.hover { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
 .rt.hover::before { border-color: var(--teal); background: color-mix(in oklab, var(--teal) 14%, transparent); border-right-color: var(--teal); border-left-color: var(--teal); animation-duration: 1.2s; }
 .rt-xy { position: fixed; z-index: 90; left: 0; top: 0; pointer-events: none; opacity: 0; font: 0.62rem var(--mono); letter-spacing: 0.06em; color: var(--teal-ink); white-space: nowrap; transition: opacity 0.25s; will-change: transform; }
 .rt-xy.on { opacity: 0.85; }
 @keyframes rtSpin { to { transform: rotate(360deg); } }
 @media (pointer: coarse), (prefers-reduced-motion: reduce) { .rt, .rt-xy { display: none; } }
 
+
+/* About: room to scroll past the last block, so the tool note never sits under the status bar */
+.end-space { height: clamp(140px, 22vh, 260px); }
+
+/* Entrance hold (see Base.astro): content fades in once the room is drawn; the figure materialises after the reveal */
+body { transition: opacity 0.28s ease-out; }
+html.pre body { opacity: 0; }
+html.pre .stage-fig img { animation: none; opacity: 0; }
+.stage-fig img { animation-duration: 1.1s, 7s; }

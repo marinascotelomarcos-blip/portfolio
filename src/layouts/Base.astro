@@ -24,9 +24,18 @@ const base = `/${lang}`;
     <meta property="og:type" content="website" />
     <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#0a0f12" />
+    <meta name="theme-color" content="#e8edec" />
     <script is:inline>
-      var m = 'dark'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
+      var m = 'light'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
+      /* Brief entrance hold: the page stays hidden until the 3D room has drawn its first frame (cap 1.1 s), so nothing pops in. */
+      (function () {
+        var r = document.documentElement; if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        r.classList.add('pre');
+        var done = false; function go() { if (done) return; done = true; r.classList.remove('pre'); }
+        setTimeout(go, 1100);
+        window.addEventListener('mmc:scene', function () { requestAnimationFrame(function () { setTimeout(go, 60); }); }, { once: true });
+        window.addEventListener('load', function () { setTimeout(function () { if (!document.querySelector('[data-scene]')) go(); }, 60); });
+      })();
     </script>
   </head>
   <body>
