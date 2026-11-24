@@ -11,6 +11,9 @@ const other: Lang = lang === 'en' ? 'es' : 'en';
 const pageTitle = title ? `${title} — Marcos Mariñas Cotelo` : t.meta.title;
 const desc = description ?? t.meta.description;
 const base = `/${lang}`;
+const SITE = 'https://mmc-portfolio.pages.dev';
+const pageUrl = `${SITE}${base}${path}`;
+const ogImage = `${SITE}/img/og-${lang}.png`;
 ---
 <!doctype html>
 <html lang={t.htmlLang} data-mode="light">
@@ -22,6 +25,16 @@ const base = `/${lang}`;
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={desc} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:site_name" content="Marcos Mariñas Cotelo" />
+    <meta property="og:locale" content={lang === 'en' ? 'en_GB' : 'es_ES'} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={lang === 'en' ? 'Marcos Mariñas Cotelo — I turn processes into systems that work' : 'Marcos Mariñas Cotelo — Convierto procesos en sistemas que funcionan'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="canonical" href={pageUrl} />
     <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#e8edec" />
