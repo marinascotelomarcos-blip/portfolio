@@ -1,7 +1,7 @@
 ---
 import { T, type Lang } from '../lib/content';
-interface Props { lang: Lang }
-const { lang } = Astro.props;
+interface Props { lang: Lang; url: string }
+const { lang, url } = Astro.props;
 const c = T[lang].ciclo;
 const ICONS: Record<string, string[]> = {
   form: ['M5 4h14v16H5z', 'M8.5 9h7', 'M8.5 13h7', 'M8.5 17h4'],
@@ -13,8 +13,25 @@ const ICONS: Record<string, string[]> = {
   bolt: ['M13 3.5L6 13.5h5l-1 7 7-10h-5z'],
   build: ['M9 4.5c-2 0-2.5 1-2.5 2.5v2c0 1-.8 2-2 3 1.2 1 2 2 2 3v2c0 1.5.5 2.5 2.5 2.5', 'M15 4.5c2 0 2.5 1 2.5 2.5v2c0 1 .8 2 2 3-1.2 1-2 2-2 3v2c0 1.5-.5 2.5-2.5 2.5'],
   screen: ['M4 5h16v11H4z', 'M9 20h6', 'M12 16v4'],
+  live: ['M3.5 12h4l2.5-6 4 12 2.5-6h4'],
+  safe: ['M12 3.5l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9v-5z', 'M9 12l2 2 4-4'],
+  code: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h3v3h-3z', 'M19 14v1', 'M14 19h1', 'M18 18h2v2h-2z'],
+  cal: ['M4 6h16v14H4z', 'M4 10.5h16', 'M8 3.5v4', 'M16 3.5v4', 'M9 15l2 2 4-4'],
+  lock: ['M6 11h12v9H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3'],
+  person: ['M12 4.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z', 'M5 10l7 1.5 7-1.5', 'M12 11.5v4l-3 4.5', 'M12 15.5l3 4.5'],
 };
 ---
+<section class="cv-preview">
+  <a class="web-preview" href={url} rel="noopener" aria-label={c.preview.cta}>
+    <div class="wp-bar"><span class="wp-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wp-url mono">{c.preview.url}</span></div>
+    <div class="wp-shot">
+      <img src="/img/ciclo/web-preview.jpg" alt={c.preview.alt} width="1200" height="750" />
+      <span class="wp-cta">{c.preview.cta} <span aria-hidden="true">→</span></span>
+    </div>
+  </a>
+  <p class="muted cv-hint wp-hint">{c.preview.hint}</p>
+</section>
+
 <section class="cv-flow" data-flow>
   <h2 class="sec">{c.flowTitle}</h2>
   <div class="flow-bar">
@@ -73,6 +90,21 @@ const ICONS: Record<string, string[]> = {
   <ul class="mats" aria-label={c.matsTitle}>
     {c.mats.map((m) => (
       <li><img src={`/img/ciclo/${m.img}.webp`} alt="" loading="lazy" /><span class="mono">{m.name}</span></li>
+    ))}
+  </ul>
+  <h2 class="sec hl-sec">{c.hlTitle}</h2>
+  <ul class="hl">
+    {c.hl.map((h, i) => (
+      <li style={`--i:${i}`}>
+        <span class="fico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{ICONS[h.ic].map((d) => <path d={d} />)}</svg>
+        </span>
+        <div>
+          <span class="hl-tag mono">{h.tag}</span>
+          <b>{h.t}</b>
+          <p>{h.d}</p>
+        </div>
+      </li>
     ))}
   </ul>
   <p class="prose cv-who">{c.who}</p>

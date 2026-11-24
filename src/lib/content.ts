@@ -15,7 +15,8 @@ export const GAME_URL = 'https://cinco-vidas.onrender.com';
 export const VISITED = ['AD','AL','AT','BE','CA','CZ','DE','DK','ES','GB','GR','HR','HU','IT','MA','MT','NL','NO','PL','PT','TR','US'];
 
 type Project = {
-  slug: 'cinco-vidas' | 'dashboard' | 'ciclo-watches';
+  slug: 'cinco-vidas' | 'dashboard' | 'ciclo-watches' | 'hotel';
+  soon?: boolean;
   name: string;
   line: string;
   status: string;
@@ -77,6 +78,8 @@ type Dict = {
     title: string; lede: string;
     facts: { status: string; role: string; stack: string; since: string };
     imgAlt: string; visit: string; repo: string;
+    preview: { alt: string; url: string; cta: string; hint: string };
+    hlTitle: string; hl: { ic: string; tag: string; t: string; d: string }[];
     piecesTitle: string; piecesHint: string; pieces: { img: string; name: string; line: string }[];
     matsTitle: string; mats: { img: string; name: string }[];
     flowTitle: string; flowHint: string; replay: string; fallback: string; n8nNote: string;
@@ -114,6 +117,7 @@ export const T: Record<Lang, Dict> = {
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'An online card game with the Spanish deck. Seven game modes, accounts, a shop and rooms that survive restarts.', status: 'In production', since: 'Since Oct 2026' },
         { slug: 'dashboard', name: 'Personal Dashboard', line: 'One private app for my day: agenda, lists, money, health, trips, and a team of scheduled agents.', status: 'Private · in use', since: 'Since Oct 2026' },
         { slug: 'ciclo-watches', name: 'CICLO Watches', line: 'A made-up company that sells smart watches you repair piece by piece. A university group project, with its own website and n8n automations.', status: 'Course project', since: 'Nov 2026' },
+        { slug: 'hotel', soon: true, name: 'A family hotel website', line: 'The website of a hotel run by my family, which I am building now. When it is ready it will appear here with its full case.', status: 'In progress', since: 'Coming soon' },
       ],
       routeTitle: 'Route',
       route: [
@@ -194,6 +198,16 @@ export const T: Record<Lang, Dict> = {
       },
       imgAlt: 'A modular CICLO watch with its pieces',
       visit: 'Visit the website', repo: 'Code on GitHub',
+      preview: { alt: 'Screenshot of the CICLO Watches website', url: 'marinascotelomarcos-blip.github.io/ciclo-watches', cta: 'Visit the website', hint: 'This is the real website, online. Click to open it.' },
+      hlTitle: 'The technical bits, in plain words',
+      hl: [
+        { ic: 'live', tag: 'Configurator', t: 'You see price and stock as you choose', d: 'Change the strap or the bezel and the total updates at once. If a piece is sold out, it tells you.' },
+        { ic: 'safe', tag: 'Local backup', t: 'If something fails, the site does not break', d: 'The configurator asks a Google Sheet for the stock. If there is no answer in 6 seconds, it uses a copy saved on the site itself and you never notice.' },
+        { ic: 'code', tag: 'Batch code', t: 'Every piece carries a code', d: 'Type the code engraved on your piece and the site shows what material it is and where it comes from. The data is made up, and the site says so.' },
+        { ic: 'cal', tag: 'Real calendar', t: 'Bookings never overlap', d: 'Before saving your slot, the flow checks the sheet to see it is free, and the site already knows the public holidays in A Coruña. Known limit: if two people ask for the same slot in the same second, both could get in.' },
+        { ic: 'lock', tag: 'Privacy', t: 'Nothing is sent without your permission', d: 'A booking is not saved without your consent, and there is a privacy page. The stock answers only to the site itself, not to anyone who asks.' },
+        { ic: 'person', tag: 'Accessibility', t: 'Works with a keyboard and on a phone', d: 'Skip-to-content link, visible focus, readable contrast and animations that switch off if you ask. Photos weigh under 80 KB, so it loads fast.' },
+      ],
       piecesTitle: 'Five pieces, one watch', piecesHint: 'Break a strap, change the strap.',
       pieces: [
         { img: 'pieza-caja', name: 'Case', line: 'Recycled aluminium' },
@@ -355,6 +369,7 @@ export const T: Record<Lang, Dict> = {
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'Un juego de cartas online con baraja española. Siete modos de juego, cuentas, tienda y salas que sobreviven a los reinicios.', status: 'En producción', since: 'Desde oct. 2026' },
         { slug: 'dashboard', name: 'Dashboard personal', line: 'Una app privada para mi día: agenda, listas, dinero, salud, viajes y un equipo de agentes programados.', status: 'Privado · en uso', since: 'Desde oct. 2026' },
         { slug: 'ciclo-watches', name: 'CICLO Watches', line: 'Una empresa inventada que vende relojes inteligentes que se reparan por piezas. Proyecto de grupo de la universidad, con su web y sus automatizaciones en n8n.', status: 'Proyecto de clase', since: 'Nov 2026' },
+        { slug: 'hotel', soon: true, name: 'Web de un hotel familiar', line: 'La web de un hotel de mi familia, que estoy construyendo ahora. Cuando esté lista aparecerá aquí con su caso completo.', status: 'En construcción', since: 'Próximamente' },
       ],
       routeTitle: 'Ruta',
       route: [
@@ -435,6 +450,16 @@ export const T: Record<Lang, Dict> = {
       },
       imgAlt: 'Un reloj modular CICLO con sus piezas',
       visit: 'Ver la web', repo: 'Código en GitHub',
+      preview: { alt: 'Captura de la web de CICLO Watches', url: 'marinascotelomarcos-blip.github.io/ciclo-watches', cta: 'Ver la web', hint: 'Esta es la web real, online. Pulsa para abrirla.' },
+      hlTitle: 'Lo técnico, en cristiano',
+      hl: [
+        { ic: 'live', tag: 'Configurador', t: 'Ves el precio y el stock mientras eliges', d: 'Cambias la correa o el bisel y el total se recalcula al momento. Si una pieza se agota, te lo marca.' },
+        { ic: 'safe', tag: 'Respaldo local', t: 'Si algo falla, la web no se rompe', d: 'El configurador pregunta el stock a una hoja de Google. Si no contesta en 6 segundos, usa una copia guardada en la propia web y tú ni lo notas.' },
+        { ic: 'code', tag: 'Código de lote', t: 'Cada pieza lleva un código', d: 'Escribes el código grabado en tu pieza y la web te dice de qué material es y de dónde viene. Los datos son inventados, y la web lo avisa.' },
+        { ic: 'cal', tag: 'Calendario real', t: 'Las citas no se pisan', d: 'Antes de apuntarte, el flujo mira la hoja y comprueba que el hueco esté libre, y la web ya sabe qué días son festivo en A Coruña. Límite conocido: si dos personas piden el mismo hueco en el mismo segundo, podrían colarse las dos.' },
+        { ic: 'lock', tag: 'Privacidad', t: 'No manda nada sin tu permiso', d: 'La cita no se apunta sin tu consentimiento y hay una página de privacidad. El stock solo responde a la propia web, no a cualquiera que lo pida.' },
+        { ic: 'person', tag: 'Accesibilidad', t: 'Se usa con teclado y en el móvil', d: 'Enlace para saltar al contenido, foco visible, contraste legible y animaciones que se apagan si lo pides. Las fotos pesan menos de 80 KB, así que carga rápido.' },
+      ],
       piecesTitle: 'Cinco piezas, un reloj', piecesHint: 'Si se rompe la correa, cambias la correa.',
       pieces: [
         { img: 'pieza-caja', name: 'Caja', line: 'Aluminio reciclado' },

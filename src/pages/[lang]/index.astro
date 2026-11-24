@@ -27,16 +27,29 @@ const h = T[lang].home;
     <ul class="ledger">
       {h.projects.map((p) => (
         <li style="display:contents">
-          <a class="row" href={`/${lang}/projects/${p.slug}/`}>
-            <div>
-              <h3>{p.name}<span class="go" aria-hidden="true">→</span></h3>
-              <p>{p.line}</p>
+          {p.soon ? (
+            <div class="row soon">
+              <div>
+                <h3>{p.name}</h3>
+                <p>{p.line}</p>
+              </div>
+              <div class="meta mono">
+                <span class="state wip">{p.status}</span>
+                <span class="muted">{p.since}</span>
+              </div>
             </div>
-            <div class="meta mono">
-              <span class:list={['state', p.slug === 'dashboard' && 'priv']}>{p.status}</span>
-              <span class="muted">{p.since}</span>
-            </div>
-          </a>
+          ) : (
+            <a class="row" href={`/${lang}/projects/${p.slug}/`}>
+              <div>
+                <h3>{p.name}<span class="go" aria-hidden="true">→</span></h3>
+                <p>{p.line}</p>
+              </div>
+              <div class="meta mono">
+                <span class:list={['state', p.slug === 'dashboard' && 'priv']}>{p.status}</span>
+                <span class="muted">{p.since}</span>
+              </div>
+            </a>
+          )}
         </li>
       ))}
     </ul>
