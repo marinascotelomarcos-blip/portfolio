@@ -1,40 +1,57 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Credentials from '../../components/Credentials.astro';
 import LogoGrid from '../../components/LogoGrid.astro';
+import Credentials from '../../components/Credentials.astro';
 import { T, LANGS, type Lang } from '../../lib/content';
 import { TOOL_IDS, METHOD_IDS } from '../../lib/logos';
+import { ABOUTX } from '../../lib/aboutx';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
 const a = T[lang].about;
+const x = ABOUTX[lang];
 ---
 <Base lang={lang} title={a.title} path="/about/" current="about">
   <div class="wrap hero">
-    <h1 class="display">{a.title}</h1>
-    <p class="lede">{a.lede}</p>
+    <div class="about-head">
+      <div>
+        <h1 class="display">{a.title}</h1>
+        <p class="lede">{a.lede}</p>
+      </div>
+      <aside class="dossier" aria-label={x.dossier}>
+        <div class="dos-fig" aria-hidden="true">
+          <span class="dos-base"><i></i><i></i></span>
+          <img src="/img/marcos-character.png" alt="" width="332" height="985" loading="lazy" decoding="async" />
+        </div>
+        <div class="dos-body">
+          <p class="mono dos-k">{x.dossier} · MMC</p>
+          <dl>
+            {x.facts.map(([k, v]) => (<div><dt class="mono">{k}</dt><dd>{v}</dd></div>))}
+          </dl>
+        </div>
+      </aside>
+    </div>
 
     <h2 class="sec">{a.storyTitle}</h2>
-    <div class="prose">{a.story.map((p) => <p>{p}</p>)}</div>
+    <ol class="story">{a.story.map((p, i) => <li><span class="mono num tnum">{String(i + 1).padStart(2, '0')}</span><p>{p}</p></li>)}</ol>
 
-    <h2 class="sec">{a.expTitle}</h2>
-    <ul class="xp">
-      {a.exp.map((e) => (
-        <li>
-          <span class="when mono tnum">{e.when}</span>
-          <div><b>{e.role}</b><span class="org">{e.org}</span><p>{e.what}</p></div>
-        </li>
-      ))}
-    </ul>
-
-    <h2 class="sec">{a.eduTitle}</h2>
-    <ul class="xp">
-      {a.edu.map((e) => (
-        <li>
-          <span class="when mono tnum">{e.when}</span>
-          <div><b>{e.title}</b><span class="org">{e.org}</span></div>
-        </li>
-      ))}
-    </ul>
+    <div class="tl-grid">
+      <section>
+        <h2 class="sec">{x.work}</h2>
+        <ul class="tl work">
+          {a.exp.map((e) => (
+            <li><span class="when mono tnum">{e.when}</span><b>{e.role}</b><span class="org">{e.org}</span><p>{e.what}</p></li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <h2 class="sec">{x.study}</h2>
+        <ul class="tl study">
+          {a.edu.map((e) => (
+            <li><span class="when mono tnum">{e.when}</span><b>{e.title}</b><span class="org">{e.org}</span></li>
+          ))}
+        </ul>
+      </section>
+    </div>
 
     <Credentials lang={lang} />
 
