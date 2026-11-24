@@ -1,7 +1,7 @@
 ---
 import { T, type Lang } from '../lib/content';
-interface Props { lang: Lang; url: string }
-const { lang, url } = Astro.props;
+interface Props { lang: Lang; url: string; part?: 'preview' | 'rest' }
+const { lang, url, part = 'rest' } = Astro.props;
 const c = T[lang].ciclo;
 const ICONS: Record<string, string[]> = {
   form: ['M5 4h14v16H5z', 'M8.5 9h7', 'M8.5 13h7', 'M8.5 17h4'],
@@ -21,6 +21,7 @@ const ICONS: Record<string, string[]> = {
   person: ['M12 4.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z', 'M5 10l7 1.5 7-1.5', 'M12 11.5v4l-3 4.5', 'M12 15.5l3 4.5'],
 };
 ---
+{part === 'preview' && (
 <section class="cv-preview">
   <a class="web-preview" href={url} rel="noopener" aria-label={c.preview.cta}>
     <div class="wp-bar"><span class="wp-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wp-url mono">{c.preview.url}</span></div>
@@ -31,6 +32,10 @@ const ICONS: Record<string, string[]> = {
   </a>
   <p class="muted cv-hint wp-hint">{c.preview.hint}</p>
 </section>
+)}
+
+{part === 'rest' && (
+<>
 
 <section class="cv-flow" data-flow>
   <h2 class="sec">{c.flowTitle}</h2>
@@ -109,6 +114,8 @@ const ICONS: Record<string, string[]> = {
   </ul>
   <p class="prose cv-who">{c.who}</p>
 </section>
+</>
+)}
 
 <script>
   document.querySelectorAll<HTMLElement>('[data-flow]').forEach((root) => {

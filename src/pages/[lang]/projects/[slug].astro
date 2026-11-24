@@ -23,7 +23,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
 ---
 <Base lang={lang} title={page.title} description={page.lede} path={`/projects/${slug}/`} current="projects">
   <div class="wrap hero">
-    <div class="case-head">
+    <div class:list={['case-head', isCiclo && 'ciclo-head']}>
       <div>
         <h1 class="display">{page.title}</h1>
         <p class="lede" style="max-width:30ch">{page.lede}</p>
@@ -39,7 +39,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
         {isCV && <div class="actions" style="justify-content:flex-start;margin-top:28px"><a class="btn primary" href={GAME_URL} rel="noopener">{t.cv.play} →</a></div>}
       </div>
       {isCiclo
-        ? <img class="case-img case-hero" src="/img/ciclo/CICLO_hero_modular_4x5.webp" alt={t.ciclo.imgAlt} width="480" height="565" />
+        ? <CicloVisuals lang={lang} url={CICLO_URL} part="preview" />
         : <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />}
     </div>
 
@@ -58,7 +58,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
       </>
     )}
 
-    {isCiclo && <CicloVisuals lang={lang} url={CICLO_URL} />}
+    {isCiclo && <CicloVisuals lang={lang} url={CICLO_URL} part="rest" />}
 
     {!isCV && !isCiclo && (
       <>

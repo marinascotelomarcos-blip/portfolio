@@ -928,3 +928,13 @@ html.intro .intro-screen, .intro-screen.out { display: grid; }
   .wp-cta { right: 10px; bottom: 10px; font-size: 13px; padding: 9px 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .web-preview, .hl li { transition: none; } .web-preview:hover { transform: none; } }
+
+/* CICLO header: only the website capture on the right */
+.ciclo-head { grid-template-columns: 1fr minmax(0, 560px); align-items: start; }
+.ciclo-head .cv-preview { margin: 0; }
+.ciclo-head .web-preview { max-width: none; }
+@media (max-width: 900px) { .ciclo-head { grid-template-columns: 1fr; } }
+
+/* Grid items must be allowed to shrink (mobile overflow with the big site capture) */
+.case-head > * { min-width: 0; }
+.case-head .web-preview { max-width: 100%; }
