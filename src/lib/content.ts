@@ -15,7 +15,7 @@ export const GAME_URL = 'https://cinco-vidas.onrender.com';
 export const VISITED = ['AD','AL','AT','BE','CA','CZ','DE','DK','ES','GB','GR','HR','HU','IT','MA','MT','NL','NO','PL','PT','TR','US'];
 
 type Project = {
-  slug: 'cinco-vidas' | 'dashboard';
+  slug: 'cinco-vidas' | 'dashboard' | 'ciclo-watches';
   name: string;
   line: string;
   status: string;
@@ -73,6 +73,22 @@ type Dict = {
     howTitle: string; how: string[];
     privTitle: string; priv: string;
   };
+  ciclo: {
+    title: string; lede: string;
+    facts: { status: string; role: string; stack: string; since: string };
+    imgAlt: string; visit: string; repo: string;
+    ideaTitle: string; idea: string[];
+    siteTitle: string; site: { t: string; d: string }[];
+    decTitle: string; dec: { t: string; d: string }[];
+    n8nTitle: string; n8n: string;
+    whoTitle: string; who: string;
+  };
+  eng: {
+    title: string; lede: string; paras: string[];
+    learnTitle: string; learn: { t: string; d: string }[];
+    exTitle: string; ex: string;
+  };
+  homeEng: string;
 };
 
 export const T: Record<Lang, Dict> = {
@@ -97,6 +113,7 @@ export const T: Record<Lang, Dict> = {
       projects: [
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'An online card game with the Spanish deck. Seven game modes, accounts, a shop and rooms that survive restarts.', status: 'In production', since: 'Since Oct 2026' },
         { slug: 'dashboard', name: 'Personal Dashboard', line: 'One private app for my day: agenda, lists, money, health, trips, and a team of scheduled agents.', status: 'Private · in use', since: 'Since Oct 2026' },
+        { slug: 'ciclo-watches', name: 'CICLO Watches', line: 'A made-up company that sells smart watches you repair piece by piece. A university group project, with its own website and n8n automations.', status: 'Course project', since: 'Nov 2026' },
       ],
       routeTitle: 'Route',
       route: [
@@ -166,6 +183,60 @@ export const T: Record<Lang, Dict> = {
       looking: 'A coffee or a call is fine.',
     },
     common: { status: 'Status', role: 'Role', stack: 'Stack', since: 'Since', live: 'Live', back: 'All projects', private: 'Private', built: 'Built with' },
+    ciclo: {
+      title: 'CICLO Watches',
+      lede: 'A smart watch you repair piece by piece. The company is made up; the website and its automations are real work.',
+      facts: {
+        status: 'Course project · website online',
+        role: 'Group 6, Innovation and Digital Transformation (UIE). Website and n8n automations, built with AI',
+        stack: 'HTML, CSS and vanilla JavaScript; n8n and Google Sheets behind the forms',
+        since: '11 Nov 2026',
+      },
+      imgAlt: 'Cover of the CICLO Watches website: the logo, the slogan and a modular watch',
+      visit: 'Visit the website', repo: 'Code on GitHub',
+      ideaTitle: 'The idea',
+      idea: [
+        'CICLO sells smart watches made of recycled material. Case, bezel, back, strap and battery are changed separately: if a strap breaks you change the strap, not the watch.',
+        'It is a company invented for a university course, written like a funding proposal. Nothing is sold, and every price, stock level and batch on the site is made up. The site says so.',
+      ],
+      siteTitle: 'What the website has',
+      site: [
+        { t: 'Models and pieces', d: 'Four models and the pieces that fit each one, with prices.' },
+        { t: 'Configurator', d: 'Pick model, bezel, back and strap and see the look and the total. Stock is meant to come from a Google Sheet through n8n, with a local file as backup.' },
+        { t: 'Traceability', d: 'Type the batch code engraved on a piece and see its material and origin, with invented data. A page lists what the company promises and what it does not yet.' },
+        { t: 'Repair booking and contact', d: 'The booking form checks the slot is free, saves it in a sheet and emails a confirmation. The contact form and a chat assistant work the same way.' },
+      ],
+      decTitle: 'Details I cared about',
+      dec: [
+        { t: 'Fail soft', d: 'If the automation does not answer in six seconds, the configurator uses its own stock file instead of breaking.' },
+        { t: 'No real data', d: 'Every figure that is invented is labelled as invented, on the page where it appears.' },
+        { t: 'Honest claims', d: 'Traceability says plainly what is a prototype and what is not promised yet.' },
+        { t: 'Accessible', d: 'Skip link, visible focus, readable contrast, reduced motion, and menus checked from 360 to 1440 px.' },
+      ],
+      n8nTitle: 'About n8n',
+      n8n: 'The automations ran on a free trial of n8n, which has ended, so the forms are off today. The workflows are saved and can be imported again; the site keeps working with its backup data.',
+      whoTitle: 'Who did what',
+      who: 'It is a group project: the business case, models and report are the group’s. I built the website and the automations, working with Claude Code, and I decided what each page says.',
+    },
+    eng: {
+      title: 'What is Business Engineering?',
+      lede: 'Short version: engineering applied to how companies run.',
+      paras: [
+        'Most engineers design a product. A business engineer designs the way a company works: how an order becomes a delivery, how much stock to keep, how to produce without waste, which numbers to watch.',
+        'It sits between engineering and business. Engineering brings method and numbers; business brings the question, which is what the company needs. The goal is simple: a company that works better, costs less and surprises nobody.',
+      ],
+      learnTitle: 'What I study, in plain words',
+      learn: [
+        { t: 'Processes', d: 'Drawing how work really flows (BPMN, VSM) and finding the root cause of a problem.' },
+        { t: 'Inventory and warehouses', d: 'How much to hold and when to reorder (ABC/XYZ, EOQ), so nothing runs out and nothing piles up.' },
+        { t: 'Production', d: 'Planning materials and flow with MRP, Lean and simulation.' },
+        { t: 'Data and AI', d: 'SQL, forecasting and automation with n8n, including agents that ask a person before acting.' },
+        { t: 'Innovation', d: 'Turning an idea into a business case, as with CICLO.' },
+      ],
+      exTitle: 'An example',
+      ex: 'A shop keeps running out of fresh food and throwing some away. A business engineer looks at the sales data, forecasts demand, sets when to reorder and redesigns the process around it.',
+    },
+    homeEng: 'What is Business Engineering?',
     cv: {
       title: 'Cinco Vidas',
       lede: 'The Spanish deck as an online game, played from the phone.',
@@ -271,6 +342,7 @@ export const T: Record<Lang, Dict> = {
       projects: [
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'Un juego de cartas online con baraja española. Siete modos de juego, cuentas, tienda y salas que sobreviven a los reinicios.', status: 'En producción', since: 'Desde oct. 2026' },
         { slug: 'dashboard', name: 'Dashboard personal', line: 'Una app privada para mi día: agenda, listas, dinero, salud, viajes y un equipo de agentes programados.', status: 'Privado · en uso', since: 'Desde oct. 2026' },
+        { slug: 'ciclo-watches', name: 'CICLO Watches', line: 'Una empresa inventada que vende relojes inteligentes que se reparan por piezas. Proyecto de grupo de la universidad, con su web y sus automatizaciones en n8n.', status: 'Proyecto de clase', since: 'Nov 2026' },
       ],
       routeTitle: 'Ruta',
       route: [
@@ -340,6 +412,60 @@ export const T: Record<Lang, Dict> = {
       looking: 'Un café o una llamada, lo que te venga mejor.',
     },
     common: { status: 'Estado', role: 'Papel', stack: 'Tecnología', since: 'Desde', live: 'En vivo', back: 'Todos los proyectos', private: 'Privado', built: 'Hecho con' },
+    ciclo: {
+      title: 'CICLO Watches',
+      lede: 'Un reloj inteligente que se repara por piezas. La empresa es inventada; la web y sus automatizaciones son trabajo real.',
+      facts: {
+        status: 'Proyecto de clase · web online',
+        role: 'Grupo 6, Gestión de la Innovación y Transformación Digital (UIE). Web y automatizaciones en n8n, hechas con IA',
+        stack: 'HTML, CSS y JavaScript sin librerías; n8n y Google Sheets detrás de los formularios',
+        since: '11 nov 2026',
+      },
+      imgAlt: 'Portada de la web de CICLO Watches: el logo, el lema y un reloj modular',
+      visit: 'Ver la web', repo: 'Código en GitHub',
+      ideaTitle: 'La idea',
+      idea: [
+        'CICLO vende relojes inteligentes de material reciclado. Caja, bisel, trasera, correa y batería se cambian por separado: si se rompe la correa, cambias la correa, no el reloj.',
+        'Es una empresa inventada para una asignatura de la universidad, planteada como una propuesta de financiación. No se vende nada, y todos los precios, existencias y lotes de la web son inventados. La web lo dice.',
+      ],
+      siteTitle: 'Qué tiene la web',
+      site: [
+        { t: 'Modelos y piezas', d: 'Cuatro modelos y las piezas que encajan en cada uno, con precios.' },
+        { t: 'Configurador', d: 'Eliges modelo, bisel, trasera y correa y ves cómo queda y el total. El stock está pensado para leerse de una hoja de Google a través de n8n, con un archivo local de respaldo.' },
+        { t: 'Trazabilidad', d: 'Escribes el código de lote grabado en una pieza y ves su material y su origen, con datos inventados. Una página cuenta lo que la empresa promete y lo que aún no.' },
+        { t: 'Cita de reparación y contacto', d: 'El formulario de cita comprueba que el hueco esté libre, lo apunta en una hoja y envía un correo de confirmación. El formulario de contacto y un asistente de chat funcionan igual.' },
+      ],
+      decTitle: 'Detalles que cuidé',
+      dec: [
+        { t: 'Que falle sin romperse', d: 'Si la automatización no contesta en seis segundos, el configurador usa su propio archivo de stock en vez de romperse.' },
+        { t: 'Sin datos reales', d: 'Cada cifra inventada está marcada como inventada, en la página donde sale.' },
+        { t: 'Promesas honestas', d: 'La trazabilidad dice claro qué es prototipo y qué todavía no se promete.' },
+        { t: 'Accesible', d: 'Enlace para saltar al contenido, foco visible, contraste legible, movimiento reducido y menús revisados de 360 a 1440 px.' },
+      ],
+      n8nTitle: 'Sobre n8n',
+      n8n: 'Las automatizaciones corrieron en una prueba gratuita de n8n que ya terminó, así que hoy los formularios están apagados. Los flujos están guardados y se pueden importar otra vez; la web sigue funcionando con sus datos de respaldo.',
+      whoTitle: 'Quién hizo qué',
+      who: 'Es un proyecto de grupo: el modelo de negocio, los modelos de reloj y el informe son del grupo. Yo hice la web y las automatizaciones, trabajando con Claude Code, y decidí qué dice cada página.',
+    },
+    eng: {
+      title: '¿Qué es la Ingeniería de la Empresa?',
+      lede: 'En corto: ingeniería aplicada a cómo funciona una empresa.',
+      paras: [
+        'La mayoría de los ingenieros diseñan un producto. Un ingeniero de la empresa diseña cómo trabaja una empresa: cómo un pedido se convierte en una entrega, cuánto stock tener, cómo producir sin desperdicio, qué números vigilar.',
+        'Está entre la ingeniería y los negocios. La ingeniería aporta método y números; los negocios, la pregunta: qué necesita la empresa. El objetivo es simple: una empresa que funcione mejor, cueste menos y no dé sorpresas.',
+      ],
+      learnTitle: 'Qué estudio, en cristiano',
+      learn: [
+        { t: 'Procesos', d: 'Dibujar cómo fluye de verdad el trabajo (BPMN, VSM) y encontrar la causa raíz de un problema.' },
+        { t: 'Inventarios y almacenes', d: 'Cuánto tener y cuándo reponer (ABC/XYZ, EOQ), para que ni falte nada ni sobre.' },
+        { t: 'Producción', d: 'Planificar materiales y flujo con MRP, Lean y simulación.' },
+        { t: 'Datos e IA', d: 'SQL, previsión y automatización con n8n, incluidos agentes que preguntan a una persona antes de actuar.' },
+        { t: 'Innovación', d: 'Convertir una idea en un modelo de negocio, como con CICLO.' },
+      ],
+      exTitle: 'Un ejemplo',
+      ex: 'Una tienda se queda sin producto fresco y tira parte. Un ingeniero de la empresa mira los datos de ventas, prevé la demanda, decide cuándo reponer y rediseña el proceso en torno a eso.',
+    },
+    homeEng: '¿Qué es la Ingeniería de la Empresa?',
     cv: {
       title: 'Cinco Vidas',
       lede: 'La baraja española como juego online, desde el móvil.',

@@ -45,4 +45,5 @@ export const METHOD_IDS = ['a3', 'lean', 'mrp', 'kanban', 'abc', 'forecast'];
 export const STACK: Record<string, string[]> = {
   'cinco-vidas': ['node', 'turso', 'render', 'claude', 'chatgpt'],
   dashboard: ['cloudflare', 'python', 'claude'],
+  'ciclo-watches': ['n8n', 'github', 'claude'],
 };

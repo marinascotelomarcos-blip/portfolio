@@ -9,6 +9,7 @@ export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang 
 const lang = Astro.params.lang as Lang;
 const a = T[lang].about;
 const x = ABOUTX[lang];
+const e = T[lang].eng;
 ---
 <Base lang={lang} title={a.title} path="/about/" current="about">
   <div class="wrap hero">
@@ -18,6 +19,15 @@ const x = ABOUTX[lang];
         <p class="lede">{a.lede}</p>
       </div>
     </div>
+    <section id="eng" class="eng">
+      <h2 class="sec">{e.title}</h2>
+      <p class="eng-lede">{e.lede}</p>
+      <div class="prose">{e.paras.map((p) => <p>{p}</p>)}</div>
+      <h3 class="mono eng-sub">{e.learnTitle}</h3>
+      <ul class="bullets">{e.learn.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
+      <p class="prose eng-ex"><b>{e.exTitle}.</b> {e.ex}</p>
+    </section>
+
     <h2 class="sec">{a.storyTitle}</h2>
     <ol class="story">{a.story.map((p, i) => <li><span class="mono num tnum">{String(i + 1).padStart(2, '0')}</span><p>{p}</p></li>)}</ol>
 

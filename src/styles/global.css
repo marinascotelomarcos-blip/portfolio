@@ -801,3 +801,13 @@ html.intro .intro-screen, .intro-screen.out { display: grid; }
 }
 
 @media (max-width: 899px) { .room-labels { margin-top: 34px; } }
+
+/* Business Engineering explainer, CICLO page image, home link */
+.eng { margin-bottom: clamp(32px, 5vw, 56px); }
+.eng-sub { margin: 28px 0 6px; color: var(--ink-2); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; }
+.eng-ex { margin-top: 20px; }
+.eng-link { margin-top: 18px; }
+.eng-link a { color: var(--teal); text-decoration: underline; text-underline-offset: 4px; }
+.case-img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 10px; display: block; }
+.eng-lede { font-size: clamp(18px, 2vw, 22px); color: var(--teal); font-weight: 500; margin: 0 0 18px; max-width: 40ch; }
+#eng { scroll-margin-top: 90px; }

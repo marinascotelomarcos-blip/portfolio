@@ -8,14 +8,17 @@ import LogoGrid from '../../../components/LogoGrid.astro';
 import { STACK } from '../../../lib/logos';
 import { T, LANGS, GAME_URL, type Lang } from '../../../lib/content';
 export function getStaticPaths() {
-  return LANGS.flatMap((lang) => ['cinco-vidas', 'dashboard'].map((slug) => ({ params: { lang, slug } })));
+  return LANGS.flatMap((lang) => ['cinco-vidas', 'dashboard', 'ciclo-watches'].map((slug) => ({ params: { lang, slug } })));
 }
 const lang = Astro.params.lang as Lang;
-const slug = Astro.params.slug as 'cinco-vidas' | 'dashboard';
+const slug = Astro.params.slug as 'cinco-vidas' | 'dashboard' | 'ciclo-watches';
 const t = T[lang];
 const c = t.common;
 const isCV = slug === 'cinco-vidas';
-const page = isCV ? t.cv : t.dash;
+const isCiclo = slug === 'ciclo-watches';
+const page = isCV ? t.cv : isCiclo ? t.ciclo : t.dash;
+const CICLO_URL = 'https://marinascotelomarcos-blip.github.io/ciclo-watches/';
+const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
 ---
 <Base lang={lang} title={page.title} description={page.lede} path={`/projects/${slug}/`} current="projects">
   <div class="wrap hero">
@@ -31,9 +34,12 @@ const page = isCV ? t.cv : t.dash;
           <dt class="mono">{c.since}</dt><dd class="tnum">{page.facts.since}</dd>
         </dl>
         <LogoGrid ids={STACK[slug]} lang={lang} label={c.built} />
+        {isCiclo && <div class="actions" style="justify-content:flex-start;margin-top:28px"><a class="btn primary" href={CICLO_URL} rel="noopener">{t.ciclo.visit} →</a><a class="btn" href={CICLO_REPO} rel="noopener">{t.ciclo.repo} →</a></div>}
         {isCV && <div class="actions" style="justify-content:flex-start;margin-top:28px"><a class="btn primary" href={GAME_URL} rel="noopener">{t.cv.play} →</a></div>}
       </div>
-      <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />
+      {isCiclo
+        ? <img class="case-img" src="/img/ciclo-og.png" alt={t.ciclo.imgAlt} width="1200" height="630" />
+        : <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />}
     </div>
 
     {isCV && (
@@ -51,7 +57,22 @@ const page = isCV ? t.cv : t.dash;
       </>
     )}
 
-    {!isCV && (
+    {isCiclo && (
+      <>
+        <h2 class="sec">{t.ciclo.ideaTitle}</h2>
+        <div class="prose">{t.ciclo.idea.map((p) => <p>{p}</p>)}</div>
+        <h2 class="sec">{t.ciclo.siteTitle}</h2>
+        <ul class="bullets">{t.ciclo.site.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
+        <h2 class="sec">{t.ciclo.decTitle}</h2>
+        <ul class="bullets">{t.ciclo.dec.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
+        <h2 class="sec">{t.ciclo.n8nTitle}</h2>
+        <p class="prose">{t.ciclo.n8n}</p>
+        <h2 class="sec">{t.ciclo.whoTitle}</h2>
+        <p class="prose">{t.ciclo.who}</p>
+      </>
+    )}
+
+    {!isCV && !isCiclo && (
       <>
         <h2 class="sec">{t.dash.demoTitle}</h2>
         <DashDemo lang={lang} />
