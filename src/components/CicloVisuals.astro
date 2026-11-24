@@ -3,26 +3,18 @@ import { T, type Lang } from '../lib/content';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const c = T[lang].ciclo;
+const ICONS: Record<string, string[]> = {
+  form: ['M5 4h14v16H5z', 'M8.5 9h7', 'M8.5 13h7', 'M8.5 17h4'],
+  check: ['M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z', 'M8 12.3l2.7 2.7L16 9.5'],
+  sheet: ['M4 5h16v14H4z', 'M4 10h16', 'M4 14.5h16', 'M9.5 5v14'],
+  save: ['M12 4v10', 'M8 10.5l4 4 4-4', 'M5 19h14'],
+  mail: ['M3.5 6.5h17v11h-17z', 'M3.5 7.2l8.5 6.3 8.5-6.3'],
+  req: ['M3.5 12h13', 'M13 7.5l4.5 4.5-4.5 4.5'],
+  bolt: ['M13 3.5L6 13.5h5l-1 7 7-10h-5z'],
+  build: ['M9 4.5c-2 0-2.5 1-2.5 2.5v2c0 1-.8 2-2 3 1.2 1 2 2 2 3v2c0 1.5.5 2.5 2.5 2.5', 'M15 4.5c2 0 2.5 1 2.5 2.5v2c0 1 .8 2 2 3-1.2 1-2 2-2 3v2c0 1.5-.5 2.5-2.5 2.5'],
+  screen: ['M4 5h16v11H4z', 'M9 20h6', 'M12 16v4'],
+};
 ---
-<section class="cv-pieces">
-  <h2 class="sec">{c.piecesTitle}</h2>
-  <p class="muted cv-hint">{c.piecesHint}</p>
-  <ul class="pieces">
-    {c.pieces.map((p, i) => (
-      <li style={`--i:${i}`} tabindex="0">
-        <img src={`/img/ciclo/${p.img}.webp`} alt="" loading="lazy" width="830" height="830" />
-        <span class="pc-name">{p.name}</span>
-        <span class="pc-line mono">{p.line}</span>
-      </li>
-    ))}
-  </ul>
-  <ul class="mats" aria-label={c.matsTitle}>
-    {c.mats.map((m) => (
-      <li><img src={`/img/ciclo/${m.img}.webp`} alt="" loading="lazy" /><span class="mono">{m.name}</span></li>
-    ))}
-  </ul>
-</section>
-
 <section class="cv-flow" data-flow>
   <h2 class="sec">{c.flowTitle}</h2>
   <div class="flow-bar">
@@ -33,12 +25,15 @@ const c = T[lang].ciclo;
   </div>
   <p class="muted cv-hint">{c.flowHint}</p>
   {c.flows.map((f, i) => (
-    <div class="flow" data-flow-id={f.id} hidden={i !== 0}>
+    <div class="flow" data-flow-id={f.id} hidden={i !== 0} style={`--n:${f.nodes.length}`}>
       <ol class="flow-row">
         {f.nodes.map((n, k) => (
           <li class="fnode" style={`--k:${k}`}>
+            <span class="fico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{ICONS[n.ic].map((d) => <path d={d} />)}</svg>
+            </span>
             <b>{n.t}</b>
-            {n.s && <span class="mono">{n.s}</span>}
+            {n.s && <span class="mono fsub">{n.s}</span>}
           </li>
         ))}
       </ol>
@@ -46,16 +41,40 @@ const c = T[lang].ciclo;
         <p class="flow-alt mono"><span class="dot" aria-hidden="true"></span>{f.alt.t} → {f.alt.s}</p>
       )}
       {f.id === 'stock' && <p class="flow-alt mono"><span class="dot warn" aria-hidden="true"></span>{c.fallback}</p>}
+      <div class="flow-result" style={`--k:${f.nodes.length}`}>
+        <span class="fico big" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{ICONS[f.result.ic].map((d) => <path d={d} />)}</svg>
+        </span>
+        <div>
+          <p class="mono fr-label">{f.result.label}</p>
+          <b>{f.result.t}</b>
+          <p class="fr-sub">{f.result.s}</p>
+        </div>
+      </div>
     </div>
   ))}
   <p class="flow-note mono">{c.n8nNote}</p>
 </section>
 
-<section class="cv-chips">
-  <h2 class="sec">{c.siteTitle}</h2>
-  <ul class="eng-chips">{c.site.map((u) => <li class="mono">{u}</li>)}</ul>
-  <h2 class="sec">{c.decTitle}</h2>
-  <ul class="eng-chips">{c.dec.map((u) => <li class="mono">{u}</li>)}</ul>
+<section class="cv-pieces">
+  <h2 class="sec">{c.piecesTitle}</h2>
+  <p class="muted cv-hint">{c.piecesHint}</p>
+  <ul class="pieces">
+    {c.pieces.map((p, i) => (
+      <li style={`--i:${i}`} tabindex="0">
+        <img src={`/img/ciclo/${p.img}.webp`} alt="" loading="lazy" width="830" height="830" />
+        <div class="pc-text">
+          <span class="pc-name">{p.name}</span>
+          <span class="pc-line mono">{p.line}</span>
+        </div>
+      </li>
+    ))}
+  </ul>
+  <ul class="mats" aria-label={c.matsTitle}>
+    {c.mats.map((m) => (
+      <li><img src={`/img/ciclo/${m.img}.webp`} alt="" loading="lazy" /><span class="mono">{m.name}</span></li>
+    ))}
+  </ul>
   <p class="prose cv-who">{c.who}</p>
 </section>
 

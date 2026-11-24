@@ -23,6 +23,15 @@ const e = T[lang].eng;
       <h2 class="sec">{e.title}</h2>
       <p class="prose">{e.paras[0]}</p>
       <ul class="eng-chips">{e.learn.map((u) => <li class="mono">{u.t}</li>)}</ul>
+      <details class="eng-more">
+        <summary><span class="eng-plus" aria-hidden="true"></span><span class="eng-more-label mono">{lang === 'es' ? 'Más información' : 'More info'}</span></summary>
+        <div class="eng-body">
+          <p class="prose">{e.paras[1]}</p>
+          <h3 class="mono eng-sub">{e.learnTitle}</h3>
+          <ul class="bullets">{e.learn.map((u) => <li><b>{u.t}.</b> {u.d}</li>)}</ul>
+          <p class="prose eng-ex"><b>{e.exTitle}.</b> {e.ex}</p>
+        </div>
+      </details>
     </section>
 
     <h2 class="sec">{a.storyTitle}</h2>

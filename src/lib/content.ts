@@ -80,9 +80,7 @@ type Dict = {
     piecesTitle: string; piecesHint: string; pieces: { img: string; name: string; line: string }[];
     matsTitle: string; mats: { img: string; name: string }[];
     flowTitle: string; flowHint: string; replay: string; fallback: string; n8nNote: string;
-    flows: { id: string; name: string; nodes: { t: string; s?: string }[]; alt?: { t: string; s?: string } }[];
-    siteTitle: string; site: string[];
-    decTitle: string; dec: string[];
+    flows: { id: string; name: string; nodes: { ic: string; t: string; s?: string }[]; alt?: { t: string; s?: string }; result: { label: string; t: string; s: string; ic: string } }[];
     who: string;
   };
   eng: {
@@ -190,7 +188,7 @@ export const T: Record<Lang, Dict> = {
       lede: 'A smart watch you repair piece by piece. The company is made up; the website and its automations are real work.',
       facts: {
         status: 'Course project · website online',
-        role: 'Group 6 (UIE). Website and n8n automations, built with AI',
+        role: 'Website and n8n automations, built with AI',
         stack: 'HTML, CSS and JavaScript; n8n and Google Sheets behind the forms',
         since: '11 Nov 2026',
       },
@@ -217,23 +215,19 @@ export const T: Record<Lang, Dict> = {
       n8nNote: 'n8n free trial ended: flows saved, forms off',
       flows: [
         { id: 'cita', name: 'Repair booking', nodes: [
-          { t: 'Web form', s: 'Name, date, hour' },
-          { t: 'Valid?', s: 'With consent' },
-          { t: 'Slot free?', s: 'Reads the sheet' },
-          { t: 'Saves it', s: 'Google Sheets' },
-          { t: 'Confirms', s: 'Email via Gmail' },
-        ], alt: { t: 'Slot taken', s: 'Asks for another hour' } },
+          { ic: 'form', t: 'Web form', s: 'Name, date, hour' },
+          { ic: 'check', t: 'Valid?', s: 'With consent' },
+          { ic: 'sheet', t: 'Slot free?', s: 'Reads the sheet' },
+          { ic: 'save', t: 'Saves it', s: 'Google Sheets' },
+          { ic: 'mail', t: 'Confirms', s: 'Email via Gmail' },
+        ], alt: { t: 'Slot taken', s: 'Asks for another hour' }, result: { label: 'What the customer gets', t: 'Booking confirmed', s: 'Thursday · 10:00 · Strap change (example)', ic: 'mail' } },
         { id: 'stock', name: 'Stock', nodes: [
-          { t: 'Configurator', s: 'Asks for stock' },
-          { t: 'n8n', s: 'Reads the sheet' },
-          { t: 'Builds the answer', s: 'Units per piece' },
-          { t: 'On screen', s: 'Sold out marked' },
-        ] },
+          { ic: 'req', t: 'Configurator', s: 'Asks for stock' },
+          { ic: 'bolt', t: 'n8n', s: 'Reads the sheet' },
+          { ic: 'build', t: 'Builds the answer', s: 'Units per piece' },
+          { ic: 'screen', t: 'On screen', s: 'Sold out marked' },
+        ], result: { label: 'What the customer sees', t: 'Ocean bezel · 12 units', s: 'At 0 it shows “Sold out” (example)', ic: 'screen' } },
       ],
-      siteTitle: 'On the website',
-      site: ['Models and prices', 'Configurator', 'Traceability by batch code', 'Repair booking', 'Contact and assistant'],
-      decTitle: 'Details I cared about',
-      dec: ['Fails soft', 'Invented data is labelled', 'No empty promises', 'Accessible, 360 to 1440 px'],
       who: 'Group project. The business case and the report are the group’s; I built the website and the automations with Claude Code.',
     },
     eng: {
@@ -435,7 +429,7 @@ export const T: Record<Lang, Dict> = {
       lede: 'Un reloj inteligente que se repara por piezas. La empresa es inventada; la web y sus automatizaciones son trabajo real.',
       facts: {
         status: 'Proyecto de clase · web online',
-        role: 'Grupo 6 (UIE). Web y automatizaciones en n8n, hechas con IA',
+        role: 'Web y automatizaciones en n8n, hechas con IA',
         stack: 'HTML, CSS y JavaScript; n8n y Google Sheets detrás de los formularios',
         since: '11 nov 2026',
       },
@@ -462,23 +456,19 @@ export const T: Record<Lang, Dict> = {
       n8nNote: 'Prueba gratuita de n8n terminada: flujos guardados, formularios apagados',
       flows: [
         { id: 'cita', name: 'Cita de reparación', nodes: [
-          { t: 'Formulario', s: 'Nombre, día, hora' },
-          { t: '¿Datos válidos?', s: 'Con consentimiento' },
-          { t: '¿Hueco libre?', s: 'Lee la hoja' },
-          { t: 'Lo apunta', s: 'Google Sheets' },
-          { t: 'Confirma', s: 'Correo por Gmail' },
-        ], alt: { t: 'Hueco ocupado', s: 'Pide otra hora' } },
+          { ic: 'form', t: 'Formulario', s: 'Nombre, día, hora' },
+          { ic: 'check', t: '¿Datos válidos?', s: 'Con consentimiento' },
+          { ic: 'sheet', t: '¿Hueco libre?', s: 'Lee la hoja' },
+          { ic: 'save', t: 'Lo apunta', s: 'Google Sheets' },
+          { ic: 'mail', t: 'Confirma', s: 'Correo por Gmail' },
+        ], alt: { t: 'Hueco ocupado', s: 'Pide otra hora' }, result: { label: 'Lo que recibe el cliente', t: 'Cita confirmada', s: 'Jueves · 10:00 · Cambio de correa (ejemplo)', ic: 'mail' } },
         { id: 'stock', name: 'Stock', nodes: [
-          { t: 'Configurador', s: 'Pide el stock' },
-          { t: 'n8n', s: 'Lee la hoja' },
-          { t: 'Arma la respuesta', s: 'Unidades por pieza' },
-          { t: 'En pantalla', s: 'Agotado marcado' },
-        ] },
+          { ic: 'req', t: 'Configurador', s: 'Pide el stock' },
+          { ic: 'bolt', t: 'n8n', s: 'Lee la hoja' },
+          { ic: 'build', t: 'Arma la respuesta', s: 'Unidades por pieza' },
+          { ic: 'screen', t: 'En pantalla', s: 'Agotado marcado' },
+        ], result: { label: 'Lo que ve el cliente', t: 'Bisel océano · 12 uds', s: 'Si llega a 0, sale «Agotado» (ejemplo)', ic: 'screen' } },
       ],
-      siteTitle: 'En la web',
-      site: ['Modelos y precios', 'Configurador', 'Trazabilidad por lote', 'Cita de reparación', 'Contacto y asistente'],
-      decTitle: 'Detalles que cuidé',
-      dec: ['Falla sin romperse', 'Lo inventado está marcado', 'Sin promesas vacías', 'Accesible, de 360 a 1440 px'],
       who: 'Proyecto de grupo. El modelo de negocio y el informe son del grupo; la web y las automatizaciones las hice yo con Claude Code.',
     },
     eng: {
