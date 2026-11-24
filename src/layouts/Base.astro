@@ -27,18 +27,50 @@ const base = `/${lang}`;
     <meta name="theme-color" content="#e8edec" />
     <script is:inline>
       var m = 'light'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
-      /* Brief entrance hold: the page stays hidden until the 3D room has drawn its first frame (cap 1.1 s), so nothing pops in. */
+      /* Entrance: the first page of a visit shows an MMC boot screen (about two seconds) while the 3D room draws and the figure is held back,
+         so nothing flickers or pops in. Later pages in the same visit only get the short hold. Reduced motion skips both. */
       (function () {
         var r = document.documentElement; if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        r.classList.add('pre');
-        var done = false; function go() { if (done) return; done = true; r.classList.remove('pre'); }
-        setTimeout(go, 1100);
-        window.addEventListener('mmc:scene', function () { requestAnimationFrame(function () { setTimeout(go, 60); }); }, { once: true });
-        window.addEventListener('load', function () { setTimeout(function () { if (!document.querySelector('[data-scene]')) go(); }, 60); });
+        var first = true; try { first = !sessionStorage.getItem('mmc-intro'); sessionStorage.setItem('mmc-intro', '1'); } catch (e) {}
+        var t0 = Date.now(), MIN = first ? 1900 : 0, MAX = first ? 3600 : 1100;
+        r.classList.add(first ? 'intro' : 'pre');
+        var sceneOk = false, loadOk = false, done = false;
+        function finish() {
+          if (done) return; done = true;
+          r.classList.remove('pre');
+          var el = document.getElementById('intro');
+          if (!el) { r.classList.remove('intro'); return; }
+          el.classList.add('out');
+          r.classList.remove('intro');
+          setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 650);
+        }
+        function check() { if (done) return; if (sceneOk && loadOk && Date.now() - t0 >= MIN) setTimeout(finish, 60); }
+        setTimeout(finish, MAX);
+        setTimeout(check, MIN + 10);
+        window.addEventListener('mmc:scene', function () { requestAnimationFrame(function () { sceneOk = true; check(); }); }, { once: true });
+        window.addEventListener('load', function () { loadOk = true; if (!document.querySelector('[data-scene]')) sceneOk = true; setTimeout(check, 40); });
+        if (first) {
+          var n, bar;
+          (function tick() {
+            n = n || document.getElementById('intro-n'); if (!n) { if (!done) requestAnimationFrame(tick); return; }
+            var p = Math.min(1, (Date.now() - t0) / MIN); var e = 1 - Math.pow(1 - p, 3);
+            n.textContent = String(Math.round(e * 100)).padStart(3, '0');
+            if (!done) requestAnimationFrame(tick);
+          })();
+        }
       })();
     </script>
   </head>
   <body>
+    <div id="intro" class="intro-screen" aria-hidden="true">
+      <div class="intro-core">
+        <span class="intro-ring"></span>
+        <span class="intro-mark mono">MMC</span>
+      </div>
+      <p class="intro-name">Marcos Mariñas Cotelo</p>
+      <div class="intro-bar"><i></i></div>
+      <p class="intro-status mono"><span>{lang === 'en' ? 'Starting system' : 'Iniciando sistema'}</span> <b id="intro-n" class="tnum">000</b></p>
+    </div>
     <Backdrop />
     <a class="skip" href="#main">{lang === 'en' ? 'Skip to content' : 'Saltar al contenido'}</a>
     <header class="wrap top">
