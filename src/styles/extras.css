@@ -79,7 +79,7 @@
 .rocket-fly.burn .rk-flame { animation: rkFlameBig .08s ease-in-out infinite alternate; }
 .rocket-fly.burn .rk-glow { width: 230%; height: 70%; animation-duration: .08s; }
 @keyframes rkFlameBig { from { transform: scale(1.1, 1.05); } to { transform: scale(1.4, 1.75); } }
-.rocket-svg img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rocket-svg img { position: absolute; top: 0; left: 8.5%; width: 100%; height: 100%; max-width: none; } /* the drawn rocket's axis sits 8.5% left of the image centre; shift so the box centre is the axis */
 .rocket-svg .rk-body { filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .rocket-svg .rk-flame { transform-origin: 50% 74%; animation: rkFlame .1s ease-in-out infinite alternate; }
 .rk-glow { position: absolute; left: 50%; top: 80%; width: 150%; height: 45%; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255,160,60,.55), rgba(255,120,40,.18) 60%, transparent); animation: rkGlow .12s ease-in-out infinite alternate; }
@@ -162,9 +162,10 @@
 @keyframes padFlash { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
 
 /* ---- Landing pad above the contact panel ---- */
-.hb-pad { position: absolute; right: 14px; top: 119px; width: 112px; height: 9px; border-radius: 3px; background: linear-gradient(#cdd8dc, #6a777c 70%, #3a4448); box-shadow: 0 6px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+.hb-pad { position: absolute; left: 50%; top: 119px; width: 136px; height: 9px; transform: translateX(-50%); border-radius: 4px 4px 2px 2px; background: linear-gradient(#dfe8eb, #7c8a90 55%, #3a4448); box-shadow: 0 6px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.1), 0 -1px 0 rgba(255,255,255,.35) inset; }
+.hb-pad::before { content: ''; position: absolute; left: 50%; top: -3px; width: 64px; height: 6px; transform: translateX(-50%); border-radius: 50%; border: 1px solid rgba(59,184,190,.7); box-shadow: 0 0 8px rgba(59,184,190,.5); }
 .hb-pad i { position: absolute; top: 2px; width: 5px; height: 5px; border-radius: 50%; background: #ffb84a; box-shadow: 0 0 8px #ffb84a; animation: padBlink 1.6s ease-in-out infinite; }
-.hb-pad i:first-child { left: 8px; } .hb-pad i:last-child { right: 8px; animation-delay: .8s; }
+.hb-pad i:first-child { left: 10px; } .hb-pad i:last-child { right: 10px; animation-delay: .8s; }
 .hb-pad.lit i { background: #52c28a; box-shadow: 0 0 10px #52c28a; animation: none; }
 @keyframes padBlink { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
 .tour-hint { margin-left: 0; }

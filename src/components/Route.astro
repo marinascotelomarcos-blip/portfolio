@@ -270,14 +270,15 @@ const kinds = items.map((i) => i.kind);
       const Lp: Pt = { x: pd.x + pd.w / 2, y: pd.y - NOZ * FINAL_SCALE };
       const Q0: Pt = { x: Math.min(W * 0.84, C.x + pl.w * 0.95), y: C.y + pl.h * 0.1 };
       const ctrl: Pt[] = [
-        { x: S.x, y: S.y - 6 },
-        { x: S.x - 6, y: S.y - 0.28 * H },
-        { x: S.x + 0.14 * W, y: S.y - 0.62 * H },
-        Q0,                                                                   // index 3: end of the climb, zone starts
+        { x: S.x, y: S.y + 6 },                                               // starts inside the globe
+        { x: S.x + 2, y: S.y - 44 },                                          // nose pokes out of the planet
+        { x: S.x + 0.07 * W, y: S.y - 74 },                                   // tiny apex, then it turns over
+        { x: S.x + 0.19 * W, y: S.y - 30 },
+        Q0,                                                                   // index 4: zone starts (past the planet)
         { x: W * 0.34, y: zt + zh * 0.20 },
         { x: W * 0.66, y: zt + zh * 0.52 },
-        { x: W * 0.40, y: zt + zh * 0.86 },                                   // index 6: zone ends
-        { x: Lp.x - 40, y: Math.max(zb + 80, Lp.y - 0.42 * H) },
+        { x: W * 0.40, y: zt + zh * 0.86 },                                   // index 7: zone ends
+        { x: Lp.x - 30, y: Math.max(zb + 80, Lp.y - 0.42 * H) },
         Lp,
       ];
       type Node = { p: Pt; seg: 0 | 1 | 2; u: number };
@@ -287,8 +288,8 @@ const kinds = items.map((i) => i.kind);
       for (let k = 0; k < nSeg; k++) {
         const p0 = ctrl[Math.max(0, k - 1)], p1 = ctrl[k], p2 = ctrl[k + 1], p3 = ctrl[Math.min(ctrl.length - 1, k + 2)];
         for (let i = (k === 0 ? 0 : 1); i <= SAMP; i++) {
-          const seg: 0 | 1 | 2 = k < 3 ? 0 : (k < 6 ? 1 : 2);
-          const u = seg === 0 ? (k * SAMP + i) / (3 * SAMP) : seg === 1 ? ((k - 3) * SAMP + i) / (3 * SAMP) : ((k - 6) * SAMP + i) / (nSeg - 6) / SAMP;
+          const seg: 0 | 1 | 2 = k < 4 ? 0 : (k < 7 ? 1 : 2);
+          const u = seg === 0 ? (k * SAMP + i) / (4 * SAMP) : seg === 1 ? ((k - 4) * SAMP + i) / (3 * SAMP) : ((k - 7) * SAMP + i) / ((nSeg - 7) * SAMP);
           nodes.push({ p: cr(p0, p1, p2, p3, i / SAMP), seg, u: Math.min(1, u) });
         }
       }
@@ -328,7 +329,7 @@ const kinds = items.map((i) => i.kind);
       }
       const scaleAt = (i: number) => {
         const nd = nodes[i];
-        if (nd.seg === 0) return 0.62 + 0.38 * smooth(nd.u);
+        if (nd.seg === 0) return 0.5 + 0.5 * smooth(nd.u * 1.5);
         if (nd.seg === 1) return 1.0;
         return 1.0 - (1.0 - FINAL_SCALE) * smooth(nd.u);
       };
@@ -377,13 +378,14 @@ const kinds = items.map((i) => i.kind);
 
       /* ---- one loop: rocket, camera, smoke ---- */
       let cam = window.scrollY, tPrev = performance.now(), rotCur = 0;
+      const startScroll = window.scrollY;
       const zoneView = zt - H * 0.18;
       const camTarget = (idx: number, P: Pt) => {
         const nd = nodes[idx];
         let target: number;
         if (nd.seg === 1) target = zoneView;                            // reading zone: hold the text in view
         else if (nd.seg === 2) { const k = smooth(nd.u * 1.2), t1 = zoneView + (P.y - H * 0.5 - zoneView) * smooth(nd.u / 0.3); target = t1 * (1 - k) + (Lp.y - H * 0.6) * k; }
-        else { const k = smooth((nd.u - 0.7) / 0.3); target = (P.y - H * 0.5) * (1 - k) + zoneView * k; }
+        else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // seg 0: only ever follows downward
         return Math.max(0, Math.min(maxScroll, target));
       };
       const IGN = 650;
@@ -397,7 +399,7 @@ const kinds = items.map((i) => i.kind);
           let P: Pt, rot: number, s: number, idx = 0;
           if (T < IGN) {
             const u = T / IGN, sh = (1 - u) * 1.6 * Math.sin(u * 90);
-            P = { x: S.x + sh, y: S.y - 6 * smooth(u) }; rot = 0; s = 0.5 + 0.12 * u;
+            P = { x: S.x + sh, y: S.y + 6 }; rot = 0; s = 0.42 + 0.08 * u;
             rocket.style.transform = `translate3d(${P.x}px, ${P.y}px, 0) rotate(0deg) scale(${s})`;
             if (now - lastEmit > 30) { lastEmit = now; const tp = tailOf(P, 0, s); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y - 4, true, now); }
           } else {
