@@ -226,6 +226,8 @@ const kinds = items.map((i) => i.kind);
       const skip = document.createElement('button');
       skip.type = 'button'; skip.className = 'fly-skip mono'; skip.textContent = en ? 'Skip ↓' : 'Saltar ↓';
       skip.addEventListener('click', () => { abort = true; });
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') abort = true; };
+      window.addEventListener('keydown', onKey);
       document.body.appendChild(skip);
 
       const W = window.innerWidth, H = window.innerHeight;
@@ -349,7 +351,7 @@ const kinds = items.map((i) => i.kind);
       };
       const finish = () => {
         html.style.scrollBehavior = prevBehavior; html.classList.remove('flying'); scene.style.transform = '';
-        window.removeEventListener('wheel', block); window.removeEventListener('touchmove', block);
+        window.removeEventListener('wheel', block); window.removeEventListener('touchmove', block); window.removeEventListener('keydown', onKey);
         skip.remove(); rk.dispose();
         root!.classList.remove('liftoff'); phase = 'idle';
         window.setTimeout(() => cv.remove(), 1400);
