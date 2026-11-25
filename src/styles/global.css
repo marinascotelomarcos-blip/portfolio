@@ -438,11 +438,14 @@ h2.sec::before { content: '>'; font-family: var(--mono); font-weight: 500; color
 @keyframes cardIn { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
 @media (max-width: 899px) {
   .tour { grid-template-columns: 1fr; }
-  .tour-card-wrap { min-height: 0; gap: 20px; }
+  /* Phone: globe, text and arrows all on one screen. All cards share one grid cell, so the box is as tall as the longest and the arrows never move. */
+  .tour { --gh: clamp(190px, 31svh, 270px); gap: 10px; }
+  .tour-card-wrap { min-height: 0; gap: 14px; }
   .stop-card { align-self: start; }
-  .stop-card[hidden] { display: none; }
   .tour-globe { order: -1; }
-  .tour-globe .scene { height: clamp(240px, 70vw, 340px); }
+  .stop-card h3 { font-size: clamp(1.5rem, 7vw, 2rem); }
+  .stop-card .stop-text { font-size: 0.92rem; }
+  .tour-hint { display: none; }
   .node { flex-basis: 128px; }
   .track-in { min-width: calc(var(--n) * 128px); }
 }
@@ -471,6 +474,18 @@ h2.sec::before { content: '>'; font-family: var(--mono); font-weight: 500; color
 .track-line { top: 12px; z-index: 2; }
 .plane { top: -12px; width: 26px; height: 26px; margin-left: -13px; padding: 5px; border-radius: 50%; background: var(--mk, var(--teal)); color: #fff; box-shadow: 0 0 0 3px var(--bg), 0 5px 12px rgba(0, 0, 0, 0.28); transition: left 0.7s var(--ease), background 0.4s; }
 .plane svg { filter: none; }
+/* Timeline marker: a glowing dot instead of the paper plane (2026-11-25) */
+.tour-globe { position: relative; }
+.globe-nav { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 3; }
+.globe-nav .tc { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 50%; color: var(--ink); cursor: pointer; transition: border-color .2s, color .2s, transform .15s; pointer-events: auto; background: color-mix(in oklab, var(--bg) 78%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+@media (max-width: 899px) { .globe-nav .tc { width: 40px; height: 40px; } }
+.globe-nav .tc:hover { border-color: var(--teal); color: var(--teal-ink); }
+.globe-nav .tc:active { transform: scale(.94); }
+.globe-nav svg { width: 18px; height: 18px; }
+.plane { padding: 0; width: 16px; height: 16px; margin-left: -8px; top: -4px; background: var(--mk, var(--teal)); box-shadow: 0 0 0 3px var(--bg), 0 0 14px 2px color-mix(in oklab, var(--mk, var(--teal)) 70%, transparent); }
+.plane i { position: absolute; inset: -8px; border-radius: 50%; border: 1.5px solid var(--mk, var(--teal)); opacity: 0; animation: plane-pulse 2.4s ease-out infinite; }
+@keyframes plane-pulse { 0% { transform: scale(.5); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .plane i { animation: none; } }
 .track-line[data-kind='work'] .plane { --mk: #d8553f; }
 .node[data-kind='study'] .dot { border-radius: 2px; transform: rotate(45deg) scale(0.9); }
 .node[data-kind='study'][aria-selected='true'] .dot { transform: rotate(45deg) scale(1.5); }
