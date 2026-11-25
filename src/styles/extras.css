@@ -75,12 +75,13 @@
 @keyframes lo-shake { 0%, 100% { translate: 0 0; } 25% { translate: -2px 1px; } 75% { translate: 2px -1px; } }
 
 .rocket-svg { position: relative; display: block; }
-.rocket-svg.rocket-fly { position: absolute; left: 0; top: 0; z-index: 120; width: 88px; height: 176px; margin: -79.2px 0 0 -44px; transform-origin: 50% 45%; pointer-events: none; will-change: transform; }
+.rocket-svg.rocket-fly { position: fixed; left: 0; top: 0; z-index: 120; width: 64px; height: 128px; margin: -57.6px 0 0 -32px; transform-origin: 50% 45%; pointer-events: none; will-change: transform; }
 .rocket-fly.burn .rk-flame { animation: rkFlameBig .08s ease-in-out infinite alternate; }
 .rocket-fly.burn .rk-glow { width: 230%; height: 70%; animation-duration: .08s; }
 @keyframes rkFlameBig { from { transform: scale(1.1, 1.05); } to { transform: scale(1.4, 1.75); } }
 .rocket-svg img { position: absolute; top: 0; left: 8.5%; width: 100%; height: 100%; max-width: none; } /* the drawn rocket's axis sits 8.5% left of the image centre; shift so the box centre is the axis */
 .rocket-svg .rk-body { filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.rocket-fly .rk-body { filter: none; }
 .rocket-svg .rk-flame { transform-origin: 50% 74%; animation: rkFlame .1s ease-in-out infinite alternate; }
 .rk-glow { position: absolute; left: 50%; top: 80%; width: 150%; height: 45%; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255,160,60,.55), rgba(255,120,40,.18) 60%, transparent); animation: rkGlow .12s ease-in-out infinite alternate; }
 @keyframes rkGlow { from { opacity: .7; transform: translate(-50%, -50%) scale(.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } }
@@ -120,8 +121,8 @@
 .tour .stop-card { align-self: start; }
 .tour-globe { position: relative; }
 /* rocket parked on the contact row after landing */
-.hb-links { position: relative; padding-top: 128px; }
-.rocket-parked { position: absolute; z-index: 3; width: 88px; height: 176px; margin: -79.2px 0 0 -44px; transform: scale(.8); transform-origin: 50% 45%; pointer-events: none; }
+.hb-links { position: relative; padding-top: 112px; }
+.rocket-parked { position: absolute; z-index: 3; width: 64px; height: 128px; margin: -57.6px 0 0 -32px; transform: scale(.8); transform-origin: 50% 45%; pointer-events: none; }
 .rocket-parked .rocket-svg { width: 100%; height: 100%; }
 .rocket-parked .rk-flame, .rocket-parked .rk-glow { display: none; }
 
@@ -143,12 +144,12 @@
 /* ---- Big countdown ---- */
 .cd-fs { position: fixed; inset: 0; z-index: 250; display: grid; place-items: center; place-content: center; gap: 4px; pointer-events: none; opacity: 0; background: radial-gradient(closest-side at 50% 50%, rgba(5,9,12,.28), rgba(5,9,12,.5)); transition: opacity .35s; text-align: center; }
 .cd-fs.in { opacity: 1; } .cd-fs.out { opacity: 0; transition: opacity .6s; }
-.cd-label { color: #cfeff0; letter-spacing: .3em; text-transform: uppercase; font-size: .66rem; text-shadow: 0 0 14px rgba(59,184,190,.8); }
-.cd-num { display: block; min-height: 1em; font-size: clamp(4rem, 17vw, 6.5rem); line-height: .9; font-weight: 800; letter-spacing: -.06em; color: transparent; background: linear-gradient(180deg, #ffffff 10%, #7de7ea 55%, #1f9aa3); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 28px rgba(59,184,190,.95)) drop-shadow(0 0 70px rgba(59,184,190,.55)); }
-.cd-fs.go .cd-num { font-size: clamp(3rem, 12vw, 4.8rem); background: linear-gradient(180deg, #fff6c9 5%, #ffb84a 55%, #ee6a22); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 30px rgba(255,140,40,.95)) drop-shadow(0 0 80px rgba(255,120,40,.6)); }
+.cd-label { color: #cfeff0; letter-spacing: .3em; text-transform: uppercase; font-size: .6rem; text-shadow: 0 0 14px rgba(59,184,190,.8); }
+.cd-num { display: block; min-height: 1em; font-size: clamp(3rem, 12.5vw, 4.8rem); line-height: .9; font-weight: 800; letter-spacing: -.06em; color: transparent; background: linear-gradient(180deg, #ffffff 10%, #7de7ea 55%, #1f9aa3); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 28px rgba(59,184,190,.95)) drop-shadow(0 0 70px rgba(59,184,190,.55)); }
+.cd-fs.go .cd-num { font-size: clamp(2.4rem, 9vw, 3.6rem); background: linear-gradient(180deg, #fff6c9 5%, #ffb84a 55%, #ee6a22); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 30px rgba(255,140,40,.95)) drop-shadow(0 0 80px rgba(255,120,40,.6)); }
 .cd-num.slam { animation: cdSlam .85s cubic-bezier(.2,.9,.2,1) both; }
 @keyframes cdSlam { 0% { opacity: 0; transform: scale(2.6); filter: blur(14px); } 18% { opacity: 1; transform: scale(.94); filter: blur(0); } 30% { transform: scale(1.04); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: .0; transform: scale(.82); } }
-.cd-ring { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 3px solid rgba(111,208,212,.85); opacity: 0; box-shadow: 0 0 30px rgba(59,184,190,.6), inset 0 0 30px rgba(59,184,190,.4); }
+.cd-ring { position: absolute; left: 50%; top: 50%; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 3px solid rgba(111,208,212,.85); opacity: 0; box-shadow: 0 0 30px rgba(59,184,190,.6), inset 0 0 30px rgba(59,184,190,.4); }
 .cd-fs.pulse .cd-ring { animation: cdRing .85s ease-out; }
 .cd-fs.go .cd-ring { border-color: rgba(255,184,74,.9); box-shadow: 0 0 40px rgba(255,140,40,.7); }
 @keyframes cdRing { from { opacity: .8; transform: scale(.4); } to { opacity: 0; transform: scale(1.9); } }
@@ -162,8 +163,8 @@
 @keyframes padFlash { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
 
 /* ---- Landing pad above the contact panel ---- */
-.hb-pad { position: absolute; left: 50%; top: 119px; width: 136px; height: 9px; transform: translateX(-50%); border-radius: 4px 4px 2px 2px; background: linear-gradient(#dfe8eb, #7c8a90 55%, #3a4448); box-shadow: 0 6px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.1), 0 -1px 0 rgba(255,255,255,.35) inset; }
-.hb-pad::before { content: ''; position: absolute; left: 50%; top: -3px; width: 64px; height: 6px; transform: translateX(-50%); border-radius: 50%; border: 1px solid rgba(59,184,190,.7); box-shadow: 0 0 8px rgba(59,184,190,.5); }
+.hb-pad { position: absolute; right: 26px; top: 103px; width: 104px; height: 9px; border-radius: 4px 4px 2px 2px; background: linear-gradient(#dfe8eb, #7c8a90 55%, #3a4448); box-shadow: 0 6px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.1), 0 -1px 0 rgba(255,255,255,.35) inset; }
+.hb-pad::before { content: ''; position: absolute; left: 50%; top: -3px; width: 52px; height: 6px; transform: translateX(-50%); border-radius: 50%; border: 1px solid rgba(59,184,190,.7); box-shadow: 0 0 8px rgba(59,184,190,.5); }
 .hb-pad i { position: absolute; top: 2px; width: 5px; height: 5px; border-radius: 50%; background: #ffb84a; box-shadow: 0 0 8px #ffb84a; animation: padBlink 1.6s ease-in-out infinite; }
 .hb-pad i:first-child { left: 10px; } .hb-pad i:last-child { right: 10px; animation-delay: .8s; }
 .hb-pad.lit i { background: #52c28a; box-shadow: 0 0 10px #52c28a; animation: none; }
@@ -179,4 +180,6 @@
 .finale .close::after { display: none; }
 .finale .close.hb::before { right: -10%; top: -10%; }
 .fly-smoke { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 119; pointer-events: none; }
-.rocket-svg.rocket-fly { z-index: 120; }
+
+/* while the rocket flies, the page's decorative animations rest so every frame goes to the flight */
+html.flying .bg-fx *, html.flying .ticker-track, html.flying .rk-glow { animation-play-state: paused !important; }
