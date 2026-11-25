@@ -22,6 +22,8 @@ export const LOGOS: Record<string, Logo> = {
   github: { name: { en: 'GitHub', es: 'GitHub' }, ...brand(siGithub) },
   instagram: { name: { en: 'Instagram', es: 'Instagram' }, ...brand(siInstagram) },
   linkedin: { name: { en: 'LinkedIn', es: 'LinkedIn' }, kind: 'mono', hex: '#0a66c2', text: 'in' },
+  portfolio: { name: { en: 'Portfolio', es: 'Portafolio' }, kind: 'mono', hex: '#0f7077', text: 'M' },
+  cv: { name: { en: 'CV (PDF)', es: 'CV (PDF)' }, kind: 'glyph', hex: '#0f7077', paths: ['M6 3.5h8l4 4v13H6z', 'M14 3.5v4h4', 'M9 12h6', 'M9 15.5h6'] },
   mail: { name: { en: 'Email', es: 'Correo' }, kind: 'glyph', hex: '#d8553f', paths: ['M3.5 6.5h17v11h-17z', 'M3.5 7.2l8.5 6.3 8.5-6.3'] },
   phone: { name: { en: 'Phone', es: 'Teléfono' }, kind: 'glyph', hex: '#1f7a4d', paths: ['M7 3.5h3l1.5 4-2 1.3a10 10 0 0 0 5.2 5.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 5 5.5a2 2 0 0 1 2-2z'] },
 

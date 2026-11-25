@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Room from '../../components/Room.astro';
 import Route from '../../components/Route.astro';
-import { T, LANGS, EMAIL, CV, type Lang } from '../../lib/content';
+import { T, LANGS, EMAIL, CV, LINKEDIN, type Lang } from '../../lib/content';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
 const h = T[lang].home;
@@ -17,6 +17,7 @@ const h = T[lang].home;
         <div class="actions" style="justify-content:flex-start;margin-top:28px">
           <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
           <a class="btn" href={CV} download>{h.cv}</a>
+          <a class="btn" href={LINKEDIN} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
         </div>
         <p class="eng-link"><a href={`/${lang}/about/#eng`}>{T[lang].homeEng} →</a></p>
       </div>
@@ -65,6 +66,7 @@ const h = T[lang].home;
       <div class="actions">
         <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
         <a class="btn" href={CV} download>{h.cv}</a>
+          <a class="btn" href={LINKEDIN} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
       </div>
     </section>
   </div>

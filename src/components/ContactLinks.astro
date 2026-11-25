@@ -1,15 +1,18 @@
 ---
 import { LOGOS } from '../lib/logos';
-import { EMAIL, LINKEDIN, GITHUB, INSTAGRAM, PHONE, PHONE_TEL, type Lang } from '../lib/content';
-interface Props { lang: Lang; big?: boolean }
-const { lang, big } = Astro.props;
-const links = [
+import { EMAIL, CV, LINKEDIN, GITHUB, INSTAGRAM, PHONE, PHONE_TEL, type Lang } from '../lib/content';
+interface Props { lang: Lang; big?: boolean; access?: boolean }
+const { lang, big, access } = Astro.props;
+const all = [
+  { id: 'portfolio', href: `/${lang}/`, sub: lang === 'en' ? 'Projects and about me' : 'Proyectos y sobre mí', ext: false },
+  { id: 'cv', href: CV, sub: 'PDF', ext: true },
   { id: 'mail', href: `mailto:${EMAIL}`, sub: EMAIL, ext: false },
   { id: 'linkedin', href: LINKEDIN, sub: 'marcos-mariñas-cotelo', ext: true },
   { id: 'github', href: GITHUB, sub: 'marinascotelomarcos-blip', ext: true },
   ...(INSTAGRAM ? [{ id: 'instagram', href: INSTAGRAM, sub: INSTAGRAM.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@').replace(/\/$/, ''), ext: true }] : []),
   { id: 'phone', href: PHONE_TEL, sub: PHONE, ext: false },
 ];
+const links = access ? ['portfolio', 'linkedin', 'cv', 'mail'].map((id) => all.find((l) => l.id === id)!) : all.filter((l) => l.id !== 'portfolio' && l.id !== 'cv');
 ---
 <ul class:list={['tiles', 'contact-tiles', big && 'cx-big']}>
   {links.map((l, i) => {
