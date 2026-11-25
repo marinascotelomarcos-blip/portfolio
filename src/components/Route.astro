@@ -224,7 +224,7 @@ const kinds = items.map((i) => i.kind);
         if (t - last > 36) {
           last = t;
           const r = rocket.getBoundingClientRect();
-          const tx = r.left + r.width / 2, ty = r.bottom - r.height * 0.06;
+          const tx = r.left + r.width / 2, ty = r.top + r.height * 0.88;
           const n = Math.floor(power + Math.random());
           for (let k = 0; k < n; k++) puff(tx, ty, false);
           if (Math.random() < Math.min(0.7, power * 0.5)) puff(tx, ty - 6, true);
@@ -247,7 +247,7 @@ const kinds = items.map((i) => i.kind);
         await go(rocket, 'translateY(-4px) scale(.6)', HOV, { duration: 2200, easing: 'cubic-bezier(.45,.05,.2,1)' });
         await waitScrollEnd();
         // 3. hover while the days count up
-        power = 0.25;
+        power = 0.1;
         const bob = rocket.animate([{ transform: HOV }, { transform: `translate(${hx - cx}px, ${hy - cy - 9}px) scale(.9)` }, { transform: HOV }], { duration: 1800, easing: 'ease-in-out' });
         await bob.finished; bob.cancel();
         // 4. scroll down to the contact panel
@@ -258,7 +258,7 @@ const kinds = items.map((i) => i.kind);
         // 5. descend and land on the row, nose up and engine firing
         power = 0.8;
         const rr = row.getBoundingClientRect();
-        const lx = rr.left + rr.width * 0.84, ldy = rr.top - 30.2 - cy; /* the drawn nozzle ends at 99 of 135px */
+        const lx = rr.left + rr.width * 0.84, ldy = rr.top - 31 - cy; /* the nozzle sits at 70% of the 176px box, which is also the scale origin */
         const LAND = `translate(${lx - cx}px, ${ldy}px) scale(.8)`;
         await go(rocket, HOV, LAND, { duration: 1900, easing: 'cubic-bezier(.3,.1,.25,1)' });
         // 6. touchdown: dust, engine off, and the rocket stays parked on the row
@@ -269,8 +269,8 @@ const kinds = items.map((i) => i.kind);
         const lk = links.getBoundingClientRect();
         const parked = document.createElement('div');
         parked.className = 'rocket-parked';
-        parked.style.left = (lx - 27 - lk.left) + 'px';
-        parked.style.top = ((cy - 68 + ldy) - lk.top) + 'px';
+        parked.style.left = (lx - 44 - lk.left) + 'px';
+        parked.style.top = ((cy - 88 + ldy) - lk.top) + 'px';
         parked.appendChild(rocketNode(true));
         links.appendChild(parked);
         rocket.remove();

@@ -1,44 +1,10 @@
 ---
-/* Marcos's rocket: his own palette (cream knit, olive trousers, amber visor, red sneaker star) with soft 3D shading */
+/* Marcos's rocket: rendered from his 3D model (mmc_rocket_3d.glb) as two aligned transparent images, body and flame */
 interface Props { class?: string }
 const { class: cls } = Astro.props;
 ---
-<svg class:list={['rocket-svg', cls]} viewBox="0 0 60 150" aria-hidden="true" focusable="false">
-  <defs>
-    <linearGradient id="rkg-body" x1="0" x2="1"><stop offset="0" stop-color="#cdbda0" /><stop offset=".28" stop-color="#fffaf0" /><stop offset=".6" stop-color="#eee0c8" /><stop offset="1" stop-color="#a99577" /></linearGradient>
-    <linearGradient id="rkg-shade" x1="0" x2="1"><stop offset="0" stop-color="#3a2a14" stop-opacity="0" /><stop offset=".62" stop-color="#3a2a14" stop-opacity="0" /><stop offset="1" stop-color="#3a2a14" stop-opacity=".38" /></linearGradient>
-    <linearGradient id="rkg-nose" x1="0" x2="1"><stop offset="0" stop-color="#2a8f96" /><stop offset=".3" stop-color="#8fe3e6" /><stop offset=".65" stop-color="#2aa0a7" /><stop offset="1" stop-color="#0b4f55" /></linearGradient>
-    <linearGradient id="rkg-fin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a9a5a" /><stop offset=".55" stop-color="#6d6c3a" /><stop offset="1" stop-color="#43421f" /></linearGradient>
-    <linearGradient id="rkg-fin2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a9a5a" /><stop offset=".55" stop-color="#6d6c3a" /><stop offset="1" stop-color="#43421f" /></linearGradient>
-    <radialGradient id="rkg-glass" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#ffe29a" /><stop offset=".5" stop-color="#ffb21c" /><stop offset="1" stop-color="#a85a00" /></radialGradient>
-    <linearGradient id="rkg-ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4efe3" /><stop offset=".5" stop-color="#9c9484" /><stop offset="1" stop-color="#5b5648" /></linearGradient>
-    <linearGradient id="rkg-band" x1="0" x2="1"><stop offset="0" stop-color="#c98a14" /><stop offset=".3" stop-color="#ffd05a" /><stop offset="1" stop-color="#9c6407" /></linearGradient>
-    <linearGradient id="rkg-bell" x1="0" x2="1"><stop offset="0" stop-color="#3b4348" /><stop offset=".4" stop-color="#8d989d" /><stop offset="1" stop-color="#2b3236" /></linearGradient>
-    <linearGradient id="rkg-fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe0" /><stop offset=".3" stop-color="#ffc24a" /><stop offset=".7" stop-color="#ee6a22" /><stop offset="1" stop-color="#d2381c" stop-opacity="0" /></linearGradient>
-    <filter id="rkg-blur" x="-60%" y="-30%" width="220%" height="180%"><feGaussianBlur stdDeviation="2.2" /></filter>
-  </defs>
-  <g class="rk-flame">
-    <path d="M30 102 C46 116 44 140 30 150 C16 140 14 116 30 102Z" fill="#ff8a2a" opacity=".55" filter="url(#rkg-blur)" />
-    <path d="M30 100 C43 113 41 134 30 148 C19 134 17 113 30 100Z" fill="url(#rkg-fl)" />
-    <path d="M30 100 C37 110 36 123 30 135 C24 123 23 110 30 100Z" fill="#fff6c9" opacity=".95" />
-  </g>
-  <path d="M16 74 C9 84 4 98 2 112 L16 102Z" fill="url(#rkg-fin)" />
-  <path d="M16 90 L6 108 L16 101Z" fill="#2c2b13" opacity=".35" />
-  <path d="M44 74 C51 84 56 98 58 112 L44 102Z" fill="url(#rkg-fin2)" />
-  <path d="M44 90 L54 108 L44 101Z" fill="#2c2b13" opacity=".35" />
-  <path d="M20 98 L40 98 L43 108 L17 108Z" fill="url(#rkg-bell)" />
-  <ellipse cx="30" cy="108" rx="13" ry="2.6" fill="#161b1d" />
-  <path d="M30 2 C45 22 49 54 46.5 100 L13.5 100 C11 54 15 22 30 2Z" fill="url(#rkg-body)" />
-  <path d="M30 2 C45 22 49 54 46.5 100 L13.5 100 C11 54 15 22 30 2Z" fill="url(#rkg-shade)" />
-  <path d="M13.5 100 L46.5 100 L46 94 L14 94Z" fill="#3a2a14" opacity=".18" />
-  <rect x="12.5" y="80" width="35" height="6" fill="url(#rkg-band)" />
-  <path d="M30 2 C37.5 10.5 41.5 21 43.5 33 L16.5 33 C18.5 21 22.5 10.5 30 2Z" fill="url(#rkg-nose)" />
-  <path d="M24.5 8.5 C21.5 14 19.5 21 18.6 29" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".55" />
-  <path d="M16.5 33 L43.5 33 L43.1 35 L16.9 35Z" fill="#06383d" opacity=".5" />
-  <circle cx="19.5" cy="42" r=".9" fill="#a99577" /><circle cx="40.5" cy="42" r=".9" fill="#a99577" />
-  <circle cx="30" cy="57" r="11" fill="url(#rkg-ring)" />
-  <circle cx="30" cy="57" r="8.2" fill="url(#rkg-glass)" />
-  <path d="M24.4 53.2 a6.6 6.6 0 0 1 5.6-3.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8" />
-  <ellipse cx="33.6" cy="61.6" rx="2.6" ry="1.4" fill="#fff" opacity=".28" />
-  <path d="M30 67.5 l1.5 3.2 3.5.4-2.6 2.4.7 3.5-3.1-1.8-3.1 1.8.7-3.5-2.6-2.4 3.5-.4z" fill="#d8553f" transform="translate(0 -2.4)" />
-</svg>
+<span class:list={['rocket-svg', cls]} aria-hidden="true">
+  <i class="rk-glow"></i>
+  <img class="rk-flame" src="/img/rocket-flame.png" alt="" width="512" height="1024" decoding="async" />
+  <img class="rk-body" src="/img/rocket-body.png" alt="" width="512" height="1024" decoding="async" />
+</span>
