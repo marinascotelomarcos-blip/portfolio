@@ -502,7 +502,6 @@ function buildRoute(opts) {
   };
 }
 
-/* ---------- Contact: a paper plane ---------- */
 /* ---------- CICLO Watches: a brushed-titanium smartwatch with modular nylon straps (as in the project's photos) ---------- */
 function dialTexture() {
   const W = 512, H = 620, c = document.createElement('canvas'); c.width = W; c.height = H;

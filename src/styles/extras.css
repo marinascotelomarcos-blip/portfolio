@@ -67,3 +67,44 @@
 @media (prefers-reduced-motion: reduce) {
   .ic-coin, .ic-spin, .ic-chip > span, .close.hb::before { animation: none !important; }
 }
+
+/* ---- Lift-off: rocket from the globe, then the 2027 screen in space ---- */
+.launch-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; min-height: 48px; padding: 0 20px; border-radius: 4px; border: 1px solid var(--teal); background: var(--teal); color: var(--on-teal); font: inherit; font-weight: 560; cursor: pointer; transition: transform .2s, background .25s; }
+.launch-btn svg { width: 18px; height: 18px; transition: transform .35s var(--ease); }
+.launch-btn:hover { background: var(--teal-ink); border-color: var(--teal-ink); }
+.launch-btn:hover svg { transform: translateY(-3px); }
+.launch-btn:active { transform: scale(.97); }
+
+.tour.liftoff .tour-globe { animation: lo-shake .09s linear 9; }
+.tour .tour-globe .scene { transition: transform 1.4s var(--ease), opacity 1.4s; }
+.tour.liftoff .tour-globe .scene { transform: scale(.93); opacity: .6; }
+@keyframes lo-shake { 0%, 100% { translate: 0 0; } 25% { translate: -2px 1px; } 75% { translate: 2px -1px; } }
+
+.rocket-fly { position: fixed; z-index: 120; width: 54px; height: 135px; margin: -68px 0 0 -27px; pointer-events: none; transform-origin: 50% 85%; will-change: transform; opacity: 0; }
+.rocket-fly .rocket-svg { width: 100%; height: 100%; overflow: visible; }
+.rk-flame { transform-origin: 30px 100px; animation: rkFlame .09s ease-in-out infinite alternate; }
+@keyframes rkFlame { from { transform: scale(.88, .8); } to { transform: scale(1.1, 1.28); } }
+.puff { position: fixed; z-index: 119; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; pointer-events: none; opacity: .9; background: radial-gradient(circle at 40% 40%, rgba(255,255,255,.9), rgba(196,210,214,.55) 55%, rgba(120,140,148,0) 72%); animation: puff var(--d, 1.2s) ease-out forwards; }
+.spark-f { position: fixed; z-index: 121; width: 7px; height: 7px; margin: -3px 0 0 -3px; border-radius: 50%; pointer-events: none; background: #ffb84a; box-shadow: 0 0 10px 2px rgba(255,140,40,.9); animation: puff var(--d, .5s) ease-out forwards; }
+@keyframes puff { to { transform: translate(var(--dx), var(--dy)) scale(var(--s)); opacity: 0; } }
+
+.space { --bg: #05090c; --bg-2: #0b1318; --ink: #e7eef0; --ink-2: #9db0b8; --rule: #22323a; --teal: #3bb8be; --teal-ink: #6fd0d4; --on-teal: #07181a; color: var(--ink); color-scheme: dark;
+  position: relative; isolation: isolate; overflow: hidden; margin-top: clamp(36px, 6vw, 72px); border: 1px solid #1c3340; border-radius: 14px; min-height: min(100svh, 680px); display: grid; place-items: center; text-align: center; padding: clamp(60px, 10vw, 110px) var(--gutter); background: radial-gradient(120% 70% at 50% 0%, #0d2a31 0%, #05090c 60%) , #05090c; }
+.space-stars { position: absolute; inset: 0; z-index: -1; }
+.space-stars i { position: absolute; inset: 0; background-repeat: repeat; animation: twinkle 4s ease-in-out infinite alternate; }
+.space-stars i:nth-child(1) { background-image: radial-gradient(1px 1px at 20px 30px, #fff, transparent), radial-gradient(1px 1px at 90px 120px, #cfe, transparent), radial-gradient(1.5px 1.5px at 160px 60px, #fff, transparent), radial-gradient(1px 1px at 230px 180px, #9ef, transparent); background-size: 260px 220px; }
+.space-stars i:nth-child(2) { background-image: radial-gradient(1px 1px at 50px 90px, #fff, transparent), radial-gradient(1.5px 1.5px at 140px 20px, #bff, transparent), radial-gradient(1px 1px at 200px 140px, #fff, transparent); background-size: 310px 260px; animation-delay: -1.5s; animation-duration: 5.5s; opacity: .8; }
+.space-stars i:nth-child(3) { background-image: radial-gradient(2px 2px at 80px 70px, rgba(255,255,255,.9), transparent), radial-gradient(1px 1px at 250px 200px, #fff, transparent); background-size: 380px 300px; animation-delay: -3s; animation-duration: 7s; opacity: .7; }
+@keyframes twinkle { from { opacity: .35; } to { opacity: 1; } }
+.space-limb { position: absolute; z-index: -1; left: 50%; top: -88%; width: 190%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, #05090c 92%, rgba(59,184,190,.22) 96%, rgba(59,184,190,.55) 99%, transparent 100%); filter: blur(1px); }
+.space-in { display: grid; justify-items: center; gap: 14px; max-width: 640px; }
+.space-rocket { width: 38px; height: 95px; margin-bottom: 8px; animation: spaceHover 5s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(59,184,190,.45)); overflow: visible; }
+@keyframes spaceHover { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+.space-kind { margin: 0; color: var(--teal-ink); letter-spacing: .16em; text-transform: uppercase; font-size: .72rem; }
+.space h2 { margin: 0; font-size: clamp(2.2rem, 6.4vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; text-wrap: balance; }
+.space-lede { margin: 0; color: var(--ink-2); max-width: 44ch; }
+.space-count { display: flex; align-items: baseline; gap: 12px; margin-top: 10px; }
+.space-count b { font-size: clamp(3.4rem, 11vw, 6.4rem); line-height: 1; letter-spacing: -0.05em; font-weight: 600; color: var(--teal-ink); }
+.space-count span { color: var(--ink-2); text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; }
+.space::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 2px; height: 56px; background: linear-gradient(var(--teal), transparent); opacity: .8; }
+@media (prefers-reduced-motion: reduce) { .space-stars i, .space-rocket, .rk-flame, .tour.liftoff .tour-globe { animation: none !important; } }

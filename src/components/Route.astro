@@ -1,5 +1,6 @@
 ---
 import { VISITED, T, EMAIL, CV, type Lang } from '../lib/content';
+import Rocket from './Rocket.astro';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const h = T[lang].home;
@@ -26,6 +27,7 @@ const items: Item[] = [
   work(0),
   { kind: 'next', when: next.when, title: next.where, line: next.what, node: next.where },
 ];
+const launchLabel = lang === 'en' ? 'Lift off to 2027' : 'Despegar hacia 2027';
 const kindLabel = { study: ui.study, work: ui.work, next: ui.next };
 const stops = items.map((i) => (i.lat !== undefined ? { lat: i.lat, lon: i.lon } : null));
 const kinds = items.map((i) => i.kind);
@@ -40,7 +42,7 @@ const kinds = items.map((i) => i.kind);
           <>
             <h3>{rn.headline}</h3>
             <p class="stop-line">{rn.lede}</p>
-            <div class="next-count"><b class="next-days tnum" data-days data-done={rn.now}>0</b><span class="mono">{rn.days}</span></div>
+            <button class="launch-btn" type="button" data-launch>{launchLabel}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg></button>
           </>
         ) : (
           <>
@@ -118,7 +120,7 @@ const kinds = items.map((i) => i.kind);
     }
     function tick() {
       window.clearTimeout(timer);
-      if (playing && visible && !hovering) timer = window.setTimeout(() => { show(cur + 1); tick(); }, 3200);
+      if (playing && visible && !hovering && cur < N - 1) timer = window.setTimeout(() => { show(cur + 1); tick(); }, 3200);
     }
     function setPlaying(v: boolean) {
       playing = v;
@@ -146,23 +148,50 @@ const kinds = items.map((i) => i.kind);
       visible = es[0].isIntersecting;
       if (visible && !started && !reduce) { started = true; setPlaying(true); } else tick();
     }, { threshold: 0.35 }).observe(root);
+
+    /* Lift-off: the last stop sends a rocket up out of the globe, with fire and smoke, while the page scrolls to the 2027 screen */
+    const launchBtn = root.querySelector<HTMLButtonElement>('[data-launch]');
+    const space = document.getElementById('space');
+    let launching = false;
+    function launch() {
+      if (!space || launching) return;
+      if (reduce) { space.scrollIntoView({ behavior: 'auto', block: 'start' }); return; }
+      launching = true; setPlaying(false);
+      const g = scene.getBoundingClientRect();
+      const cx = g.left + g.width / 2, cy = g.top + g.height * 0.52;
+      const src = document.querySelector('.space .rocket-svg');
+      const rocket = document.createElement('div');
+      rocket.className = 'rocket-fly';
+      rocket.style.left = cx + 'px'; rocket.style.top = cy + 'px';
+      if (src) rocket.appendChild(src.cloneNode(true));
+      document.body.appendChild(rocket);
+      root.classList.add('liftoff');
+      const IGNITE = 800, FLIGHT = 2300;
+      rocket.animate([{ transform: 'translateY(0) scale(.3)', opacity: 0 }, { transform: 'translateY(-6px) scale(.55)', opacity: 1, offset: .25 }, { transform: 'translateY(-4px) scale(.6)', opacity: 1 }], { duration: IGNITE, easing: 'ease-out', fill: 'forwards' });
+      const fly = rocket.animate([{ transform: 'translateY(-4px) scale(.6)' }, { transform: `translateY(${-(cy + 260)}px) scale(1.25)` }], { duration: FLIGHT, delay: IGNITE, easing: 'cubic-bezier(.55,.02,.85,.45)', fill: 'forwards' });
+      window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), IGNITE + 500);
+      const t0 = performance.now(); let last = 0;
+      const puff = (x: number, y: number, fire: boolean) => {
+        const e = document.createElement('i'); e.className = fire ? 'spark-f' : 'puff';
+        const a = (Math.random() - 0.5) * 70;
+        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${fire ? 0.2 : 2.6 + Math.random() * 2.2};--d:${fire ? 0.5 : 1 + Math.random() * 0.7}s`;
+        document.body.appendChild(e); e.addEventListener('animationend', () => e.remove());
+      };
+      const loop = (t: number) => {
+        if (t - last > 34) {
+          last = t;
+          const r = rocket.getBoundingClientRect();
+          const tx = r.left + r.width / 2, ty = r.bottom - r.height * 0.08;
+          const power = t - t0 < IGNITE ? 1 : 2;
+          for (let k = 0; k < power; k++) puff(tx, ty, false);
+          if (Math.random() < 0.7) puff(tx, ty - 6, true);
+        }
+        if (t - t0 < IGNITE + FLIGHT + 200) requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+      fly.finished.then(() => { rocket.remove(); root.classList.remove('liftoff'); launching = false; show(0); }).catch(() => { rocket.remove(); launching = false; });
+    }
+    launchBtn?.addEventListener('click', launch);
     show(0);
-  }
-</script>
-<script>
-  const dEl = document.querySelector<HTMLElement>('[data-days]');
-  const card = dEl ? (dEl.closest('.stop-card') as HTMLElement | null) : null;
-  if (dEl && card) {
-    const left = Math.max(0, Math.ceil((new Date(2027, 0, 1).getTime() - Date.now()) / 86400000));
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const run = () => {
-      if (left === 0) { dEl.textContent = dEl.dataset.done || ''; return; }
-      if (reduce) { dEl.textContent = String(left); return; }
-      const t0 = performance.now();
-      const step = (t: number) => { const k = Math.min(1, (t - t0) / 1000); dEl.textContent = String(Math.round(left * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
-      requestAnimationFrame(step);
-    };
-    dEl.textContent = String(left);
-    new MutationObserver(() => { if (!card.hidden) run(); }).observe(card, { attributes: true, attributeFilter: ['hidden'] });
   }
 </script>

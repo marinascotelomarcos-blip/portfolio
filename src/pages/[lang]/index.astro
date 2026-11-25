@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Room from '../../components/Room.astro';
 import Route from '../../components/Route.astro';
+import Rocket from '../../components/Rocket.astro';
 import { T, LANGS, EMAIL, CV, LINKEDIN, type Lang } from '../../lib/content';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
@@ -58,6 +59,18 @@ const h = T[lang].home;
     <h2 class="sec" id="route">{h.routeTitle}</h2>
     <Route lang={lang} />
 
+    <section class="space" id="space" aria-labelledby="space-h">
+      <div class="space-stars" aria-hidden="true"><i></i><i></i><i></i></div>
+      <span class="space-limb" aria-hidden="true"></span>
+      <div class="space-in">
+        <Rocket class="space-rocket" />
+        <p class="mono space-kind">{lang === 'en' ? 'Countdown' : 'Cuenta atrás'}</p>
+        <h2 id="space-h">{h.routeNext.headline}</h2>
+        <p class="space-lede">{h.routeNext.lede}</p>
+        <div class="space-count"><b class="tnum" data-days data-done={h.routeNext.now}>0</b><span class="mono">{h.routeNext.days}</span></div>
+      </div>
+    </section>
+
     <section class="close hb">
       <div class="hb-copy">
         <p class="mono hb-status"><i></i>{lang === 'en' ? 'Available from January 2027' : 'Disponible desde enero de 2027'}</p>
@@ -72,4 +85,22 @@ const h = T[lang].home;
       <span class="hb-mark" aria-hidden="true">MMC</span>
     </section>
   </div>
+
+<script>
+  const dEl = document.querySelector<HTMLElement>('[data-days]');
+  if (dEl) {
+    const left = Math.max(0, Math.ceil((new Date(2027, 0, 1).getTime() - Date.now()) / 86400000));
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    dEl.textContent = String(left);
+    new IntersectionObserver((es, io) => {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      if (left === 0) { dEl.textContent = dEl.dataset.done || ''; return; }
+      if (reduce) return;
+      const t0 = performance.now();
+      const step = (t: number) => { const k = Math.min(1, (t - t0) / 1600); dEl.textContent = String(Math.round(left * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }, { threshold: 0.4 }).observe(dEl);
+  }
+</script>
 </Base>
