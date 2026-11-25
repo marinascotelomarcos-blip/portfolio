@@ -1,0 +1,346 @@
+---
+// La oficina de agentes («Equipo») del Dashboard, en pequeño y con datos inventados.
+// Planta isométrica dibujada en SVG; muebles de Kenney (CC0, ver public/office/LICENSE-kenney.txt); figuritas propias.
+import type { Lang } from '../lib/content';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const en = lang === 'en';
+
+const L = en
+  ? {
+      title: 'The agent office', fake: 'Demo with made-up data',
+      lede: 'In the real Dashboard, a small team of agents works on scheduled tasks while I do other things: sorting the inbox, writing summaries, filing. Each room is one task and the little robot inside shows how it is going. Here it is, with invented tasks.',
+      hint: 'Tap a room to see what it does.', ok: 'Working', retry: 'Retrying', sleep: 'Asleep', you: 'You',
+      what: 'What it does', last: 'Latest runs', legend: 'Room colour = state',
+      sum: (a: number, b: number, c: number) => `${a} working · ${b} retrying · ${c} asleep`,
+      note: 'Every task, name, time and number on this page is made up. The real office reads my own tasks and never leaves my Mac.',
+      credit: 'Furniture: Kenney (CC0).',
+      aria: 'Isometric floor plan of a small office with five rooms: your desk in the middle and four agent rooms around it.',
+    }
+  : {
+      title: 'La oficina de agentes', fake: 'Demo con datos de mentira',
+      lede: 'En el Dashboard de verdad, un equipo pequeño de agentes trabaja en tareas programadas mientras yo hago otras cosas: ordenar el correo, redactar resúmenes, archivar. Cada habitación es una tarea y el robot de dentro enseña cómo va. Aquí está, con tareas inventadas.',
+      hint: 'Toca una habitación para ver qué hace.', ok: 'Trabajando', retry: 'Reintentando', sleep: 'Dormido', you: 'Tú',
+      what: 'Qué hace', last: 'Últimas veces', legend: 'Color de la sala = estado',
+      sum: (a: number, b: number, c: number) => `${a} trabajando · ${b} reintentando · ${c} dormido`,
+      note: 'Todas las tareas, nombres, horas y números de esta página son inventados. La oficina real lee mis tareas y no sale de mi Mac.',
+      credit: 'Muebles: Kenney (CC0).',
+      aria: 'Plano isométrico de una oficina pequeña con cinco habitaciones: tu mesa en el centro y cuatro salas de agentes alrededor.',
+    };
+
+type Room = { k: string; est: 'ok' | 'reintenta' | 'duerme' | 'tu'; name: string; agent: string; what: string; acts: string[]; hist: [string, string][]; when: string };
+const rooms: Room[] = en
+  ? [
+      { k: 'tu', est: 'tu', name: 'Your desk', agent: 'You', what: 'Where the decisions are made: approve, discard, postpone.', acts: ['Reading the summary'], hist: [['Approved the weekly summary', 'today 08:40'], ['Postponed “tidy the archive”', 'yesterday'], ['Discarded two duplicate alerts', 'yesterday']], when: 'by hand' },
+      { k: 'resumen', est: 'ok', name: 'Summary room', agent: 'Quill', what: 'Writes a short summary of the week from the other rooms and leaves it on your desk.', acts: ['Drafting the summary…', 'Checking the dates…', 'Ready to review'], hist: [['Weekly summary done', 'today 08:20'], ['Weekly summary done', 'last Mon'], ['Nothing new, skipped', '2 weeks ago']], when: 'today 08:20' },
+      { k: 'bandeja', est: 'ok', name: 'Inbox room', agent: 'Belt', what: 'Sorts the inbox and marks what is urgent. It never answers anything on its own.', acts: ['Sorting 18 messages…', 'Marking the urgent ones', 'Inbox sorted'], hist: [['Sorted the inbox', '12 min ago'], ['Sorted the inbox', '1 h ago'], ['Marked 2 as urgent', '3 h ago']], when: '12 min ago' },
+      { k: 'archivo', est: 'reintenta', name: 'Archive', agent: 'Lens', what: 'Saves copies of notes and files. If a folder is not ready, it tries again later.', acts: ['Folder not ready, trying again', 'Retry at 14:30'], hist: [['Failed: folder not ready', 'today 13:55'], ['Saved 24 notes', 'yesterday'], ['Saved 9 notes', '2 days ago']], when: 'retry 14:30' },
+      { k: 'vigia', est: 'duerme', name: 'Night watch', agent: 'Owl', what: 'Wakes up in the evening to warn about anything past its date.', acts: ['Zzz…'], hist: [['Warned about 1 late task', 'yesterday 21:00'], ['All fine, stayed quiet', '2 days ago'], ['All fine, stayed quiet', '3 days ago']], when: 'wakes at 21:00' },
+    ]
+  : [
+      { k: 'tu', est: 'tu', name: 'Tu mesa', agent: 'Tú', what: 'Donde se decide: aprobar, descartar, dejar para mañana.', acts: ['Leyendo el resumen'], hist: [['Aprobado el resumen semanal', 'hoy 08:40'], ['Aplazado «ordenar el archivo»', 'ayer'], ['Descartados dos avisos repetidos', 'ayer']], when: 'a mano' },
+      { k: 'resumen', est: 'ok', name: 'Sala del resumen', agent: 'Pluma', what: 'Escribe un resumen corto de la semana con lo de las otras salas y lo deja en tu mesa.', acts: ['Redactando el resumen…', 'Revisando las fechas…', 'Listo para revisar'], hist: [['Resumen semanal hecho', 'hoy 08:20'], ['Resumen semanal hecho', 'lun pasado'], ['Nada nuevo, saltado', 'hace 2 semanas']], when: 'hoy 08:20' },
+      { k: 'bandeja', est: 'ok', name: 'Sala de la bandeja', agent: 'Cinta', what: 'Ordena la bandeja de entrada y marca lo urgente. Nunca contesta nada por su cuenta.', acts: ['Ordenando 18 mensajes…', 'Marcando lo urgente', 'Bandeja ordenada'], hist: [['Bandeja ordenada', 'hace 12 min'], ['Bandeja ordenada', 'hace 1 h'], ['2 marcados como urgentes', 'hace 3 h']], when: 'hace 12 min' },
+      { k: 'archivo', est: 'reintenta', name: 'Archivo', agent: 'Lupa', what: 'Guarda copias de notas y archivos. Si una carpeta no está lista, lo vuelve a intentar más tarde.', acts: ['Carpeta no lista, reintento', 'Reintento a las 14:30'], hist: [['Falló: carpeta no lista', 'hoy 13:55'], ['Guardadas 24 notas', 'ayer'], ['Guardadas 9 notas', 'hace 2 días']], when: 'reintento 14:30' },
+      { k: 'vigia', est: 'duerme', name: 'Guardia de noche', agent: 'Búho', what: 'Se despierta por la tarde para avisar de lo que se ha pasado de fecha.', acts: ['Zzz…'], hist: [['Avisó de 1 tarea atrasada', 'ayer 21:00'], ['Todo bien, no dijo nada', 'hace 2 días'], ['Todo bien, no dijo nada', 'hace 3 días']], when: 'despierta a las 21:00' },
+    ];
+
+const stateLabel: Record<string, string> = { ok: L.ok, reintenta: L.retry, duerme: L.sleep, tu: L.you };
+const n = (e: string) => rooms.filter((r) => r.est === e).length;
+const payload = { rooms, stateLabel };
+---
+<section class="of" data-office data-payload={JSON.stringify(payload)} aria-labelledby="of-title">
+  <div class="of-head">
+    <div>
+      <h2 class="sec" id="of-title" style="margin-top:0">{L.title}</h2>
+      <p class="prose of-lede">{L.lede}</p>
+    </div>
+    <p class="of-fake mono"><i></i>{L.fake}</p>
+  </div>
+
+  <div class="of-grid">
+    <figure class="of-stage">
+      <svg role="img" aria-label={L.aria} viewBox="-360 20 720 520" preserveAspectRatio="xMidYMid meet"></svg>
+      <figcaption class="mono">{L.hint} <span>{L.sum(n('ok'), n('reintenta'), n('duerme'))}</span></figcaption>
+    </figure>
+
+    <aside class="of-panel" aria-live="polite">
+      <p class="of-state mono" data-of-state></p>
+      <h3 data-of-name></h3>
+      <p class="of-who mono" data-of-who></p>
+      <p class="of-what" data-of-what></p>
+      <p class="of-sub mono">{L.last}</p>
+      <ul class="of-hist" data-of-hist></ul>
+      <ul class="of-legend mono" aria-label={L.legend}>
+        <li><i style="--c:#30d158"></i>{L.ok}</li>
+        <li><i style="--c:#ff9f0a"></i>{L.retry}</li>
+        <li><i style="--c:#8e8e93"></i>{L.sleep}</li>
+        <li><i style="--c:#0a84ff"></i>{L.you}</li>
+      </ul>
+    </aside>
+  </div>
+  <p class="of-note">{L.note} <span>{L.credit}</span></p>
+</section>
+
+<style is:global>
+  .of { --of-floor: #fbfbfc; --of-canto1: #d9dce2; --of-canto2: #e6e8ec; --of-pasillo: #eef0f3; --of-sombra: rgba(20,40,77,.16); margin-top: clamp(40px, 6vw, 72px); }
+  :root[data-mode='dark'] .of { --of-floor: #1a242a; --of-canto1: #0d1316; --of-canto2: #141c20; --of-pasillo: #151e23; --of-sombra: rgba(0,0,0,.45); }
+  .of-head { display: flex; flex-wrap: wrap; gap: 14px 32px; justify-content: space-between; align-items: flex-end; }
+  .of-lede { max-width: 62ch; margin: 12px 0 0; }
+  .of-fake { display: inline-flex; align-items: center; gap: 9px; margin: 0; padding: 6px 14px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; border: 1px dashed var(--teal); border-radius: 99px; color: var(--teal-ink); white-space: nowrap; }
+  .of-fake i { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; }
+  .of-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(250px, 1fr); gap: clamp(16px, 3vw, 32px); margin-top: 24px; align-items: stretch; }
+  .of-stage { margin: 0; position: relative; border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--teal) 9%, var(--bg-2)), var(--bg-2)); }
+  .of-stage svg { display: block; width: 100%; height: auto; max-height: 640px; }
+  .of-stage figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 10px 16px 12px; font-size: .7rem; letter-spacing: .04em; color: var(--ink-2); border-top: 1px solid var(--rule); }
+  .of-stage figcaption span { color: var(--ink); }
+  .of .sala { cursor: pointer; outline: none; }
+  .of .sala .of-floor { transition: filter .25s; }
+  .of .sala:hover .of-floor, .of .sala:focus-visible .of-floor { filter: brightness(1.06); }
+  .of .sala .of-borde { transition: stroke-width .2s, opacity .2s; }
+  .of .of-borde.elegida { stroke-width: 3.8; opacity: 1; }
+  .of .of-canto1 { fill: var(--of-canto1); } .of .of-canto2 { fill: var(--of-canto2); }
+  .of .of-pasillo { fill: var(--of-pasillo); }
+  :root[data-mode='dark'] .of image { filter: brightness(.86) contrast(1.04); }
+  .of .of-etq text { font-family: var(--sans); }
+  .of .of-latido { animation: of-latido 2.2s ease-in-out infinite; }
+  .of .of-teclea { animation: of-teclea .9s ease-in-out infinite; }
+  .of .of-zeta { animation: of-zeta 3s ease-in-out infinite; opacity: 0; }
+  .of .of-flujo { animation: of-flujo 1.2s linear infinite; }
+  .of .of-saluda { animation: of-saluda 1.1s ease-in-out infinite; }
+  .of .of-ojos { transform-box: fill-box; transform-origin: 50% 50%; animation: of-parpadea 5s infinite; }
+  .of .of-burbuja { transition: opacity .35s; }
+  @keyframes of-latido { 50% { opacity: .45; } }
+  @keyframes of-teclea { 50% { transform: translateY(-1.5px); } }
+  @keyframes of-zeta { 0% { opacity: 0; transform: translate(0, 0); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(10px, -22px); } }
+  @keyframes of-flujo { to { stroke-dashoffset: -16; } }
+  @keyframes of-saluda { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(16deg); } }
+  @keyframes of-parpadea { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+  .of-panel { display: flex; flex-direction: column; gap: 6px; padding: clamp(18px, 2.4vw, 26px); border: 1px solid var(--rule); border-radius: 16px; background: color-mix(in oklab, var(--bg-2) 80%, transparent); }
+  .of-state { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+  .of-state::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--teal)); box-shadow: 0 0 10px var(--c, var(--teal)); }
+  .of-panel h3 { margin: 4px 0 0; font-size: 1.5rem; letter-spacing: -.02em; font-weight: 560; }
+  .of-who { margin: 0; font-size: .72rem; color: var(--teal-ink); }
+  .of-what { margin: 8px 0 4px; color: var(--ink-2); }
+  .of-sub { margin: 12px 0 2px; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+  .of-hist { list-style: none; margin: 0; padding: 0; display: grid; }
+  .of-hist li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--rule); font-size: .92rem; }
+  .of-hist li span:last-child { flex: none; font-family: var(--mono); font-size: .72rem; color: var(--ink-2); padding-top: 2px; }
+  .of-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: auto 0 0; padding: 16px 0 0; font-size: .68rem; color: var(--ink-2); }
+  .of-legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .of-legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .of-note { margin: 14px 0 0; font-size: .86rem; color: var(--ink-2); max-width: 70ch; }
+  .of-note span { opacity: .7; }
+  @media (max-width: 860px) { .of-grid { grid-template-columns: 1fr; } .of-head { align-items: flex-start; } }
+  @media (prefers-reduced-motion: reduce) { .of .of-latido, .of .of-teclea, .of .of-zeta, .of .of-flujo, .of .of-saluda, .of .of-ojos { animation: none !important; } .of .of-zeta { opacity: .7; } }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-office]');
+  if (root) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = root.querySelector('svg') as SVGSVGElement;
+    const { rooms, stateLabel } = JSON.parse(root.dataset.payload || '{}') as { rooms: any[]; stateLabel: Record<string, string> };
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const T = 22;
+    const P = (x: number, y: number, z = 0): [number, number] => [(x - y) * T * 0.866, (x + y) * T * 0.5 - z * T];
+    const el = (tag: string, attrs: Record<string, any> = {}, parent: Element = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, String(attrs[k])); parent.appendChild(e); return e; };
+    const pts = (a: [number, number][]) => a.map((p) => p.join(',')).join(' ');
+    const rombo = (x: number, y: number, w: number, d: number, z = 0): [number, number][] => [P(x, y, z), P(x + w, y, z), P(x + w, y + d, z), P(x, y + d, z)];
+    const COL: Record<string, string> = { ok: '#30d158', reintenta: '#ff9f0a', duerme: '#8e8e93', tu: '#0a84ff' };
+    const ACENTO: Record<string, string> = { tu: '#0a84ff', resumen: '#30d158', bandeja: '#ff9f0a', archivo: '#64d2ff', vigia: '#a78bfa' };
+
+    const defs = el('defs');
+    defs.innerHTML = `<filter id="of-b2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="of-b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+
+    // Geometría: una cruz con «Tu mesa» en el centro
+    const G: Record<string, { x: number; y: number; w: number; d: number }> = {
+      tu: { x: 10, y: 10, w: 8, d: 8 }, resumen: { x: 10, y: 0, w: 7, d: 7 }, bandeja: { x: 21, y: 10, w: 7, d: 7 },
+      archivo: { x: 10, y: 21, w: 8, d: 7 }, vigia: { x: 0, y: 10, w: 7, d: 7 },
+    };
+    const pasillos: [number, number, number, number, string][] = [
+      [12.5, 6.6, 3, 3.6, 'resumen'], [17.6, 12.5, 3.6, 3, 'bandeja'], [12.5, 17.6, 3, 3.6, 'archivo'], [6.6, 12.5, 3.6, 3, 'vigia'],
+    ];
+
+    const capaSuelo = el('g'), capaAlf = el('g'), capaBordes = el('g'), capaCosas = el('g'), capaEtq = el('g');
+    const objetos: { prof: number; pintar: (p: Element) => void }[] = [];
+    const sombra = 'rgba(20,40,77,0.16)';
+    const roomOf = (k: string) => rooms.find((r) => r.k === k);
+
+    // Suelos
+    pasillos.forEach(([x, y, w, d, k]) => {
+      el('polygon', { points: pts(rombo(x, y, w, d)), class: 'of-pasillo' }, capaSuelo);
+      const r = roomOf(k);
+      if (r && r.est === 'ok') {
+        const cx = x + w / 2, cy = y + d / 2;
+        const l = w > d ? [P(x, cy), P(x + w, cy)] : [P(cx, y), P(cx, y + d)];
+        el('polyline', { points: pts(l as any), stroke: '#5ac8fa', 'stroke-width': 2.4, 'stroke-dasharray': '6 10', fill: 'none', class: 'of-flujo', 'stroke-linecap': 'round' }, capaBordes);
+      }
+    });
+    const salas: Record<string, SVGGElement> = {};
+    rooms.forEach((r) => {
+      const d = G[r.k], c = COL[r.est], acc = ACENTO[r.k];
+      const g = el('g', { class: 'sala', 'data-k': r.k, tabindex: 0, role: 'button', 'aria-label': `${r.name}: ${stateLabel[r.est]}` }, capaSuelo) as SVGGElement;
+      salas[r.k] = g;
+      const z = -0.35;
+      el('polygon', { class: 'of-canto1', points: pts([P(d.x, d.y + d.d), P(d.x + d.w, d.y + d.d), P(d.x + d.w, d.y + d.d, z), P(d.x, d.y + d.d, z)]) }, g);
+      el('polygon', { class: 'of-canto2', points: pts([P(d.x + d.w, d.y), P(d.x + d.w, d.y + d.d), P(d.x + d.w, d.y + d.d, z), P(d.x + d.w, d.y, z)]) }, g);
+      el('polygon', { class: 'of-floor', points: pts(rombo(d.x, d.y, d.w, d.d)), style: `fill:color-mix(in oklab, ${acc} 13%, var(--of-floor))` }, g);
+      const gb = el('g', { filter: 'url(#of-b)', 'pointer-events': 'none' }, capaBordes);
+      el('polygon', { class: 'of-borde-' + r.k, points: pts(rombo(d.x + 0.1, d.y + 0.1, d.w - 0.2, d.d - 0.2)), fill: 'none', stroke: c, 'stroke-width': r.est === 'duerme' ? 1.6 : 2.4, 'stroke-linejoin': 'round', opacity: r.est === 'duerme' ? 0.6 : 0.95 }, gb).classList.add('of-borde', ...(r.est === 'reintenta' ? ['of-latido'] : []));
+      // el borde que se resalta al elegir va dentro del grupo de la sala para poder cambiarlo con CSS
+    });
+
+    // Piezas
+    const K3: Record<string, number[]> = {};
+    const KZ: Record<string, number> = { furniture: 2.0, mini: 1.35, factory: 1.05 };
+    const k3 = (n: string, x: number, y: number, o: { z?: number; sobre?: any; plano?: boolean; kz?: number } = {}) => {
+      const m = K3[n]; if (!m) return { w: 0, d: 0, h: 0, prof: 0 };
+      const kz = o.kz || KZ[n.split('-')[0]] || 2, [iw, ih, ox, oy, px, x0, x1, y0, y1, u1] = m, s = (T * kz) / px;
+      const w = (x1 - x0) * kz, d = (y1 - y0) * kz, z = o.z || 0;
+      const pintar = (parent: Element) => { const [qx, qy] = P(x - x0 * kz, y - y0 * kz, z); el('image', { href: `/office/${n}.png`, x: qx - ox * s, y: qy - oy * s, width: iw * s, height: ih * s }, parent); };
+      const prof = o.sobre ? o.sobre.prof + 0.01 : x + y + w + d;
+      if (o.plano) pintar(capaAlf); else objetos.push({ prof, pintar });
+      return { w, d, h: u1 * kz, prof };
+    };
+
+    const mezcla = (hex: string, con: string, k: number) => { const nn = (h: string) => parseInt(h, 16); const a = [1, 3, 5].map((i) => nn(hex.substr(i, 2))), b = [1, 3, 5].map((i) => nn(con.substr(i, 2))); return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
+    const grads: Record<string, string> = {};
+    const brillo = (c: string) => {
+      if (grads[c]) return grads[c];
+      const id = 'ofg' + c.slice(1);
+      defs.insertAdjacentHTML('beforeend', `<radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${mezcla(c, '#ffffff', 0.75)}"/><stop offset="0.35" stop-color="${mezcla(c, '#ffffff', 0.2)}"/><stop offset="0.7" stop-color="${c}"/><stop offset="1" stop-color="${mezcla(c, '#000000', 0.35)}"/></radialGradient>`);
+      return (grads[c] = `url(#${id})`);
+    };
+    const burbujas: { g: SVGGElement; t: SVGTextElement; r: SVGRectElement; acts: string[]; i: number }[] = [];
+    const figurita = (g: Element, px: number, py: number, color: string, est: string, acts: string[]) => {
+      el('ellipse', { cx: px, cy: py, rx: 8.5, ry: 3.6, fill: sombra }, g);
+      const c = est === 'duerme' ? '#b8bcc6' : color;
+      const cuerpo = el('g', { class: est === 'ok' || est === 'tu' ? 'of-teclea' : '' }, g);
+      [-3.2, 3.2].forEach((dx) => el('ellipse', { cx: px + dx, cy: py - 1, rx: 3, ry: 1.8, fill: mezcla(c, '#000000', 0.45) }, cuerpo));
+      el('rect', { x: px - 8.5, y: py - 31, width: 17, height: 30, rx: 8.5, fill: brillo(c) }, cuerpo);
+      el('ellipse', { cx: px - 3.5, cy: py - 25, rx: 2.8, ry: 4.5, fill: '#fff', opacity: 0.55 }, cuerpo);
+      el('rect', { x: px - 6.5, y: py - 25, width: 13, height: 7.5, rx: 3.75, fill: '#141821' }, cuerpo);
+      const ojos = el('g', { class: est === 'duerme' ? '' : 'of-ojos' }, cuerpo);
+      if (est === 'duerme') {
+        [-2.7, 2.7].forEach((dx) => el('rect', { x: px + dx - 1.6, y: py - 21.6, width: 3.2, height: 0.9, rx: 0.45, fill: '#9be7ff' }, ojos));
+        ['z', 'z', 'Z'].forEach((tz, i) => { const tx = el('text', { x: px + 10 + i * 3, y: py - 30 - i * 5, fill: '#8e8e93', 'font-size': 8 + i * 2, 'font-weight': 700, class: 'of-zeta', style: `animation-delay:${i * 0.9}s` }, cuerpo); tx.textContent = tz; });
+      } else {
+        [-2.7, 2.7].forEach((dx) => el('rect', { x: px + dx - 1.3, y: py - 23.2, width: 2.6, height: 3.4, rx: 1.3, fill: '#9be7ff', filter: 'url(#of-b2)' }, ojos));
+      }
+      if (est === 'reintenta') {
+        const b = el('g', { class: 'of-latido' }, g);
+        el('circle', { cx: px + 12, cy: py - 39, r: 7.5, fill: '#ff9f0a' }, b);
+        const tt = el('text', { x: px + 12, y: py - 35.5, fill: '#fff', 'font-size': 10, 'font-weight': 800, 'text-anchor': 'middle' }, b); tt.textContent = '↻';
+      }
+      if (acts && acts.length && est !== 'duerme' && est !== 'tu') {
+        const bg = el('g', { class: 'of-burbuja', 'pointer-events': 'none' }, g) as SVGGElement;
+        const rr = el('rect', { y: py - 62, height: 15, rx: 7.5, fill: 'var(--bg)', stroke: 'var(--rule)', 'stroke-width': 1, opacity: 0.96 }, bg) as SVGRectElement;
+        const tx = el('text', { y: py - 51.8, 'font-size': 7, 'font-weight': 600, fill: 'var(--ink)', 'text-anchor': 'middle', 'font-family': 'var(--sans)' }, bg) as SVGTextElement;
+        burbujas.push({ g: bg, t: tx, r: rr, acts, i: 0 });
+        (bg as any)._px = px;
+      }
+    };
+    const persona = (x: number, y: number, color: string, est: string, acts: string[] = []) => objetos.push({ prof: x + y + 0.9, pintar: (parent) => {
+      const [px, py] = P(x, y);
+      const g = el('g', { transform: `translate(${px},${py}) scale(1.3) translate(${-px},${-py})` }, parent);
+      figurita(g, px, py, color, est, acts);
+    } });
+    const setBurbuja = (b: (typeof burbujas)[number]) => {
+      const txt = b.acts[b.i % b.acts.length]; b.t.textContent = txt;
+      const px = (b.g as any)._px as number, w = 14 + txt.length * 3.6;
+      b.t.setAttribute('x', String(px)); b.r.setAttribute('x', String(px - w / 2)); b.r.setAttribute('width', String(w));
+    };
+
+    const dibujar = () => {
+      // Tu mesa
+      { const d = G.tu, r = roomOf('tu');
+        k3('furniture-rugRound-0', d.x + 2.6, d.y + 2.8, { plano: true });
+        k3('furniture-loungeSofa-3', d.x + 0.4, d.y + 4.8);
+        const ds = k3('furniture-desk-0', d.x + 2.4, d.y + 0.25);
+        k3('furniture-computerScreen-0', d.x + 3.0, d.y + 0.35, { z: ds.h, sobre: ds });
+        k3('furniture-chairDesk-2', d.x + 2.9, d.y + 1.5);
+        k3('furniture-bookcaseOpen-0', d.x + 6.4, d.y + 0.2);
+        k3('furniture-lampRoundFloor-0', d.x + 0.3, d.y + 0.3); k3('furniture-pottedPlant-0', d.x + 7.1, d.y + 6.9);
+        persona(d.x + 4.2, d.y + 2.6, '#0a84ff', 'tu', r?.acts); }
+      // Resumen
+      { const d = G.resumen, r = roomOf('resumen');
+        const a = k3('furniture-desk-0', d.x + 1.2, d.y + 1.6), b = k3('furniture-desk-0', d.x + 4.0, d.y + 1.6);
+        k3('furniture-computerScreen-0', d.x + 1.8, d.y + 1.7, { z: a.h, sobre: a }); k3('furniture-computerScreen-0', d.x + 4.6, d.y + 1.7, { z: b.h, sobre: b });
+        k3('furniture-chairDesk-2', d.x + 1.8, d.y + 2.9); k3('furniture-chairDesk-2', d.x + 4.6, d.y + 2.9);
+        k3('furniture-bookcaseClosedWide-3', d.x + 0.2, d.y + 3.8);
+        const st = k3('furniture-sideTable-0', d.x + 5.6, d.y + 5.2); k3('furniture-kitchenCoffeeMachine-0', d.x + 5.75, d.y + 5.3, { z: st.h, sobre: st });
+        k3('furniture-pottedPlant-0', d.x + 0.3, d.y + 0.3);
+        persona(d.x + 2.4, d.y + 3.7, '#30d158', 'ok', r?.acts); persona(d.x + 5.2, d.y + 3.7, '#5ac8fa', 'ok'); }
+      // Bandeja
+      { const d = G.bandeja, r = roomOf('bandeja');
+        k3('mini-shelf-boxes-3', d.x + 0.25, d.y + 0.6); k3('mini-shelf-boxes-3', d.x + 0.25, d.y + 2.4);
+        const c = k3('factory-conveyor-long-0', d.x + 2.6, d.y + 3.0); k3('factory-conveyor-long-0', d.x + 2.6 + c.w, d.y + 3.0);
+        k3('factory-box-small-0', d.x + 3.0, d.y + 3.2, { z: c.h, sobre: c }); k3('factory-box-wide-0', d.x + 4.6, d.y + 3.0, { z: c.h, sobre: c });
+        k3('mini-hand-truck-0', d.x + 5.9, d.y + 5.4); k3('factory-box-large-0', d.x + 0.4, d.y + 5.4); k3('factory-box-small-0', d.x + 1.8, d.y + 6.1);
+        persona(d.x + 3.6, d.y + 5.0, '#ff9f0a', 'ok', r?.acts); }
+      // Archivo
+      { const d = G.archivo, r = roomOf('archivo');
+        k3('furniture-bookcaseClosedWide-3', d.x + 0.2, d.y + 0.3); k3('furniture-bookcaseClosedWide-3', d.x + 0.2, d.y + 3.2);
+        k3('furniture-bookcaseOpen-0', d.x + 5.2, d.y + 0.2);
+        const ds = k3('furniture-desk-0', d.x + 3.0, d.y + 3.4);
+        k3('furniture-books-0', d.x + 3.4, d.y + 3.5, { z: ds.h, sobre: ds });
+        k3('furniture-chairDesk-2', d.x + 3.5, d.y + 4.7);
+        k3('furniture-cardboardBoxClosed-0', d.x + 6.6, d.y + 3.4); k3('furniture-cardboardBoxClosed-0', d.x + 6.7, d.y + 4.4);
+        k3('furniture-trashcan-0', d.x + 7.2, d.y + 6.2);
+        persona(d.x + 5.2, d.y + 5.0, '#64d2ff', 'reintenta', r?.acts); }
+      // Guardia de noche
+      { const d = G.vigia;
+        k3('furniture-rugRound-0', d.x + 2.4, d.y + 3.0, { plano: true });
+        k3('furniture-loungeSofa-3', d.x + 1.0, d.y + 0.9);
+        k3('furniture-tableCoffee-0', d.x + 3.0, d.y + 3.3);
+        k3('furniture-lampRoundFloor-0', d.x + 0.3, d.y + 0.3); k3('furniture-pottedPlant-0', d.x + 6.0, d.y + 0.4);
+        persona(d.x + 4.4, d.y + 5.0, '#a78bfa', 'duerme'); }
+    };
+
+    // Etiquetas (píldoras) sobre cada sala
+    const etiquetas = () => {
+      rooms.forEach((r) => {
+        const d = G[r.k], [px, py] = P(d.x + d.w / 2, d.y + d.d / 2, 0);
+        const lines = [r.name];
+        const w = 18 + r.name.length * 5.2, y0 = py + 4;
+        const g = el('g', { class: 'of-etq', 'pointer-events': 'none' }, capaEtq);
+        el('rect', { x: px - w / 2, y: y0 + 34, width: w, height: 20, rx: 10, fill: 'var(--bg)', stroke: COL[r.est], 'stroke-width': 1.4, opacity: 0.96 }, g);
+        el('circle', { cx: px - w / 2 + 10, cy: y0 + 44, r: 3.4, fill: COL[r.est] }, g);
+        const t = el('text', { x: px + 5, y: y0 + 47.6, 'font-size': 10.5, 'font-weight': 650, fill: 'var(--ink)', 'text-anchor': 'middle' }, g); t.textContent = lines[0];
+      });
+    };
+
+    const panel = {
+      state: root.querySelector('[data-of-state]') as HTMLElement, name: root.querySelector('[data-of-name]') as HTMLElement,
+      who: root.querySelector('[data-of-who]') as HTMLElement, what: root.querySelector('[data-of-what]') as HTMLElement, hist: root.querySelector('[data-of-hist]') as HTMLElement,
+    };
+    const elegir = (k: string) => {
+      const r = roomOf(k); if (!r) return;
+      Object.entries(salas).forEach(([kk, g]) => { g.classList.toggle('elegida', kk === k); svg.querySelector('.of-borde-' + kk)?.classList.toggle('elegida', kk === k); });
+      panel.state.textContent = `${stateLabel[r.est]} · ${r.when}`; panel.state.style.setProperty('--c', COL[r.est]);
+      panel.name.textContent = r.name; panel.who.textContent = r.est === 'tu' ? '' : `${r.agent}`; panel.what.textContent = r.what;
+      panel.hist.innerHTML = r.hist.map(([a, b]: [string, string]) => `<li><span>${a.replace(/</g, '&lt;')}</span><span>${b}</span></li>`).join('');
+    };
+
+    fetch('/office/k3.json').then((r) => r.json()).then((j) => {
+      Object.assign(K3, j);
+      dibujar();
+      objetos.sort((a, b) => a.prof - b.prof).forEach((o) => o.pintar(capaCosas));
+      etiquetas();
+      burbujas.forEach(setBurbuja);
+      if (!reduce) setInterval(() => { burbujas.forEach((b, n) => { setTimeout(() => { b.g.style.opacity = '0'; setTimeout(() => { b.i++; setBurbuja(b); b.g.style.opacity = '1'; }, 350); }, n * 700); }); }, 4200);
+      // Encuadre automático
+      const bb = svg.getBBox(); const pad = 16;
+      svg.setAttribute('viewBox', `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`);
+    }).catch(() => {});
+
+    Object.entries(salas).forEach(([k, g]) => {
+      g.addEventListener('click', () => elegir(k));
+      g.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') { e.preventDefault(); elegir(k); } });
+    });
+    elegir('resumen');
+  }
+</script>

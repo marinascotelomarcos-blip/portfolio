@@ -1,6 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import DashDemo from '../../../components/DashDemo.astro';
+import OfficeDemo from '../../../components/OfficeDemo.astro';
 import Scene from '../../../components/Scene.astro';
 import BetTry from '../../../components/BetTry.astro';
 import CvVisuals from '../../../components/CvVisuals.astro';
@@ -64,6 +65,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
       <>
         <h2 class="sec">{t.dash.demoTitle}</h2>
         <DashDemo lang={lang} />
+        <OfficeDemo lang={lang} />
         <h2 class="sec">{t.dash.howTitle}</h2>
         <ul class="bullets">{t.dash.how.map((u) => <li>{u}</li>)}</ul>
         <h2 class="sec">{t.dash.privTitle}</h2>
