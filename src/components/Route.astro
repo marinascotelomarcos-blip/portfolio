@@ -161,13 +161,13 @@ const kinds = items.map((i) => i.kind);
     }, { threshold: 0.35 }).observe(root);
 
     /* ================= Lift-off =================
-       Full charge starts a big 3, 2, 1. The rocket leaves the globe nose-up, curves over, orbits the 2027 planet
-       (where the days count up), swoops down to the contact panel and lands on its pad, engine firing.
-       It leaves a trail of clouds that stays on the page. */
+       Full charge starts 3, 2, 1. The rocket then follows ONE continuous path (so it never stops and starts):
+       up from the globe, a curve over to the 2027 planet, one orbit while the days can be read, then a long
+       swoop down to the pad in "Hablemos", flipping nose-up and landing with the engine on.
+       The camera follows the rocket; smoke is drawn on one canvas; a few clouds stay on the page as a trail. */
     const space = document.getElementById('space');
     const tpl = document.getElementById('rocket-tpl') as HTMLTemplateElement | null;
-    const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
-    const ORG_X = 44, ORG_Y = 79.2, NOZ = 44; // rocket box 88x176; origin 45%; nozzle sits NOZ px (x scale) below the origin
+    const ORG_X = 44, ORG_Y = 79.2, NOZ = 44; // rocket box 88x176, scale origin at 45%; nozzle NOZ px below the origin (at scale 1)
     const rad = (d: number) => (d * Math.PI) / 180;
 
     function cancelCountdown() {
@@ -188,8 +188,8 @@ const kinds = items.map((i) => i.kind);
       requestAnimationFrame(() => overlay?.classList.add('in'));
       const num = overlay.querySelector<HTMLElement>('.cd-num')!;
       const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); overlay!.classList.remove('pulse'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.add('pulse'); overlay!.classList.toggle('go', go); };
-      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 200 + k * 850)));
-      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 500)); }, 200 + 3 * 850));
+      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 700)));
+      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 380)); }, 150 + 3 * 700));
     }
 
     function rocketNode() {
@@ -197,21 +197,9 @@ const kinds = items.map((i) => i.kind);
       wrap.innerHTML = (tpl!.content.firstElementChild as Element).outerHTML;
       return wrap.firstElementChild as HTMLElement;
     }
-    function waitScrollEnd() {
-      return new Promise<void>((res) => {
-        let last = window.scrollY, same = 0;
-        const t = window.setInterval(() => {
-          same = Math.abs(window.scrollY - last) < 1 ? same + 1 : 0; last = window.scrollY;
-          if (same >= 4) { window.clearInterval(t); res(); }
-        }, 60);
-        window.setTimeout(() => { window.clearInterval(t); res(); }, 5000);
-      });
-    }
-    const smooth = (u: number) => u * u * (3 - 2 * u);
-    const sine = (u: number) => -(Math.cos(Math.PI * u) - 1) / 2;
     type Pt = { x: number; y: number };
+    const smooth = (u: number) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
     const bez = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => { const v = 1 - u; return { x: v * v * v * a.x + 3 * v * v * u * b.x + 3 * v * u * u * c.x + u * u * u * d.x, y: v * v * v * a.y + 3 * v * v * u * b.y + 3 * v * u * u * c.y + u * u * u * d.y }; };
-    const bezD = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => { const v = 1 - u; return { x: 3 * v * v * (b.x - a.x) + 6 * v * u * (c.x - b.x) + 3 * u * u * (d.x - c.x), y: 3 * v * v * (b.y - a.y) + 6 * v * u * (c.y - b.y) + 3 * u * u * (d.y - c.y) }; };
     const headingDeg = (h: Pt) => (Math.atan2(h.x, -h.y) * 180) / Math.PI; // 0 = nose up, 90 = nose right, 180 = nose down
 
     async function launch() {
@@ -222,11 +210,13 @@ const kinds = items.map((i) => i.kind);
       document.getElementById('rocket-trail')?.remove();
       document.querySelector('.hb-pad')?.classList.remove('lit');
       const planet = space.querySelector<HTMLElement>('.planet')!;
+      const finale = document.querySelector<HTMLElement>('.finale')!;
       const row = document.querySelector<HTMLElement>('.hb-row.main')!;
       const links = row.parentElement as HTMLElement;
       const pad = links.querySelector<HTMLElement>('.hb-pad')!;
+      const html = document.documentElement;
+      const prevBehavior = html.style.scrollBehavior; html.style.scrollBehavior = 'auto'; // the page has smooth scrolling in CSS; the camera must not be smoothed twice
 
-      // keep the page still while it plays; "Saltar" ends it
       const block = (e: Event) => e.preventDefault();
       window.addEventListener('wheel', block, { passive: false }); window.addEventListener('touchmove', block, { passive: false });
       const skip = document.createElement('button');
@@ -234,154 +224,209 @@ const kinds = items.map((i) => i.kind);
       skip.addEventListener('click', () => { abort = true; });
       document.body.appendChild(skip);
 
-      // trail layer: clouds placed in document coordinates, so they stay where the rocket flew
+      const W = window.innerWidth, H = window.innerHeight;
+      const dr = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height }; };
+      const docH = html.scrollHeight, maxScroll = Math.max(0, docH - H);
+
+      // trail layer (document coordinates)
       const trail = document.createElement('div');
-      trail.id = 'rocket-trail';
-      trail.style.height = document.documentElement.scrollHeight + 'px';
+      trail.id = 'rocket-trail'; trail.style.height = docH + 'px';
       document.body.appendChild(trail);
 
-      const W = window.innerWidth, H = window.innerHeight;
-      const g = scene.getBoundingClientRect();
-      const S: Pt = { x: g.left + g.width / 2, y: g.top + g.height * 0.52 };
+      // smoke canvas: one fixed layer, particles live in document coordinates
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const cv = document.createElement('canvas'); cv.className = 'fly-smoke';
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      document.body.appendChild(cv);
+      const ctx = cv.getContext('2d')!; ctx.scale(dpr, dpr);
+      const sprite = (c0: string, c1: string) => { const s = document.createElement('canvas'); s.width = s.height = 64; const x = s.getContext('2d')!; const gr = x.createRadialGradient(28, 28, 2, 32, 32, 31); gr.addColorStop(0, c0); gr.addColorStop(1, c1); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return s; };
+      const puffSp = sprite('rgba(255,255,255,.95)', 'rgba(200,214,218,0)'), fireSp = sprite('rgba(255,236,170,1)', 'rgba(255,110,30,0)');
+      type Pa = { x: number; y: number; vx: number; vy: number; t0: number; life: number; s0: number; s1: number; a: number; fire: boolean };
+      let parts: Pa[] = [];
+      const addPart = (x: number, y: number, fire: boolean, t: number, k = 1) => {
+        if (parts.length > 160) return;
+        const sp = fire ? 40 : 22;
+        parts.push({ x: x + (Math.random() - 0.5) * 10, y, vx: (Math.random() - 0.5) * sp * 1.6, vy: (fire ? 50 : 26) + Math.random() * 40, t0: t, life: fire ? 420 : 900 + Math.random() * 500, s0: fire ? 12 : 16, s1: (fire ? 4 : 52 + Math.random() * 28) * k, a: fire ? 1 : 0.62, fire });
+      };
+      const drawParts = (t: number, cam: number) => {
+        ctx.clearRect(0, 0, W, H);
+        parts = parts.filter((p) => t - p.t0 < p.life);
+        for (const p of parts) {
+          const u = (t - p.t0) / p.life, e = 1 - (1 - u) * (1 - u), sz = p.s0 + (p.s1 - p.s0) * e;
+          ctx.globalAlpha = p.a * (1 - u) * (p.fire ? 1 : Math.min(1, u * 8));
+          const x = p.x + p.vx * e * 1.4, y = p.y + p.vy * e * 1.4 - cam;
+          ctx.drawImage(p.fire ? fireSp : puffSp, x - sz, y - sz, sz * 2, sz * 2);
+        }
+        ctx.globalAlpha = 1;
+      };
+
+      /* ---- path, built once in document coordinates ---- */
+      const g = dr(scene), S: Pt = { x: g.x + g.w / 2, y: g.y + g.h * 0.52 };
+      const pl = dr(planet), C: Pt = { x: pl.x + pl.w / 2, y: pl.y + pl.h / 2 };
+      const oa = pl.w / 2 + (W < 640 ? 56 : 84), ob = oa * 0.36, tilt = rad(-12);
+      const rot2 = (x: number, y: number): Pt => ({ x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt) });
+      const orb = (th: number): Pt => { const r = rot2(oa * Math.cos(th), ob * Math.sin(th)); return { x: C.x + r.x, y: C.y + r.y }; };
+      const orbH = (th: number): Pt => rot2(-oa * Math.sin(th), ob * Math.cos(th));
+      const E = orb(0), h0 = orbH(0), hl = Math.hypot(h0.x, h0.y), hn: Pt = { x: h0.x / hl, y: h0.y / hl };
+      const pd = dr(pad), FINAL_SCALE = 0.8;
+      const Lp: Pt = { x: pd.x + pd.w / 2, y: pd.y - NOZ * FINAL_SCALE };
+
+      type Node = { p: Pt; seg: 0 | 1 | 2; th: number; u: number };
+      const nodes: Node[] = [];
+      const A0: Pt = { x: S.x, y: S.y - 6 };
+      const b1: Pt = { x: S.x - 26, y: S.y - 0.55 * H }, b2: Pt = { x: E.x - hn.x * 0.36 * H, y: E.y - hn.y * 0.36 * H };
+      for (let i = 0; i <= 140; i++) { const u = i / 140; nodes.push({ p: bez(A0, b1, b2, E, u), seg: 0, th: 0, u }); }
+      const TURNS = 1.0;
+      for (let i = 1; i <= 120; i++) { const u = i / 120, th = Math.PI * 2 * TURNS * u; nodes.push({ p: orb(th), seg: 1, th, u }); }
+      const d1: Pt = { x: E.x + hn.x * 200 + 70, y: E.y + hn.y * 200 }, d2: Pt = { x: Lp.x - 80, y: Lp.y - 320 };
+      for (let i = 1; i <= 220; i++) { const u = i / 220; nodes.push({ p: bez(E, d1, d2, Lp, u), seg: 2, th: 0, u }); }
+      const n = nodes.length;
+      const cum: number[] = [0];
+      for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(nodes[i].p.x - nodes[i - 1].p.x, nodes[i].p.y - nodes[i - 1].p.y));
+      const total = cum[n - 1];
+      // speed profile along the path: eases out of the launch, slower while orbiting (so it can be read), eases into the landing
+      const sOrbit0 = cum[141], sOrbit1 = cum[261];
+      const speedAt = (s: number) => {
+        const acc = smooth(s / (total * 0.2)), dec = smooth((total - s) / (total * 0.22));
+        let v = 0.16 + 0.84 * Math.min(acc, dec);
+        const w = total * 0.06, bump = smooth((s - (sOrbit0 - w)) / (2 * w)) * (1 - smooth((s - sOrbit1) / (2 * w)));
+        v *= 1 - 0.42 * bump;
+        return v;
+      };
+      const tm: number[] = [0];
+      for (let i = 1; i < n; i++) { const s = (cum[i] + cum[i - 1]) / 2; tm.push(tm[i - 1] + (cum[i] - cum[i - 1]) / Math.max(0.05, speedAt(s))); }
+      const FLIGHT = 7600; // ms of flight after the 650 ms ignition
+      const tmk = FLIGHT / tm[n - 1]; for (let i = 0; i < n; i++) tm[i] *= tmk;
+      // heading per node (smoothed), unwrapped, flipped to nose-up over the last stretch
+      const rots: number[] = []; let last = 0;
+      for (let i = 0; i < n; i++) {
+        const a = nodes[Math.max(0, i - 3)].p, b = nodes[Math.min(n - 1, i + 3)].p;
+        let r = headingDeg({ x: b.x - a.x, y: b.y - a.y });
+        const fl = smooth((cum[i] / total - 0.80) / 0.17);
+        r = r * (1 - fl);
+        while (r - last > 180) r -= 360; while (r - last < -180) r += 360;
+        last = r; rots.push(r);
+      }
+      const scaleAt = (i: number) => {
+        const nd = nodes[i];
+        if (nd.seg === 0) return 0.62 + 0.4 * smooth(nd.u);
+        if (nd.seg === 1) return 0.98 + 0.2 * Math.sin(nd.th) ;
+        return 1.0 - (1.0 - FINAL_SCALE) * smooth(nd.u * 1.15);
+      };
+
+      /* ---- rocket ---- */
       const rocket = rocketNode();
       rocket.classList.add('rocket-fly');
       rocket.style.opacity = '0';
       document.body.appendChild(rocket);
       root!.classList.add('liftoff');
-
-      let lastRot = 0, lastEmit = 0, rate = 1.2, emitAlways = false, tailOn = true;
-      const unwrap = (r: number) => { while (r - lastRot > 180) r -= 360; while (r - lastRot < -180) r += 360; lastRot = r; return r; };
-      const put = (el: HTMLElement, p: Pt, rot: number, s: number) => { el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${rot}deg) scale(${s})`; };
-      const puff = (x: number, y: number, fire: boolean, big = 1) => {
-        const e = document.createElement('i'); e.className = fire ? 'spark-f' : 'puff';
-        const a = (Math.random() - 0.5) * 70;
-        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${(fire ? 0.2 : 1.5 + Math.random() * 1.4) * big};--d:${fire ? 0.5 : 0.9 + Math.random() * 0.6}s`;
-        document.body.appendChild(e); e.addEventListener('animationend', () => e.remove());
+      const put = (p: Pt, rot: number, s: number) => { rocket.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${rot}deg) scale(${s})`; };
+      let inFinale = false, fOrg: Pt = { x: 0, y: 0 }, z = 0, parked = false, burning = false;
+      const place = (p: Pt, rot: number, s: number, idx: number) => {
+        const nd = nodes[idx];
+        if (nd.seg !== 0 && !inFinale) { const f = dr(finale); fOrg = { x: f.x, y: f.y }; finale.appendChild(rocket); inFinale = true; }
+        if (inFinale) {
+          put({ x: p.x - fOrg.x, y: p.y - fOrg.y }, rot, s);
+          const zz = nd.seg === 1 && Math.sin(nd.th) < 0 ? 1 : 4; if (zz !== z) { z = zz; rocket.style.zIndex = String(zz); }
+        } else put(p, rot, s);
       };
-      let persist = 0;
-      const emit = (P: Pt, rot: number, s: number, t: number) => {
-        if (!tailOn || t - lastEmit < 34) return; lastEmit = t;
-        const d = 62 * s, r = rad(rot);
-        const tx = P.x - d * Math.sin(r), ty = P.y + d * Math.cos(r);
-        const n = Math.floor(rate + Math.random());
-        for (let k = 0; k < n; k++) puff(tx, ty, false);
-        if (Math.random() < Math.min(0.7, rate * 0.5)) puff(tx, ty - 4, true);
-        if (++persist % 3 === 0) { // a cloud that stays
-          const c = document.createElement('i'); c.className = 'cloud';
-          c.style.cssText = `left:${tx + (Math.random() - 0.5) * 18}px;top:${ty + window.scrollY + (Math.random() - 0.5) * 12}px;--cs:${0.9 + Math.random() * 1.1}`;
-          trail.appendChild(c);
-        }
-      };
-      const run = (ms: number, step: (u: number, t: number) => void) => new Promise<void>((res, rej) => {
-        const t0 = performance.now();
-        const f = (t: number) => { if (abort) { rej(new Error('abort')); return; } const u = Math.min(1, (t - t0) / ms); step(u, t); if (u < 1) requestAnimationFrame(f); else res(); };
-        requestAnimationFrame(f);
-      });
 
-      let parked = false;
       const park = (P: Pt) => {
-        const lk = links.getBoundingClientRect();
+        const lk = dr(links);
         const el = document.createElement('div');
         el.className = 'rocket-parked';
-        el.style.left = (P.x - lk.left) + 'px'; el.style.top = (P.y - lk.top) + 'px';
+        el.style.left = (P.x - lk.x) + 'px'; el.style.top = (P.y - lk.y) + 'px';
         el.appendChild(rocketNode());
         links.appendChild(el); parked = true;
       };
-      const landingPoint = (): Pt => { const pr = pad.getBoundingClientRect(); return { x: pr.left + pr.width / 2, y: pr.top - NOZ * 0.8 }; };
+      let persist = 0, lastEmit = 0;
+      const tailOf = (P: Pt, rot: number, s: number): Pt => { const d = 62 * s, r = rad(rot); return { x: P.x - d * Math.sin(r), y: P.y + d * Math.cos(r) }; };
+      const trailCloud = (tp: Pt) => {
+        const c = document.createElement('i'); c.className = 'cloud';
+        c.style.cssText = `left:${tp.x + (Math.random() - 0.5) * 18}px;top:${tp.y + (Math.random() - 0.5) * 12}px;--cs:${0.9 + Math.random() * 1.0}`;
+        trail.appendChild(c);
+      };
 
-      try {
-        /* 1. ignition: nose up, shaking on the globe */
-        const FINAL_SCALE = 0.8;
-        rocket.style.opacity = '1';
-        await run(900, (u, t) => {
-          const sh = (1 - u) * 1.6 * Math.sin(u * 90);
-          rate = 1.6; put(rocket, { x: S.x + sh, y: S.y - 4 * smooth(u) }, 0, 0.5 + 0.12 * u); emit({ x: S.x, y: S.y - 4 * smooth(u) }, 0, 0.6, t);
-        });
-
-        /* 2. up and over: the path starts vertical, curves, and comes down onto the planet's orbit */
-        const sr = space.getBoundingClientRect(), pr = planet.getBoundingClientRect();
-        const C: Pt = { x: pr.left + pr.width / 2 - sr.left, y: pr.top + pr.height / 2 - sr.top };
-        const oa = pr.width / 2 + (W < 640 ? 56 : 84), ob = oa * 0.36, tilt = rad(-12);
-        const orb = (th: number): Pt => { const x = oa * Math.cos(th), y = ob * Math.sin(th); return { x: C.x + x * Math.cos(tilt) - y * Math.sin(tilt), y: C.y + x * Math.sin(tilt) + y * Math.cos(tilt) }; };
-        const orbH = (th: number): Pt => { const x = -oa * Math.sin(th), y = ob * Math.cos(th); return { x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt) }; };
-        const e0 = orb(0), h0 = orbH(0), hl = Math.hypot(h0.x, h0.y);
-        const E: Pt = { x: e0.x + sr.left, y: e0.y };
-        const p1: Pt = { x: S.x - 24, y: S.y - 0.5 * H };
-        const p2: Pt = { x: E.x - (h0.x / hl) * 0.34 * H, y: E.y - (h0.y / hl) * 0.34 * H };
-        window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), 900);
-        const P0: Pt = { x: S.x, y: S.y - 4 };
-        await run(2900, (u, t) => {
-          const k = sine(u), P = bez(P0, p1, p2, E, k), D = bezD(P0, p1, p2, E, k);
-          const rot = unwrap(headingDeg(D)); const s = 0.62 + 0.38 * k;
-          rate = 1.1; put(rocket, P, rot, s); emit(P, rot, s, t);
-        });
-        await waitScrollEnd();
-
-        /* 3. orbit the planet (the rocket moves into the section so it can pass behind the planet) */
-        const sr2 = space.getBoundingClientRect();
-        rocket.classList.add('in-orbit'); space.appendChild(rocket);
-        const cur0: Pt = { x: E.x - sr2.left, y: E.y - sr2.top }; // where the rocket is, in section coordinates
-        const off: Pt = { x: cur0.x - e0.x, y: cur0.y - e0.y };
-        const TH = Math.PI * 2 * 1.25;
-        let z = 0;
-        await run(3800, (u, t) => {
-          const th = TH * sine(u), q = orb(th), D = orbH(th), f = 1 - smooth(Math.min(1, u / 0.3));
-          const P: Pt = { x: q.x + off.x * f, y: q.y + off.y * f };
-          const rot = unwrap(headingDeg(D)); const s = 0.9 + 0.22 * Math.sin(th);
-          const zz = Math.sin(th) < 0 ? 1 : 3; if (zz !== z) { z = zz; rocket.style.zIndex = String(zz); }
-          rate = 0.9; put(rocket, P, rot, s);
-          const sr3 = space.getBoundingClientRect(); emit({ x: P.x + sr3.left, y: P.y + sr3.top }, rot, s, t);
-        });
-
-        /* 4. back to the page, swoop down while it scrolls to the contact panel */
-        const sr4 = space.getBoundingClientRect();
-        const endTh = TH, X: Pt = { x: orb(endTh).x + sr4.left, y: orb(endTh).y + sr4.top };
-        const hX = orbH(endTh), hxl = Math.hypot(hX.x, hX.y);
-        rocket.classList.remove('in-orbit'); rocket.style.zIndex = ''; document.body.appendChild(rocket);
-        const Wp: Pt = { x: W * 0.3, y: H * 0.3 };
-        const q1: Pt = { x: X.x + (hX.x / hxl) * 170, y: X.y + (hX.y / hxl) * 170 };
-        const q2: Pt = { x: Wp.x, y: Wp.y - 150 };
-        const rowDocTop = row.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top: rowDocTop - H * 0.58, behavior: 'smooth' });
-        await run(1900, (u, t) => {
-          const k = sine(u), P = bez(X, q1, q2, Wp, k), D = bezD(X, q1, q2, Wp, k);
-          const rot = unwrap(headingDeg(D)); const s = 1.12 - 0.22 * k;
-          rate = 1.0; put(rocket, P, rot, s); emit(P, rot, s, t);
-        });
-        await waitScrollEnd();
-
-        /* 5. landing: dive, flip to nose-up, engine roaring, settle on the pad */
-        const L = landingPoint();
-        const r1: Pt = { x: Wp.x, y: Wp.y + 170 }, r2: Pt = { x: L.x, y: L.y - 330 };
-        let burning = false;
-        await run(2800, (u, t) => {
-          const k = 1 - Math.pow(1 - u, 2.4), P = bez(Wp, r1, r2, L, k), D = bezD(Wp, r1, r2, L, k);
-          let rot = headingDeg(D); const fl = smooth(Math.min(1, Math.max(0, (u - 0.38) / 0.4)));
-          rot = unwrap(rot * (1 - fl)); const s = 0.9 - 0.1 * k;
-          if (!burning && u > 0.45) { burning = true; rocket.classList.add('burn'); }
-          rate = 1.2 + 1.6 * fl; put(rocket, P, rot, s); emit(P, rot, s, t);
-        });
-
-        /* 6. touchdown: flash and dust on the pad, engine off, rocket stays */
-        tailOn = false;
-        const pr2 = pad.getBoundingClientRect(), bx = pr2.left + pr2.width / 2, by = pr2.top;
-        const flash = document.createElement('i'); flash.className = 'pad-flash'; flash.style.cssText = `left:${bx}px;top:${by}px`;
-        document.body.appendChild(flash); flash.addEventListener('animationend', () => flash.remove());
-        for (let k = 0; k < 18; k++) { const e = document.createElement('i'); const side = k % 2 ? 1 : -1; e.className = k % 3 ? 'puff' : 'spark-f'; e.style.cssText = `left:${bx + side * Math.random() * 20}px;top:${by}px;--dx:${side * (30 + Math.random() * 90)}px;--dy:${-2 - Math.random() * 18}px;--s:${k % 3 ? 2 + Math.random() * 1.8 : 0.4};--d:${0.7 + Math.random() * 0.6}s`; document.body.appendChild(e); e.addEventListener('animationend', () => e.remove()); }
-        park({ x: L.x, y: L.y });
-        pad.classList.add('lit');
-        rocket.remove();
-      } catch (err) {
-        /* "Saltar": jump to the contact panel and park the rocket on the pad right away */
-        rocket.remove();
-        window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - H * 0.58, behavior: 'auto' });
-        if (!parked) { const L2 = landingPoint(); park({ x: L2.x, y: L2.y }); pad.classList.add('lit'); }
-      } finally {
-        tailOn = false; rocket.remove(); skip.remove();
+      const finish = (landed: boolean) => {
+        html.style.scrollBehavior = prevBehavior;
         window.removeEventListener('wheel', block); window.removeEventListener('touchmove', block);
+        skip.remove(); rocket.remove();
         root!.classList.remove('liftoff'); phase = 'idle';
+        window.setTimeout(() => cv.remove(), 1400);
         show(0);
+      };
+
+      /* ---- one loop: rocket, camera, smoke ---- */
+      let cam = window.scrollY, tPrev = performance.now();
+      const camTarget = (idx: number, P: Pt) => {
+        const nd = nodes[idx];
+        let target: number;
+        const orbitView = C.y - H * 0.36;
+        if (nd.seg === 1) target = orbitView;                           // orbit: hold the planet and the days in view
+        else if (nd.seg === 2) { const k = smooth(nd.u * 1.2), t1 = orbitView + (P.y - H * 0.5 - orbitView) * smooth(nd.u / 0.25); target = t1 * (1 - k) + (Lp.y - H * 0.6) * k; }
+        else { const k = smooth((nd.u - 0.75) / 0.25); target = (P.y - H * 0.5) * (1 - k) + orbitView * k; }
+        return Math.max(0, Math.min(maxScroll, target));
+      };
+      const IGN = 650;
+      rocket.style.opacity = '1';
+      const t0 = performance.now();
+      await new Promise<void>((resolve) => {
+        const frame = (now: number) => {
+          const dt = Math.min(64, now - tPrev); tPrev = now;
+          const T = now - t0;
+          if (abort) { resolve(); return; }
+          let P: Pt, rot: number, s: number, idx = 0;
+          if (T < IGN) {
+            const u = T / IGN, sh = (1 - u) * 1.6 * Math.sin(u * 90);
+            P = { x: S.x + sh, y: S.y - 6 * smooth(u) }; rot = 0; s = 0.5 + 0.12 * u;
+            rocket.style.transform = `translate3d(${P.x}px, ${P.y}px, 0) rotate(0deg) scale(${s})`;
+            if (now - lastEmit > 30) { lastEmit = now; const tp = tailOf(P, 0, s); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y - 4, true, now); }
+          } else {
+            const tt = Math.min(FLIGHT, T - IGN);
+            let lo = 0, hi = n - 1;
+            while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tm[mid] <= tt) lo = mid; else hi = mid; }
+            const f = tm[hi] > tm[lo] ? (tt - tm[lo]) / (tm[hi] - tm[lo]) : 0;
+            idx = f > 0.5 ? hi : lo;
+            P = { x: nodes[lo].p.x + (nodes[hi].p.x - nodes[lo].p.x) * f, y: nodes[lo].p.y + (nodes[hi].p.y - nodes[lo].p.y) * f };
+            rot = rots[lo] + (rots[hi] - rots[lo]) * f; s = scaleAt(lo) + (scaleAt(hi) - scaleAt(lo)) * f;
+            place(P, rot, s, idx);
+            if (!burning && cum[lo] / total > 0.8) { burning = true; rocket.classList.add('burn'); }
+            const rate = nodes[idx].seg === 1 ? 0.9 : (cum[lo] / total > 0.8 ? 2.2 : 1.4);
+            if (now - lastEmit > 28) {
+              lastEmit = now; const tp = tailOf(P, rot, s);
+              const k = Math.floor(rate + Math.random()); for (let q = 0; q < k; q++) addPart(tp.x, tp.y, false, now);
+              if (Math.random() < Math.min(0.8, rate * 0.5)) addPart(tp.x, tp.y - 4, true, now);
+              if (++persist % 7 === 0) trailCloud(tp);
+            }
+            // camera: follows the rocket, critically damped, in the same frame
+            const target = camTarget(idx, P);
+            cam += (target - cam) * (1 - Math.exp(-dt / 170));
+            window.scrollTo(0, cam);
+          }
+          drawParts(now, window.scrollY);
+          if (T < IGN + FLIGHT) requestAnimationFrame(frame); else resolve();
+        };
+        requestAnimationFrame(frame);
+      });
+
+      if (abort) {
+        rocket.remove();
+        window.scrollTo(0, Math.max(0, Math.min(maxScroll, Lp.y - H * 0.6)));
+        park({ x: Lp.x, y: Lp.y }); pad.classList.add('lit');
+        finish(false); return;
       }
+
+      /* touchdown: flash and dust on the pad, engine off, rocket stays */
+      const now = performance.now();
+      for (let k = 0; k < 26; k++) { const side = k % 2 ? 1 : -1; addPart(pd.x + pd.w / 2 + side * Math.random() * 18, pd.y, k % 3 === 0, now, 0.8); const p = parts[parts.length - 1]; if (p) { p.vx = side * (50 + Math.random() * 140); p.vy = -4 - Math.random() * 20; } }
+      const flash = document.createElement('i'); flash.className = 'pad-flash';
+      flash.style.cssText = `left:${pd.x + pd.w / 2}px;top:${pd.y}px`;
+      document.body.appendChild(flash); flash.addEventListener('animationend', () => flash.remove());
+      park({ x: Lp.x, y: Lp.y }); pad.classList.add('lit');
+      rocket.remove();
+      const drain = (t: number) => { drawParts(t, window.scrollY); if (parts.length) requestAnimationFrame(drain); };
+      requestAnimationFrame(drain);
+      finish(true);
     }
     show(0);
   }
