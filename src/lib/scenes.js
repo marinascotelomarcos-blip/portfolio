@@ -328,12 +328,20 @@ function buildPhone() {
   const body = new THREE.ExtrudeGeometry(roundedShape(W, H, 0.13), { depth: D, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 4, curveSegments: 24 });
   body.translate(0, 0, -D / 2);
   const phone = new THREE.Group();
-  phone.add(new THREE.Mesh(body, new THREE.MeshPhysicalMaterial({ color: 0x1b2227, roughness: 0.3, metalness: 0.6, clearcoat: 0.5 })));
+  phone.add(new THREE.Mesh(body, new THREE.MeshPhysicalMaterial({ color: 0x59656b, roughness: 0.38, metalness: 1, clearcoat: 0.3, envMapIntensity: 1.3 })));
+  const bezel = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(W - 0.035, H - 0.035, 0.115), 28), new THREE.MeshStandardMaterial({ color: 0x05080a, roughness: 0.3, metalness: 0.4 }));
+  bezel.position.z = D / 2 + 0.0155; phone.add(bezel);
   const screen = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(W - 0.07, H - 0.07, 0.1), 24), new THREE.MeshBasicMaterial({ map: phoneScreen(), toneMapped: false }));
   // remap UVs of the screen shape to 0..1
   const sw = W - 0.07, sh = H - 0.07; const uv = screen.geometry.attributes.uv; const pos = screen.geometry.attributes.position;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + sw / 2) / sw, (pos.getY(i) + sh / 2) / sh);
   screen.position.z = D / 2 + 0.017; phone.add(screen);
+  const pglass = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(W - 0.07, H - 0.07, 0.1), 28), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 2, depthWrite: false }));
+  pglass.position.z = D / 2 + 0.02; phone.add(pglass);
+  const island = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(0.3, 0.3, 0.08), 20), new THREE.MeshStandardMaterial({ color: 0x20282c, roughness: 0.4, metalness: 0.8 }));
+  island.rotation.y = Math.PI; island.position.set(-0.17, H / 2 - 0.2, -D / 2 - 0.0165); phone.add(island);
+  [[-0.24, 0.07], [-0.1, 0.07], [-0.17, -0.07]].forEach(([x, y]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.025, 24), new THREE.MeshPhysicalMaterial({ color: 0x080b0d, metalness: 0.9, roughness: 0.15 })); l.rotation.x = Math.PI / 2; l.position.set(x, H / 2 - 0.2 + y, -D / 2 - 0.03); phone.add(l); });
+  [[0.5, 0.3], [0.5, 0.0], [-0.5, 0.35]].forEach(([sx, y]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x59656b, metalness: 1, roughness: 0.4 })); b.position.set(sx * (W / 2 + 0.012) / 0.5, y, 0); phone.add(b); });
   phone.rotation.set(0.08, -0.2, 0.04);
   root.add(phone);
   root.userData.update = (t, ptr) => {
@@ -423,19 +431,108 @@ function buildRoute(opts) {
 }
 
 /* ---------- Contact: a paper plane ---------- */
-function buildMail() {
+/* ---------- CICLO Watches: a brushed-titanium smartwatch with modular nylon straps (as in the project's photos) ---------- */
+function dialTexture() {
+  const W = 512, H = 620, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const bg = g.createRadialGradient(W / 2, H * 0.4, 20, W / 2, H / 2, H * 0.7);
+  bg.addColorStop(0, '#14323a'); bg.addColorStop(1, '#050b0e'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2;
+  // 60 ticks laid on a superellipse so they follow the rounded-square case
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), n = 4.2;
+    const k = 1 / Math.pow(Math.pow(Math.abs(ca) / (W / 2 - 34), n) + Math.pow(Math.abs(sa) / (H / 2 - 34), n), 1 / n);
+    const x = cx + ca * k, y = cy + sa * k, big = i % 5 === 0;
+    const l = big ? 26 : 10;
+    const nx = -ca * 0.5 - ca * 0.5, ny = -sa; // inward direction approximated toward the centre
+    const dx = cx - x, dy = cy - y, d = Math.hypot(dx, dy);
+    g.strokeStyle = big ? '#e9f4f4' : 'rgba(180,215,218,.5)'; g.lineWidth = big ? 5 : 2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (dx / d) * l, y + (dy / d) * l); g.stroke();
+  }
+  g.textAlign = 'center'; g.fillStyle = '#e9f4f4';
+  g.font = '600 34px system-ui, sans-serif'; g.letterSpacing = '6px'; g.fillText('CICLO', cx, cy - 130);
+  g.font = '500 15px system-ui, sans-serif'; g.fillStyle = '#3bb8be'; g.letterSpacing = '5px'; g.fillText('WATCHES', cx, cy - 104);
+  // small repair-progress ring, bottom
+  const rx = cx, ry = cy + 120, rr0 = 44;
+  g.lineWidth = 9; g.strokeStyle = 'rgba(59,184,190,.22)'; g.beginPath(); g.arc(rx, ry, rr0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = '#7be34a'; g.lineCap = 'round'; g.beginPath(); g.arc(rx, ry, rr0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 1.45); g.stroke();
+  g.fillStyle = '#e9f4f4'; g.font = '600 26px system-ui, sans-serif'; g.letterSpacing = '0px'; g.fillText('72', rx, ry + 9);
+  return tex(c);
+}
+
+function nylonBump() {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#777'; g.fillRect(0, 0, 64, 64);
+  for (let y = 0; y < 64; y += 4) { g.fillStyle = '#bbb'; g.fillRect(0, y, 64, 2); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 8); return t;
+}
+
+function strapSegments(parent, dir, color, bump) {
+  // a strap leaving the case along +-y and curving back behind it (-z)
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0, bumpMap: bump, bumpScale: 1.2 });
+  const n = 9, w = 0.92, len = 0.18;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * 1.25; // bend angle
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(w, len, 0.07), mat);
+    const r = 0.95;
+    seg.position.set(0, dir * (0.62 + Math.sin(a) * r), -0.02 - (1 - Math.cos(a)) * r);
+    seg.rotation.x = dir * a * -1 + (dir < 0 ? 0 : 0);
+    seg.rotation.x = -dir * a;
+    parent.add(seg);
+  }
+}
+
+function buildWatch() {
   const root = new THREE.Group(); const g = new THREE.Group(); root.add(g);
-  const N = [0, 0, 1.15], L = [-0.9, 0.14, -0.8], R = [0.9, 0.14, -0.8], T = [0, -0.02, -0.55], K = [0, -0.45, -0.8];
-  const face = (pts, color) => {
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3)); geo.computeVertexNormals();
-    return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.45, side: THREE.DoubleSide, flatShading: true }));
+  const D = 0.26, CW = 1.18, CH = 1.4;
+  const ti = new THREE.MeshPhysicalMaterial({ color: 0xaeb4b7, metalness: 1, roughness: 0.33, clearcoat: 0.15, envMapIntensity: 1.35 });
+  const body = new THREE.ExtrudeGeometry(roundedShape(CW, CH, 0.32), { depth: D, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 8, curveSegments: 40 });
+  body.translate(0, 0, -D / 2);
+  const caseM = new THREE.Mesh(body, ti); g.add(caseM);
+  // sunken black bezel + dial + glass
+  const bez = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(CW - 0.12, CH - 0.12, 0.26), 32), new THREE.MeshStandardMaterial({ color: 0x06090b, roughness: 0.4, metalness: 0.5 }));
+  bez.position.z = D / 2 + 0.052; g.add(bez);
+  const dw = CW - 0.2, dh = CH - 0.2;
+  const dial = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(dw, dh, 0.22), 32), new THREE.MeshBasicMaterial({ map: dialTexture(), toneMapped: false }));
+  const uv = dial.geometry.attributes.uv, pos = dial.geometry.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + dw / 2) / dw, (pos.getY(i) + dh / 2) / dh);
+  dial.position.z = D / 2 + 0.055; g.add(dial);
+  const glass = new THREE.Mesh(new THREE.ShapeGeometry(roundedShape(dw, dh, 0.22), 32), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, roughness: 0.02, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 2.2, depthWrite: false }));
+  glass.position.z = D / 2 + 0.075; g.add(glass);
+  // hands
+  const hz = D / 2 + 0.09, handMat = new THREE.MeshStandardMaterial({ color: 0xf2f7f7, roughness: 0.35, metalness: 0.3 });
+  const hour = new THREE.Group(), minute = new THREE.Group(), sec = new THREE.Group();
+  const hb = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.34, 0.016), handMat); hb.position.y = 0.12; hour.add(hb);
+  const mb = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.5, 0.016), handMat); mb.position.y = 0.19; minute.add(mb);
+  const sb = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.56, 0.01), new THREE.MeshStandardMaterial({ color: 0xff7a1a, roughness: 0.4, emissive: 0x4a1d00 })); sb.position.y = 0.14; sec.add(sb);
+  hour.position.z = hz; minute.position.z = hz + 0.012; sec.position.z = hz + 0.024;
+  g.add(hour, minute, sec);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.04, 24), ti); cap.rotation.x = Math.PI / 2; cap.position.z = hz + 0.03; g.add(cap);
+  // crown (knurled) + side button
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.13, 32), new THREE.MeshPhysicalMaterial({ color: 0x8e979b, metalness: 1, roughness: 0.45 }));
+  crown.rotation.z = Math.PI / 2; crown.position.set(CW / 2 + 0.07, 0.24, 0); g.add(crown);
+  for (let i = 0; i < 7; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.087, 0.008, 6, 28), ti); r.rotation.y = Math.PI / 2; r.position.set(CW / 2 + 0.03 + i * 0.016, 0.24, 0); g.add(r); }
+  const btn = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.09), ti); btn.position.set(CW / 2 + 0.03, -0.2, 0); g.add(btn);
+  // green status LED on the lower bezel, like the product shots
+  const led = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 10, 24), new THREE.MeshBasicMaterial({ color: 0x8cf05a, toneMapped: false }));
+  led.position.set(0, -(CH / 2) + 0.07, D / 2 + 0.058); g.add(led);
+  // straps: graphite on top, orange below (the project's modular straps) + a metal keeper
+  const bump = nylonBump();
+  strapSegments(g, 1, 0x15191b, bump); strapSegments(g, -1, 0xe2621a, bump);
+  const keeper = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.12), new THREE.MeshStandardMaterial({ color: 0x0f1213, roughness: 0.6, metalness: 0.4 }));
+  keeper.position.set(0, -1.02, -0.2); keeper.rotation.x = 0.55; g.add(keeper);
+  g.rotation.set(-0.12, 0.45, 0.06); g.scale.setScalar(0.95);
+  const setTime = () => {
+    const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60;
+    sec.rotation.z = -s / 60 * Math.PI * 2; minute.rotation.z = -m / 60 * Math.PI * 2; hour.rotation.z = -h / 12 * Math.PI * 2;
   };
-  g.add(face([N, L, T], 0xf4f5f3), face([N, T, R], 0xe0e7e5), face([N, T, K], 0x0f7077), face([T, L, K], 0x0b5a60), face([T, K, R], 0x0b5a60));
-  const trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -0.2, -1.1), new THREE.Vector3(0, -0.3, -1.6), new THREE.Vector3(0, -0.5, -2.2)]), new THREE.LineDashedMaterial({ color: 0x3bb8be, dashSize: 0.12, gapSize: 0.1 }));
-  trail.computeLineDistances(); g.add(trail);
-  g.rotation.x = -0.35; g.scale.setScalar(0.9);
-  root.userData.update = (t) => { g.rotation.y = 0.7 + Math.sin(t * 0.0007) * 0.25; g.rotation.z = Math.sin(t * 0.0011) * 0.2; g.position.y = Math.sin(t * 0.0012) * 0.08; };
-  return { object: root };
+  setTime();
+  root.userData.update = (t, ptr) => {
+    setTime();
+    g.rotation.y = 0.45 + Math.sin(t * 0.0006) * 0.18 + ptr.x * 0.35;
+    g.rotation.x = -0.12 + Math.sin(t * 0.0008) * 0.05 - ptr.y * 0.2;
+  };
+  return { object: root, camera: { z: 4.4, y: 0, fov: 34 } };
 }
 
 /* ---------- A hologram portrait: a photo (or a placeholder bust) as a projected image ---------- */
@@ -495,16 +592,28 @@ function buildPortrait(opts) {
 }
 
 /* ---------- The cover: objects float free around the page, each one is a way into the site ---------- */
+/* soft radial light used for the glow behind each object and the hologram pad under it */
+function glowTexture(rgb) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  r.addColorStop(0, `rgba(${rgb},0.55)`); r.addColorStop(0.45, `rgba(${rgb},0.16)`); r.addColorStop(1, `rgba(${rgb},0)`);
+  g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
 function buildRoom(opts) {
   const root = new THREE.Group();
   const target = new THREE.Vector3(0, 2.0, 0);
+  const fill = new THREE.DirectionalLight(0xa6ecef, 0.9); fill.position.set(-3, 2.5, 3); root.add(fill);
+  const warm = new THREE.DirectionalLight(0xfff1dd, 0.7); warm.position.set(3, 4, 2); root.add(warm);
+  const glowTex = glowTexture('59,184,190'), padTex = glowTexture('59,184,190');
 
   // pos: x, y (height), z. top: label height above the object.
   const defs = [
-    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0, a0: 3.5, rx: 3.9, rz: 2.3, sp: 1 },
-    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7, a0: 5.1, rx: 3.5, rz: 2.0, sp: 0.85 },
-    { id: 'mail', make: () => buildMail(), pos: [3.5, 3.9, 0.3], scale: 1.1, rot: 0.15, top: 0.9, ph: 3.1, a0: 0.4, rx: 3.9, rz: 2.4, sp: 1.1 },
-    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4, a0: 1.9, rx: 4.1, rz: 2.2, sp: 0.9 },
+    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0, a0: 3.5, rx: 3.9, rz: 2.3, sp: 1, glow: 2.6 },
+    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7, a0: 5.1, rx: 3.5, rz: 2.0, sp: 0.85, glow: 2.8 },
+    { id: 'ciclo', make: () => buildWatch(), pos: [3.5, 3.9, 0.3], scale: 1.0, rot: 0.15, top: 1.35, ph: 3.1, a0: 0.4, rx: 3.9, rz: 2.4, sp: 1.1, glow: 2.8 },
+    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4, a0: 1.9, rx: 4.1, rz: 2.2, sp: 0.9, glow: 3.0 },
   ];
   const hits = [];
   const st = defs.map((d) => {
@@ -512,9 +621,13 @@ function buildRoom(opts) {
     const made = d.make();
     const inner = new THREE.Group(); inner.rotation.y = d.rot; inner.scale.setScalar(d.scale); inner.position.y = d.pos[1]; group.add(inner);
     inner.add(made.object);
+    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 }));
+    gl.scale.setScalar(d.glow); gl.position.z = -0.9; inner.add(gl);
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({ map: padTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5, toneMapped: false }));
+    pad.rotation.x = -Math.PI / 2; pad.position.y = 0.02; group.add(pad);
     const hit = new THREE.Mesh(new THREE.SphereGeometry(1.35, 12, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
     hit.position.y = d.pos[1]; hit.userData.id = d.id; group.add(hit); hits.push(hit);
-    return { ...d, group, inner, hit, made, h: 0, vel: 0, baseY: d.pos[1], a0: d.a0, rx: d.rx, rz: d.rz, sp: d.sp };
+    return { ...d, group, inner, hit, made, pad, h: 0, vel: 0, baseY: d.pos[1], a0: d.a0, rx: d.rx, rz: d.rz, sp: d.sp };
   });
 
   let ctx = null, camera = null, dir = new THREE.Vector3(0.22, 0.6, 0.85).normalize(), dist = 16;
@@ -532,12 +645,19 @@ function buildRoom(opts) {
     st.forEach((s) => {
       const goal = s.id === hover ? 1 : 0;
       s.h += (goal - s.h) * (ctx.still ? 1 : 0.16);
-      const fl = ctx.still ? 0 : Math.sin(t * 0.0011 + s.ph) * 0.22;
+      // each object drifts on its own tilted ellipse around Marcos: slow, a little vertical swell, leaning into the turn
+      const an = s.a0 + (ctx.still ? 0 : t * 0.00014 * s.sp);
+      const fl = ctx.still ? 0 : Math.sin(t * 0.0006 + s.ph) * 0.16 + Math.sin(t * 0.00037 + s.ph * 1.7) * 0.07 + Math.sin(an) * 0.32;
       s.inner.scale.setScalar(s.scale * (1 + 0.12 * s.h)); s.inner.position.y = s.baseY + fl + 0.14 * s.h; s.hit.position.y = s.inner.position.y;
-      { const an = s.a0 + (ctx.still ? 0 : t * 0.00022 * s.sp); s.group.position.x = Math.cos(an) * s.rx; s.group.position.z = Math.sin(an) * s.rz; } // orbit around the figure
-      if (s !== dragSt) { // a dragged object keeps spinning, then settles back to its pose
+      const breathe = ctx.still ? 1 : 1 + Math.sin(t * 0.0003 + s.ph) * 0.04;
+      s.group.position.x = Math.cos(an) * s.rx * breathe + ptr.x * 0.35 * Math.sin(an + 0.6);
+      s.group.position.z = Math.sin(an) * s.rz * breathe;
+      s.pad.material.opacity = (ctx.still ? 0.45 : 0.55 - Math.max(0, fl) * 0.25) * (0.7 + 0.3 * s.h);
+      s.pad.scale.setScalar(1 - Math.max(0, fl) * 0.12);
+      if (s !== dragSt) { // a dragged object keeps spinning, then settles toward its pose (a gentle yaw follows the orbit)
         s.inner.rotation.y += s.vel; s.vel *= 0.94;
-        if (Math.abs(s.vel) < 0.0004) { s.vel = 0; s.inner.rotation.y += wrapPi(s.rot - s.inner.rotation.y) * 0.03; }
+        if (Math.abs(s.vel) < 0.0004) { s.vel = 0; const goalY = s.rot + (ctx.still ? 0 : Math.sin(an) * 0.3); s.inner.rotation.y += wrapPi(goalY - s.inner.rotation.y) * 0.04; }
+        s.inner.rotation.z += ((ctx.still ? 0 : -Math.cos(an) * 0.07) - s.inner.rotation.z) * 0.05;
       }
       const u = s.made.object.userData.update; if (u) u(t, { x: ptr.x * 0.4, y: ptr.y * 0.4 });
     });
