@@ -58,16 +58,18 @@ const h = T[lang].home;
     <h2 class="sec" id="route">{h.routeTitle}</h2>
     <Route lang={lang} />
 
-    <section class="close">
-      <div>
+    <section class="close hb">
+      <div class="hb-copy">
+        <p class="mono hb-status"><i></i>{lang === 'en' ? 'Available from January 2027' : 'Disponible desde enero de 2027'}</p>
         <h2>{h.closeTitle}</h2>
         <p>{h.closeText}</p>
       </div>
-      <div class="actions">
-        <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
-        <a class="btn" href={CV} download>{h.cv}</a>
-          <a class="btn" href={LINKEDIN} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+      <div class="hb-links">
+        <a class="hb-row main" href={`mailto:${EMAIL}`}><span class="mono">01</span><b>{h.write}</b><small>{EMAIL}</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
+        <a class="hb-row" href={LINKEDIN} target="_blank" rel="noopener noreferrer"><span class="mono">02</span><b>LinkedIn</b><small>marcos-mariñas-cotelo</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
+        <a class="hb-row" href={CV} target="_blank" rel="noopener"><span class="mono">03</span><b>{h.cv}</b><small>PDF</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
       </div>
+      <span class="hb-mark" aria-hidden="true">MMC</span>
     </section>
   </div>
 </Base>

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import '../styles/extras.css';
 import Backdrop from '../components/Backdrop.astro';
 import Ticker from '../components/Ticker.astro';
 import { T, type Lang } from '../lib/content';
@@ -16,7 +17,7 @@ const pageUrl = `${SITE}${base}${path}`;
 const ogImage = `${SITE}/img/og-${lang}.png`;
 ---
 <!doctype html>
-<html lang={t.htmlLang} data-mode="light">
+<html lang={t.htmlLang} data-mode="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,9 +38,9 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
     <link rel="canonical" href={pageUrl} />
     <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#e8edec" />
+    <meta name="theme-color" content="#0a0f12" />
     <script is:inline>
-      var m = 'light'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
+      var m = 'dark'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
       /* Entrance: the first page of a visit shows an MMC boot screen (about two seconds) while the 3D room draws and the figure is held back,
          so nothing flickers or pops in. Later pages in the same visit only get the short hold. Reduced motion skips both. */
       (function () {
@@ -77,8 +78,13 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
   <body>
     <div id="intro" class="intro-screen" aria-hidden="true">
       <div class="intro-core">
-        <span class="intro-ring"></span>
-        <span class="intro-mark mono">MMC</span>
+        <div class="ic-orbit"><div class="ic-spin">
+          <span class="ic-chip c1"><span><img src="/img/cinco-vidas-logo.webp" alt="" width="28" height="28" /></span></span>
+          <span class="ic-chip c2"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.5" /><ellipse cx="12" cy="12" rx="3.6" ry="8.5" /><path d="M3.5 12h17" /></svg></span></span>
+          <span class="ic-chip c3"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5.2" /><path d="M12 9.4V12l1.8 1.2M9.5 3.5h5l.6 3.2M9.5 20.5h5l.6-3.2" /></svg></span></span>
+          <span class="ic-chip c4"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="3" width="9" height="18" rx="2.4" /><path d="M10.5 6.5h3" /></svg></span></span>
+        </div></div>
+        <div class="ic-coin"><span class="ic-face front"></span><span class="ic-face back mono">MMC</span></div>
       </div>
       <p class="intro-name">Marcos Mariñas Cotelo</p>
       <div class="intro-bar"><i></i></div>
