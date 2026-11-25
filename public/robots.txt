@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /hola/
+Disallow: /es/hola/
+Disallow: /en/hola/
+
+Sitemap: https://marcosmarinascotelo.com/sitemap.xml
