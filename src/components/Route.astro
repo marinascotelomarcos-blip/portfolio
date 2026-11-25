@@ -25,9 +25,7 @@ const items: Item[] = [
   work(1),
   { kind: 'study', when: edu[1].when, title: poz.where, line: edu[1].org, text: edu[1].title, node: poz.where, lat: poz.lat, lon: poz.lon },
   work(0),
-  { kind: 'next', when: next.when, title: next.where, line: next.what, node: next.where },
 ];
-const launchLabel = lang === 'en' ? 'Lift off to 2027' : 'Despegar hacia 2027';
 const kindLabel = { study: ui.study, work: ui.work, next: ui.next };
 const stops = items.map((i) => (i.lat !== undefined ? { lat: i.lat, lon: i.lon } : null));
 const kinds = items.map((i) => i.kind);
@@ -38,13 +36,7 @@ const kinds = items.map((i) => i.kind);
     {items.map((it, i) => (
       <article class="stop-card" id={`stop-${i}`} role="tabpanel" aria-labelledby={`node-${i}`} data-kind={it.kind} hidden={i !== 0}>
         <span class="stop-kind mono">{kindLabel[it.kind]} · <span class="tnum">{it.when}</span></span>
-        {it.kind === 'next' ? (
-          <>
-            <h3>{rn.headline}</h3>
-            <p class="stop-line">{rn.lede}</p>
-            <button class="launch-btn" type="button" data-launch>{launchLabel}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg></button>
-          </>
-        ) : (
+        {(
           <>
             <h3>{it.title}</h3>
             <p class="stop-line">{it.line}</p>
@@ -64,6 +56,7 @@ const kinds = items.map((i) => i.kind);
   </div>
   <div class="tour-globe">
     <div class="scene scene-route" data-scene="route" data-step="0" data-stops={JSON.stringify(stops)} data-kinds={JSON.stringify(kinds)} data-visited={JSON.stringify(VISITED)} aria-hidden="true"><canvas></canvas></div>
+    <div class="countdown" aria-hidden="true"></div>
     <div class="globe-nav">
       <button class="tc gn" type="button" data-prev aria-label={ui.prev}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
@@ -74,6 +67,7 @@ const kinds = items.map((i) => i.kind);
     </div>
   </div>
 </div>
+<template id="rocket-tpl"><Rocket /></template>
 <div class="tour-track-wrap" data-tour-track>
   <div class="track" style={`--n:${items.length}`}>
    <div class="track-in" role="tablist" aria-label={ui.stops}>
@@ -96,6 +90,8 @@ const kinds = items.map((i) => i.kind);
   const trackWrap = document.querySelector<HTMLElement>('[data-tour-track]');
   if (root && trackWrap) {
     const scene = root.querySelector<HTMLElement>('[data-scene]')!;
+    const stopsEl = root.querySelector<HTMLElement>('.stops')!;
+    const cdEl = root.querySelector<HTMLElement>('.countdown')!;
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.stop-card'));
     const nodes = Array.from(trackWrap.querySelectorAll<HTMLButtonElement>('.node'));
     const track = trackWrap.querySelector<HTMLElement>('.track')!;
@@ -104,6 +100,12 @@ const kinds = items.map((i) => i.kind);
     const N = nodes.length;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let cur = 0, playing = false, visible = false, hovering = false, timer = 0, started = false;
+    let launching = false, launched = false, cdTimers: number[] = [];
+
+    /* The card area is exactly as tall as the stop on show, so no gap opens above the timeline */
+    function fit() { stopsEl.style.height = cards[cur].offsetHeight + 'px'; }
+    const sizer = new ResizeObserver(() => fit());
+    cards.forEach((c) => sizer.observe(c));
 
     function show(i: number) {
       cur = (i + N) % N;
@@ -117,6 +119,9 @@ const kinds = items.map((i) => i.kind);
       line.style.setProperty('--p', String(cur / (N - 1)));
       line.dataset.kind = nodes[cur].dataset.kind || '';
       track.scrollTo({ left: nodes[cur].offsetLeft - track.clientWidth / 2 + nodes[cur].clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
+      fit();
+      cancelCountdown();
+      if (cur === N - 1) armCountdown();
     }
     function tick() {
       window.clearTimeout(timer);
@@ -146,52 +151,135 @@ const kinds = items.map((i) => i.kind);
     });
     new IntersectionObserver((es) => {
       visible = es[0].isIntersecting;
+      if (visible && launched && !launching) launched = false;
+      if (!visible && !launching) cancelCountdown();
       if (visible && !started && !reduce) { started = true; setPlaying(true); } else tick();
+      if (visible && cur === N - 1) armCountdown();
     }, { threshold: 0.35 }).observe(root);
 
-    /* Lift-off: the last stop sends a rocket up out of the globe, with fire and smoke, while the page scrolls to the 2027 screen */
-    const launchBtn = root.querySelector<HTMLButtonElement>('[data-launch]');
+    /* ---- Lift-off ----
+       Reaching the last stop starts 3, 2, 1. Then the rocket leaves the globe, flies to the 2027 screen,
+       hovers while the days count up, and finally lands on the "Escríbeme" row at the bottom. */
     const space = document.getElementById('space');
-    let launching = false;
-    function launch() {
-      if (!space || launching) return;
-      if (reduce) { space.scrollIntoView({ behavior: 'auto', block: 'start' }); return; }
-      launching = true; setPlaying(false);
+    const tpl = document.getElementById('rocket-tpl') as HTMLTemplateElement | null;
+    const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+    function cancelCountdown() { cdTimers.forEach((t) => window.clearTimeout(t)); cdTimers = []; cdEl.classList.remove('on'); cdEl.textContent = ''; }
+    function armCountdown() {
+      if (reduce || !space || !tpl || launching || launched || !visible || cdTimers.length) return;
+      cdTimers.push(window.setTimeout(() => {
+        setPlaying(false);
+        [3, 2, 1].forEach((n, k) => cdTimers.push(window.setTimeout(() => {
+          cdEl.textContent = String(n); cdEl.classList.remove('on'); void cdEl.offsetWidth; cdEl.classList.add('on');
+          if (n === 1) cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 700));
+        }, k * 700)));
+      }, 2300));
+    }
+    function rocketNode(parked: boolean) {
+      const uid = Math.random().toString(36).slice(2, 7);
+      const wrap = document.createElement('div');
+      wrap.innerHTML = (tpl!.content.firstElementChild as Element).outerHTML.replace(/rkg-/g, `rkg-${uid}-`);
+      const svg = wrap.firstElementChild as SVGElement;
+      if (parked) svg.classList.add('is-parked');
+      return svg;
+    }
+    async function go(el: HTMLElement, from: string, to: string, opts: KeyframeAnimationOptions) {
+      const a = el.animate([{ transform: from }, { transform: to }], { ...opts, fill: 'forwards' });
+      await a.finished; el.style.transform = to; a.cancel();
+    }
+    function waitScrollEnd() {
+      return new Promise<void>((res) => {
+        let last = window.scrollY, same = 0;
+        const t = window.setInterval(() => {
+          same = Math.abs(window.scrollY - last) < 1 ? same + 1 : 0; last = window.scrollY;
+          if (same >= 4) { window.clearInterval(t); res(); }
+        }, 60);
+        window.setTimeout(() => { window.clearInterval(t); res(); }, 5000);
+      });
+    }
+    async function launch() {
+      if (!space || !tpl || launching) return;
+      launching = true; launched = true; cancelCountdown(); setPlaying(false);
+      document.querySelector('.rocket-parked')?.remove();
+      const bay = space.querySelector<HTMLElement>('.space-bay')!;
+      const bayRocket = bay.querySelector<HTMLElement>('.rocket-svg');
       const g = scene.getBoundingClientRect();
       const cx = g.left + g.width / 2, cy = g.top + g.height * 0.52;
-      const src = document.querySelector('.space .rocket-svg');
       const rocket = document.createElement('div');
       rocket.className = 'rocket-fly';
       rocket.style.left = cx + 'px'; rocket.style.top = cy + 'px';
-      if (src) rocket.appendChild(src.cloneNode(true));
+      rocket.appendChild(rocketNode(false));
       document.body.appendChild(rocket);
-      root.classList.add('liftoff');
-      const IGNITE = 800, FLIGHT = 2300;
-      rocket.animate([{ transform: 'translateY(0) scale(.3)', opacity: 0 }, { transform: 'translateY(-6px) scale(.55)', opacity: 1, offset: .25 }, { transform: 'translateY(-4px) scale(.6)', opacity: 1 }], { duration: IGNITE, easing: 'ease-out', fill: 'forwards' });
-      const fly = rocket.animate([{ transform: 'translateY(-4px) scale(.6)' }, { transform: `translateY(${-(cy + 260)}px) scale(1.25)` }], { duration: FLIGHT, delay: IGNITE, easing: 'cubic-bezier(.55,.02,.85,.45)', fill: 'forwards' });
-      window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), IGNITE + 500);
-      const t0 = performance.now(); let last = 0;
+      root!.classList.add('liftoff');
+      if (bayRocket) bayRocket.style.visibility = 'hidden';
+
+      let smoking = true, power = 1, last = 0;
       const puff = (x: number, y: number, fire: boolean) => {
         const e = document.createElement('i'); e.className = fire ? 'spark-f' : 'puff';
         const a = (Math.random() - 0.5) * 70;
-        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${fire ? 0.2 : 2.6 + Math.random() * 2.2};--d:${fire ? 0.5 : 1 + Math.random() * 0.7}s`;
+        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${fire ? 0.2 : 2.4 + Math.random() * 2};--d:${fire ? 0.5 : 0.9 + Math.random() * 0.6}s`;
         document.body.appendChild(e); e.addEventListener('animationend', () => e.remove());
       };
       const loop = (t: number) => {
-        if (t - last > 34) {
+        if (!smoking) return;
+        if (t - last > 36) {
           last = t;
           const r = rocket.getBoundingClientRect();
-          const tx = r.left + r.width / 2, ty = r.bottom - r.height * 0.08;
-          const power = t - t0 < IGNITE ? 1 : 2;
-          for (let k = 0; k < power; k++) puff(tx, ty, false);
-          if (Math.random() < 0.7) puff(tx, ty - 6, true);
+          const tx = r.left + r.width / 2, ty = r.bottom - r.height * 0.06;
+          const n = Math.floor(power + Math.random());
+          for (let k = 0; k < n; k++) puff(tx, ty, false);
+          if (Math.random() < Math.min(0.7, power * 0.5)) puff(tx, ty - 6, true);
         }
-        if (t - t0 < IGNITE + FLIGHT + 200) requestAnimationFrame(loop);
+        requestAnimationFrame(loop);
       };
       requestAnimationFrame(loop);
-      fly.finished.then(() => { rocket.remove(); root.classList.remove('liftoff'); launching = false; show(0); }).catch(() => { rocket.remove(); launching = false; });
+
+      try {
+        // 1. ignition at the globe
+        power = 1.4;
+        rocket.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: 'forwards' });
+        await go(rocket, 'translateY(0) scale(.3)', 'translateY(-4px) scale(.6)', { duration: 700, easing: 'ease-out' });
+        // 2. up to the 2027 screen: page scrolls while the rocket flies to the bay
+        const sr = space.getBoundingClientRect(), br = bay.getBoundingClientRect();
+        const hx = window.innerWidth / 2, hy = br.top - sr.top + br.height / 2;
+        window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+        power = 0.9;
+        const HOV = `translate(${hx - cx}px, ${hy - cy}px) scale(.9)`;
+        await go(rocket, 'translateY(-4px) scale(.6)', HOV, { duration: 2200, easing: 'cubic-bezier(.45,.05,.2,1)' });
+        await waitScrollEnd();
+        // 3. hover while the days count up
+        power = 0.25;
+        const bob = rocket.animate([{ transform: HOV }, { transform: `translate(${hx - cx}px, ${hy - cy - 9}px) scale(.9)` }, { transform: HOV }], { duration: 1800, easing: 'ease-in-out' });
+        await bob.finished; bob.cancel();
+        // 4. scroll down to the contact panel
+        const row = document.querySelector<HTMLElement>('.hb-row.main')!;
+        const rowDocTop = row.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: rowDocTop - window.innerHeight * 0.6, behavior: 'smooth' });
+        await sleep(150); await waitScrollEnd();
+        // 5. descend and land on the row, nose up and engine firing
+        power = 0.8;
+        const rr = row.getBoundingClientRect();
+        const lx = rr.left + rr.width * 0.84, ldy = rr.top - 30.2 - cy; /* the drawn nozzle ends at 99 of 135px */
+        const LAND = `translate(${lx - cx}px, ${ldy}px) scale(.8)`;
+        await go(rocket, HOV, LAND, { duration: 1900, easing: 'cubic-bezier(.3,.1,.25,1)' });
+        // 6. touchdown: dust, engine off, and the rocket stays parked on the row
+        smoking = false;
+        const bx = lx, by = rr.top + 4;
+        for (let k = 0; k < 12; k++) { const e = document.createElement('i'); e.className = 'puff'; const side = k % 2 ? 1 : -1; e.style.cssText = `left:${bx}px;top:${by}px;--dx:${side * (24 + Math.random() * 70)}px;--dy:${-4 - Math.random() * 14}px;--s:${2 + Math.random() * 1.6};--d:${0.9 + Math.random() * 0.5}s`; document.body.appendChild(e); e.addEventListener('animationend', () => e.remove()); }
+        const links = row.parentElement as HTMLElement;
+        const lk = links.getBoundingClientRect();
+        const parked = document.createElement('div');
+        parked.className = 'rocket-parked';
+        parked.style.left = (lx - 27 - lk.left) + 'px';
+        parked.style.top = ((cy - 68 + ldy) - lk.top) + 'px';
+        parked.appendChild(rocketNode(true));
+        links.appendChild(parked);
+        rocket.remove();
+      } finally {
+        smoking = false; rocket.remove();
+        root!.classList.remove('liftoff'); launching = false;
+        show(0);
+      }
     }
-    launchBtn?.addEventListener('click', launch);
     show(0);
   }
 </script>

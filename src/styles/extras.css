@@ -69,12 +69,6 @@
 }
 
 /* ---- Lift-off: rocket from the globe, then the 2027 screen in space ---- */
-.launch-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; min-height: 48px; padding: 0 20px; border-radius: 4px; border: 1px solid var(--teal); background: var(--teal); color: var(--on-teal); font: inherit; font-weight: 560; cursor: pointer; transition: transform .2s, background .25s; }
-.launch-btn svg { width: 18px; height: 18px; transition: transform .35s var(--ease); }
-.launch-btn:hover { background: var(--teal-ink); border-color: var(--teal-ink); }
-.launch-btn:hover svg { transform: translateY(-3px); }
-.launch-btn:active { transform: scale(.97); }
-
 .tour.liftoff .tour-globe { animation: lo-shake .09s linear 9; }
 .tour .tour-globe .scene { transition: transform 1.4s var(--ease), opacity 1.4s; }
 .tour.liftoff .tour-globe .scene { transform: scale(.93); opacity: .6; }
@@ -98,8 +92,9 @@
 @keyframes twinkle { from { opacity: .35; } to { opacity: 1; } }
 .space-limb { position: absolute; z-index: -1; left: 50%; top: -88%; width: 190%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, #05090c 92%, rgba(59,184,190,.22) 96%, rgba(59,184,190,.55) 99%, transparent 100%); filter: blur(1px); }
 .space-in { display: grid; justify-items: center; gap: 14px; max-width: 640px; }
-.space-rocket { width: 38px; height: 95px; margin-bottom: 8px; animation: spaceHover 5s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(59,184,190,.45)); overflow: visible; }
-@keyframes spaceHover { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+.space-bay { height: 132px; display: grid; place-items: center; }
+.space-rocket { width: 49px; height: 122px; filter: drop-shadow(0 0 14px rgba(59,184,190,.45)); overflow: visible; }
+.space-rocket .rk-flame { display: none; }
 .space-kind { margin: 0; color: var(--teal-ink); letter-spacing: .16em; text-transform: uppercase; font-size: .72rem; }
 .space h2 { margin: 0; font-size: clamp(2.2rem, 6.4vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; text-wrap: balance; }
 .space-lede { margin: 0; color: var(--ink-2); max-width: 44ch; }
@@ -107,4 +102,17 @@
 .space-count b { font-size: clamp(3.4rem, 11vw, 6.4rem); line-height: 1; letter-spacing: -0.05em; font-weight: 600; color: var(--teal-ink); }
 .space-count span { color: var(--ink-2); text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; }
 .space::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 2px; height: 56px; background: linear-gradient(var(--teal), transparent); opacity: .8; }
-@media (prefers-reduced-motion: reduce) { .space-stars i, .space-rocket, .rk-flame, .tour.liftoff .tour-globe { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .space-stars i, .rk-flame, .tour.liftoff .tour-globe { animation: none !important; } }
+
+/* card area follows the stop on show (no gap above the timeline) */
+.tour .stops { display: grid; overflow: hidden; transition: height .45s var(--ease); }
+.tour .stop-card { align-self: start; }
+.tour-globe { position: relative; }
+.countdown { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-weight: 700; font-size: clamp(5rem, 20vw, 9rem); letter-spacing: -.05em; color: var(--teal-ink); text-shadow: 0 0 34px var(--teal), 0 0 6px rgba(255,255,255,.35); opacity: 0; z-index: 3; }
+.countdown.on { animation: cdPop .7s ease-out forwards; }
+@keyframes cdPop { 0% { opacity: 0; transform: scale(1.9); } 22% { opacity: 1; transform: scale(1); } 78% { opacity: 1; transform: scale(.96); } 100% { opacity: 0; transform: scale(.7); } }
+/* rocket parked on the contact row after landing */
+.hb-links { position: relative; padding-top: 104px; }
+.rocket-parked { position: absolute; z-index: 3; width: 54px; height: 135px; transform: scale(.8); transform-origin: 50% 85%; pointer-events: none; }
+.rocket-parked .rocket-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+.rocket-parked .rk-flame { display: none; }
