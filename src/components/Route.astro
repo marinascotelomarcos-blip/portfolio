@@ -1,6 +1,5 @@
 ---
 import { VISITED, T, EMAIL, CV, type Lang } from '../lib/content';
-import Rocket from './Rocket.astro';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const h = T[lang].home;
@@ -68,7 +67,6 @@ const kinds = items.map((i) => i.kind);
     </div>
   </div>
 </div>
-<template id="rocket-tpl"><Rocket /></template>
 <div class="tour-track-wrap" data-tour-track>
   <div class="track" style={`--n:${items.length}`}>
    <div class="track-in" role="tablist" aria-label={ui.stops}>
@@ -161,14 +159,16 @@ const kinds = items.map((i) => i.kind);
     }, { threshold: 0.35 }).observe(root);
 
     /* ================= Lift-off =================
-       Full charge starts 3, 2, 1. The rocket then follows ONE continuous path (so it never stops and starts):
-       up from the globe, a curve past the 2027 planet, a slow drift over the text so it can be read, then a long
-       swoop down to the pad in "Hablemos", flipping nose-up and landing with the engine on.
-       The camera follows the rocket; smoke is drawn on one canvas; a few clouds stay on the page as a trail. */
+       Full charge starts 3, 2, 1. The rocket is Marcos's real 3D model, rendered live:
+       it rises out of the planet nose-first TOWARD the camera (true perspective, it grows because it comes closer),
+       pitches over to look down, drifts past the 2027 planet, loops slowly over the text so it can be read,
+       then swoops down and lands softly on the pad. One continuous path; the camera follows downward only.
+       It is a quiet guide, not the star of the page. */
     const space = document.getElementById('space');
-    const tpl = document.getElementById('rocket-tpl') as HTMLTemplateElement | null;
-    const NOZ = 32; // rocket box 64x128, scale origin at 45%; the nozzle sits NOZ px below the origin (at scale 1)
+    const CS = 180; // rocket canvas, CSS px
     const rad = (d: number) => (d * Math.PI) / 180;
+    let rocketLib: Promise<any> | null = null;
+    const loadRocketLib = () => (rocketLib ||= import('../lib/rocket3d.js'));
 
     function cancelCountdown() {
       window.clearTimeout(pending);
@@ -178,8 +178,9 @@ const kinds = items.map((i) => i.kind);
     }
     let cdTimers: number[] = [];
     function startCountdown() {
-      if (reduce || !space || !tpl || phase !== 'idle') return;
+      if (reduce || !space || phase !== 'idle') return;
       phase = 'count';
+      loadRocketLib(); // fetch the 3D code and model while the numbers run
       overlay = document.createElement('div');
       overlay.className = 'cd-fs';
       overlay.setAttribute('aria-hidden', 'true');
@@ -192,32 +193,34 @@ const kinds = items.map((i) => i.kind);
       cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 380)); }, 150 + 3 * 700));
     }
 
-    function rocketNode() {
-      const wrap = document.createElement('div');
-      wrap.innerHTML = (tpl!.content.firstElementChild as Element).outerHTML;
-      return wrap.firstElementChild as HTMLElement;
-    }
     type Pt = { x: number; y: number };
     const smooth = (u: number) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
-    const bez = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => { const v = 1 - u; return { x: v * v * v * a.x + 3 * v * v * u * b.x + 3 * v * u * u * c.x + u * u * u * d.x, y: v * v * v * a.y + 3 * v * v * u * b.y + 3 * v * u * u * c.y + u * u * u * d.y }; };
-    const headingDeg = (h: Pt) => (Math.atan2(h.x, -h.y) * 180) / Math.PI; // 0 = nose up, 90 = nose right, 180 = nose down
+    const easeOut3 = (u: number) => 1 - Math.pow(1 - Math.max(0, Math.min(1, u)), 3);
 
     async function launch() {
-      if (!space || !tpl) return;
+      if (!space) return;
       phase = 'fly'; abort = false;
       overlay?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => ov?.remove(), 700);
       document.querySelector('.rocket-parked')?.remove();
       document.getElementById('rocket-trail')?.remove();
       document.querySelector('.hb-pad')?.classList.remove('lit');
       const planet = space.querySelector<HTMLElement>('.planet')!;
-      const finale = document.querySelector<HTMLElement>('.finale')!;
       const row = document.querySelector<HTMLElement>('.hb-row.main')!;
       const links = row.parentElement as HTMLElement;
       const pad = links.querySelector<HTMLElement>('.hb-pad')!;
       const html = document.documentElement;
+
+      // the 3D rocket; if WebGL or the model is unavailable, the page simply scrolls down to 2027
+      let lib: any, rk: any;
+      try { lib = await loadRocketLib(); rk = await lib.createRocket({ size: CS }); }
+      catch (e) { phase = 'idle'; show(0); space.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      const V3 = (x: number, y: number, z: number) => ({ x, y, z });
+      const THREE_V = rk.nose(); // a THREE.Vector3 we can reuse
+      const NOZ = (lib.BODY_LEN / 2) / lib.UNITS_PER_CANVAS * CS; // px from the rocket's centre to its nozzle at normal depth
+      const persp = (z: number) => 15.5 / (15.5 - z);              // on-screen size factor at depth z
+
       html.classList.add('flying');
       const prevBehavior = html.style.scrollBehavior; html.style.scrollBehavior = 'auto'; // the page has smooth scrolling in CSS; the camera must not be smoothed twice
-
       const block = (e: Event) => e.preventDefault();
       window.addEventListener('wheel', block, { passive: false }); window.addEventListener('touchmove', block, { passive: false });
       const skip = document.createElement('button');
@@ -229,25 +232,22 @@ const kinds = items.map((i) => i.kind);
       const dr = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height }; };
       const docH = html.scrollHeight, maxScroll = Math.max(0, docH - H);
 
-      // trail layer (document coordinates)
       const trail = document.createElement('div');
       trail.id = 'rocket-trail'; trail.style.height = docH + 'px';
       document.body.appendChild(trail);
 
-      // smoke canvas: one fixed layer, particles live in document coordinates
-      const dpr = 1; // smoke is soft; a 1x canvas keeps phones fast
+      /* smoke: one fixed canvas, particles live in document coordinates */
       const cv = document.createElement('canvas'); cv.className = 'fly-smoke';
-      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      cv.width = W; cv.height = H;
       document.body.appendChild(cv);
-      const ctx = cv.getContext('2d')!; ctx.scale(dpr, dpr);
+      const ctx = cv.getContext('2d')!;
       const sprite = (c0: string, c1: string) => { const s = document.createElement('canvas'); s.width = s.height = 64; const x = s.getContext('2d')!; const gr = x.createRadialGradient(28, 28, 2, 32, 32, 31); gr.addColorStop(0, c0); gr.addColorStop(1, c1); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return s; };
       const puffSp = sprite('rgba(255,255,255,.95)', 'rgba(200,214,218,0)'), fireSp = sprite('rgba(255,236,170,1)', 'rgba(255,110,30,0)');
       type Pa = { x: number; y: number; vx: number; vy: number; t0: number; life: number; s0: number; s1: number; a: number; fire: boolean };
       let parts: Pa[] = [];
-      const addPart = (x: number, y: number, fire: boolean, t: number, k = 1, al = 0.62) => {
-        if (parts.length > 90) return;
-        const sp = fire ? 40 : 22;
-        parts.push({ x: x + (Math.random() - 0.5) * 10, y, vx: (Math.random() - 0.5) * sp * 1.6, vy: (fire ? 50 : 26) + Math.random() * 40, t0: t, life: fire ? 420 : 900 + Math.random() * 500, s0: fire ? 9 : 12, s1: (fire ? 3 : 32 + Math.random() * 20) * k, a: fire ? 1 : al, fire });
+      const addPart = (x: number, y: number, fire: boolean, t: number, k = 1, al = 0.5) => {
+        if (parts.length > 80) return;
+        parts.push({ x: x + (Math.random() - 0.5) * 8, y, vx: (Math.random() - 0.5) * (fire ? 60 : 34), vy: (fire ? 40 : 18) + Math.random() * 30, t0: t, life: fire ? 380 : 800 + Math.random() * 500, s0: fire ? 8 : 10, s1: (fire ? 3 : 26 + Math.random() * 16) * k, a: fire ? 1 : al, fire });
       };
       const drawParts = (t: number, cam: number) => {
         ctx.clearRect(0, 0, W, H);
@@ -255,197 +255,210 @@ const kinds = items.map((i) => i.kind);
         for (const p of parts) {
           const u = (t - p.t0) / p.life, e = 1 - (1 - u) * (1 - u), sz = p.s0 + (p.s1 - p.s0) * e;
           ctx.globalAlpha = p.a * (1 - u) * (p.fire ? 1 : Math.min(1, u * 8));
-          const x = p.x + p.vx * e * 1.4, y = p.y + p.vy * e * 1.4 - cam;
-          ctx.drawImage(p.fire ? fireSp : puffSp, x - sz, y - sz, sz * 2, sz * 2);
+          ctx.drawImage(p.fire ? fireSp : puffSp, p.x + p.vx * e * 1.4 - sz, p.y + p.vy * e * 1.4 - cam - sz, sz * 2, sz * 2);
         }
         ctx.globalAlpha = 1;
       };
 
-      /* ---- path, built once in document coordinates ----
-         Up from the globe, past the planet, then a slow zig-zag over the text (so it can be read), then down to the pad. */
-      const g = dr(scene), S: Pt = { x: g.x + g.w / 2, y: g.y + g.h * 0.52 };
-      const pl = dr(planet), C: Pt = { x: pl.x + pl.w / 2, y: pl.y + pl.h / 2 };
+      /* ---- the path, built once in document coordinates ---- */
+      const g = dr(scene), S: Pt = { x: g.x + g.w / 2, y: g.y + g.h * 0.5 };
+      const pl = dr(planet);
       const kindR = dr(space.querySelector<HTMLElement>('.space-kind')!), countR = dr(space.querySelector<HTMLElement>('.space-count')!);
       const zt = kindR.y, zb = countR.y + countR.h, zh = zb - zt;
-      const pd = dr(pad), FINAL_SCALE = 0.8;
-      const Lp: Pt = { x: pd.x + pd.w / 2, y: pd.y - NOZ * FINAL_SCALE };
-      const Q0: Pt = { x: Math.min(W * 0.84, C.x + pl.w * 0.95), y: C.y + pl.h * 0.1 };
+      const pd = dr(pad);
+      const Lp: Pt = { x: pd.x + pd.w * 0.5, y: pd.y - NOZ + 3 };
+      const Q0: Pt = { x: W * 0.8, y: zt - 24 };
+      const Xe: Pt = { x: W * 0.36, y: zt + zh + 30 };
       const ctrl: Pt[] = [
-        { x: S.x, y: S.y + 6 },                                               // starts inside the globe
-        { x: S.x + 2, y: S.y - 50 },                                          // nose pokes out of the planet
-        { x: S.x + 0.08 * W, y: S.y - 80 },                                   // tiny apex, then it turns over
-        { x: S.x + 0.21 * W, y: S.y - 34 },
-        Q0,                                                                   // index 4: zone starts (past the planet)
-        { x: W * 0.34, y: zt + zh * 0.20 },
-        { x: W * 0.66, y: zt + zh * 0.52 },
-        { x: W * 0.40, y: zt + zh * 0.86 },                                   // index 7: zone ends
-        { x: Lp.x - 30, y: Math.max(zb + 80, Lp.y - 0.42 * H) },
-        Lp,
+        S,
+        { x: S.x + 2, y: S.y + 36 },
+        { x: S.x + 0.14 * W, y: S.y + 0.26 * H },
+        { x: S.x + (Q0.x - S.x) * 0.66, y: S.y + (Q0.y - S.y) * 0.62 },
+        Q0,
       ];
+      const iZ0 = ctrl.length - 1;
+      // slow loop-the-loop over the text: forward drift plus one full circle with eased ends (so the path stays smooth)
+      const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118));
+      const ZN = 30;
+      for (let i = 1; i <= ZN; i++) {
+        const u = i / ZN, f = smooth(u), th = Math.PI * 2 * smooth((u - 0.12) / 0.76);
+        ctrl.push({ x: Q0.x + (Xe.x - Q0.x) * f + R * (Math.cos(th) - 1), y: Q0.y + (Xe.y - Q0.y) * f + R * Math.sin(th) });
+      }
+      const iZ1 = ctrl.length - 1;
+      ctrl.push({ x: Lp.x - 24, y: Math.max(zb + 110, Lp.y - 0.44 * H) });
+      ctrl.push(Lp);
       type Node = { p: Pt; seg: 0 | 1 | 2; u: number };
       const nodes: Node[] = [];
       const cr = (p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt => { const t2 = t * t, t3 = t2 * t; const f = (a: number, b: number, c: number, d: number) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3); return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) }; };
-      const SAMP = 36, nSeg = ctrl.length - 1;
-      for (let k = 0; k < nSeg; k++) {
+      for (let k = 0; k < ctrl.length - 1; k++) {
         const p0 = ctrl[Math.max(0, k - 1)], p1 = ctrl[k], p2 = ctrl[k + 1], p3 = ctrl[Math.min(ctrl.length - 1, k + 2)];
-        for (let i = (k === 0 ? 0 : 1); i <= SAMP; i++) {
-          const seg: 0 | 1 | 2 = k < 4 ? 0 : (k < 7 ? 1 : 2);
-          const u = seg === 0 ? (k * SAMP + i) / (4 * SAMP) : seg === 1 ? ((k - 4) * SAMP + i) / (3 * SAMP) : ((k - 7) * SAMP + i) / ((nSeg - 7) * SAMP);
-          nodes.push({ p: cr(p0, p1, p2, p3, i / SAMP), seg, u: Math.min(1, u) });
-        }
+        const seg: 0 | 1 | 2 = k < iZ0 ? 0 : (k < iZ1 ? 1 : 2);
+        const samp = seg === 1 ? 5 : 26;
+        const segStart = seg === 0 ? 0 : seg === 1 ? iZ0 : iZ1, segLen = seg === 0 ? iZ0 : seg === 1 ? iZ1 - iZ0 : ctrl.length - 1 - iZ1;
+        for (let i = (k === 0 ? 0 : 1); i <= samp; i++) nodes.push({ p: cr(p0, p1, p2, p3, i / samp), seg, u: Math.min(1, ((k - segStart) + i / samp) / segLen) });
       }
       const n = nodes.length;
       const cum: number[] = [0];
       for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(nodes[i].p.x - nodes[i - 1].p.x, nodes[i].p.y - nodes[i - 1].p.y));
       const total = cum[n - 1];
-      let iz0 = nodes.findIndex((q) => q.seg === 1), iz1 = n - 1 - [...nodes].reverse().findIndex((q) => q.seg === 1);
+      const iz0 = nodes.findIndex((q) => q.seg === 1), iz1 = n - 1 - [...nodes].reverse().findIndex((q) => q.seg === 1);
       const sZ0 = cum[iz0], sZ1 = cum[iz1];
       // speed along the path: eases out of the launch, glides slowly over the text, eases into the landing
       const speedAt = (s: number) => {
-        const acc = smooth(s / (total * 0.16)), dec = smooth((total - s) / (total * 0.2));
-        let v = 0.16 + 0.84 * Math.min(acc, dec);
-        const w = total * 0.05, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (2 * w)));
-        v *= 1 - 0.66 * bump;
+        const acc = smooth(s / (total * 0.12)), dec = smooth((total - s) / (total * 0.2));
+        let v = 0.1 + 0.9 * Math.min(acc, dec);
+        const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (2 * w)));
+        v *= 1 - 0.6 * bump;
         return v;
       };
       const tm: number[] = [0];
-      for (let i = 1; i < n; i++) { const s = (cum[i] + cum[i - 1]) / 2; tm.push(tm[i - 1] + (cum[i] - cum[i - 1]) / Math.max(0.05, speedAt(s))); }
-      const FLIGHT = 8400; // ms of flight after the 650 ms ignition
+      for (let i = 1; i < n; i++) { const s = (cum[i] + cum[i - 1]) / 2; tm.push(tm[i - 1] + (cum[i] - cum[i - 1]) / Math.max(0.04, speedAt(s))); }
+      const FLIGHT = 9200; // ms after the 700 ms ignition
       const tmk = FLIGHT / tm[n - 1]; for (let i = 0; i < n; i++) tm[i] *= tmk;
-      // heading per node, unwrapped, and blended to nose-up over the last stretch
-      const rots: number[] = []; let last = 0;
+      // unit direction of travel per node (smoothed over neighbours)
+      const hdg: Pt[] = [];
       for (let i = 0; i < n; i++) {
-        const a = nodes[Math.max(0, i - 8)].p, b = nodes[Math.min(n - 1, i + 8)].p;
-        let r = headingDeg({ x: b.x - a.x, y: b.y - a.y });
-        // over the text the nose just leans (±36° from straight down) while the rocket drifts sideways: gentle, never whipping
-        if (nodes[i].seg === 1) {
-          const wz = Math.min(smooth(nodes[i].u / 0.22), smooth((1 - nodes[i].u) / 0.22));
-          const k = Math.round((r - 180) / 360), dev = r - (180 + 360 * k), lean = 180 + 360 * k + Math.max(-36, Math.min(36, dev));
-          r = r * (1 - wz) + lean * wz;
-        }
-        const fl = smooth((cum[i] / total - 0.82) / 0.16);
-        r = r * (1 - fl);
-        while (r - last > 180) r -= 360; while (r - last < -180) r += 360;
-        last = r; rots.push(r);
+        const a = nodes[Math.max(0, i - 4)].p, b = nodes[Math.min(n - 1, i + 4)].p;
+        const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
+        hdg.push({ x: dx / l, y: dy / l });
       }
-      const scaleAt = (i: number) => {
-        const nd = nodes[i];
-        if (nd.seg === 0) return 0.5 + 0.5 * smooth(nd.u * 1.5);
-        if (nd.seg === 1) return 1.0;
-        return 1.0 - (1.0 - FINAL_SCALE) * smooth(nd.u);
-      };
 
-      /* ---- rocket ---- */
-      const rocket = rocketNode();
-      rocket.classList.add('rocket-fly');
-      rocket.style.opacity = '0';
-      document.body.appendChild(rocket);
+      /* ---- rocket canvas ---- */
+      const cvs: HTMLCanvasElement = rk.canvas;
+      cvs.className = 'rocket-gl';
+      cvs.style.width = CS + 'px'; cvs.style.height = CS + 'px';
+      cvs.style.opacity = '0';
+      document.body.appendChild(cvs);
       root!.classList.add('liftoff');
-      // the rocket lives in screen space (position: fixed): its smoothness never depends on how the browser scrolls the page
-      const put = (p: Pt, rot: number, s: number) => { rocket.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${rot}deg) scale(${s})`; };
-      let parked = false, burning = false;
-
-      const park = (P: Pt) => {
+      const put = (x: number, y: number) => { cvs.style.transform = `translate3d(${x}px, ${y}px, 0)`; };
+      let parked = false, scenePaused = false;
+      const park = (P: Pt, img: string) => {
         const lk = dr(links);
         const el = document.createElement('div');
         el.className = 'rocket-parked';
         el.style.left = (P.x - lk.x) + 'px'; el.style.top = (P.y - lk.y) + 'px';
-        el.appendChild(rocketNode());
+        const im = document.createElement('img'); im.src = img; im.alt = ''; im.width = CS; im.height = CS;
+        el.appendChild(im);
         links.appendChild(el); parked = true;
       };
       let persist = 0, lastEmit = 0;
-      const tailOf = (P: Pt, rot: number, s: number): Pt => { const d = 45 * s, r = rad(rot); return { x: P.x - d * Math.sin(r), y: P.y + d * Math.cos(r) }; };
       const trailCloud = (tp: Pt) => {
         const c = document.createElement('i'); c.className = 'cloud';
-        c.style.cssText = `left:${tp.x + (Math.random() - 0.5) * 18}px;top:${tp.y + (Math.random() - 0.5) * 12}px;--cs:${0.9 + Math.random() * 1.0}`;
+        c.style.cssText = `left:${tp.x + (Math.random() - 0.5) * 18}px;top:${tp.y + (Math.random() - 0.5) * 12}px;--cs:${0.8 + Math.random() * 0.9}`;
         trail.appendChild(c);
       };
-
-      const finish = (landed: boolean) => {
+      const finish = () => {
         html.style.scrollBehavior = prevBehavior; html.classList.remove('flying'); scene.style.transform = '';
         window.removeEventListener('wheel', block); window.removeEventListener('touchmove', block);
-        skip.remove(); rocket.remove();
+        skip.remove(); rk.dispose();
         root!.classList.remove('liftoff'); phase = 'idle';
         window.setTimeout(() => cv.remove(), 1400);
         show(0);
       };
 
       /* ---- one loop: rocket, camera, smoke ---- */
-      let cam = window.scrollY, camVel = 0, tPrev = performance.now(), ang = 0, angVel = 0, scenePaused = false;
+      let cam = window.scrollY, camVel = 0, tPrev = performance.now();
       const startScroll = window.scrollY;
       const zoneView = zt - H * 0.18;
       const camTarget = (idx: number, P: Pt) => {
         const nd = nodes[idx];
         let target: number;
-        if (nd.seg === 1) target = zoneView;                            // reading zone: hold the text in view
+        if (nd.seg === 1) target = zoneView;                                  // over the text: hold it in view
         else if (nd.seg === 2) { const k = smooth(nd.u * 1.2), t1 = zoneView + (P.y - H * 0.5 - zoneView) * smooth(nd.u / 0.3); target = t1 * (1 - k) + (Lp.y - H * 0.6) * k; }
-        else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // seg 0: only ever follows downward
+        else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // before the text: only ever follows downward
         return Math.max(0, Math.min(maxScroll, target));
       };
-      const IGN = 650;
-      rocket.style.opacity = '1';
+      const IGN = 700;
       const t0 = performance.now();
+      let touch = 0;
       await new Promise<void>((resolve) => {
         const frame = (now: number) => {
           const dt = Math.min(64, now - tPrev); tPrev = now;
-          const T = now - t0;
+          const T = now - t0, dts = dt / 1000;
           if (abort) { resolve(); return; }
-          let P: Pt, rot: number, s: number, idx = 0;
+          let P: Pt, idx = 0, tt = 0, land = 0, hx = 0, hy = 1;
           if (T < IGN) {
-            const u = T / IGN, sh = (1 - u) * 1.6 * Math.sin(u * 90);
-            P = { x: S.x + sh, y: S.y + 6 }; rot = 0; s = 0.42 + 0.08 * u;
-            put({ x: P.x, y: P.y - cam }, 0, s);
-            if (now - lastEmit > 30) { lastEmit = now; const tp = tailOf(P, 0, s); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y, false, now); addPart(tp.x, tp.y - 4, true, now); }
+            P = { x: S.x, y: S.y }; tt = 0;
+            cvs.style.opacity = '1';
           } else {
-            const tt = Math.min(FLIGHT, T - IGN);
+            tt = Math.min(FLIGHT, T - IGN);
             let lo = 0, hi = n - 1;
             while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tm[mid] <= tt) lo = mid; else hi = mid; }
             const f = tm[hi] > tm[lo] ? (tt - tm[lo]) / (tm[hi] - tm[lo]) : 0;
             idx = f > 0.5 ? hi : lo;
             P = { x: nodes[lo].p.x + (nodes[hi].p.x - nodes[lo].p.x) * f, y: nodes[lo].p.y + (nodes[hi].p.y - nodes[lo].p.y) * f };
-            const rotT = rots[lo] + (rots[hi] - rots[lo]) * f; s = scaleAt(lo) + (scaleAt(hi) - scaleAt(lo)) * f;
-            // camera and nose are critically-damped springs: no sudden accelerations, so nothing snaps or lurches
-            const dts = dt / 1000;
+            hx = hdg[lo].x + (hdg[hi].x - hdg[lo].x) * f; hy = hdg[lo].y + (hdg[hi].y - hdg[lo].y) * f;
+            land = smooth((cum[lo] / total - 0.8) / 0.16);
+            // camera: a critically-damped spring that follows the rocket
             const target = camTarget(idx, P), wc = 5.2;
             camVel += (wc * wc * (target - cam) - 2 * wc * camVel) * dts; camVel = Math.max(-2600, Math.min(2600, camVel));
             cam = Math.max(0, Math.min(maxScroll, cam + camVel * dts));
             window.scrollTo(0, cam);
-            const wr = 6.5, wMax = 210; angVel += (wr * wr * (rotT - ang) - 2 * wr * angVel) * dts; angVel = wMax * Math.tanh(angVel / wMax); ang += angVel * dts; rot = ang; // soft limit: no kink when the turn is fast
-            put({ x: P.x, y: P.y - cam }, rot, s);
-            if (!scenePaused && T > IGN + 1500) { scenePaused = true; scene.style.transform = 'translateY(-99999px)'; } // stop the globe renderer: the GPU is needed here
-            if (!burning && cum[lo] / total > 0.8) { burning = true; rocket.classList.add('burn'); }
-            const zone = nodes[idx].seg === 1, rate = zone ? 0.3 : (cum[lo] / total > 0.8 ? 2.2 : 1.4);
-            if (now - lastEmit > 28) {
-              lastEmit = now; const tp = tailOf(P, rot, s);
-              const k = Math.floor(rate + Math.random()); for (let q = 0; q < k; q++) addPart(tp.x, tp.y, false, now, zone ? 0.45 : 1, zone ? 0.22 : 0.62);
-              if (Math.random() < Math.min(0.8, rate * 0.5)) addPart(tp.x, tp.y - 4, true, now);
-              if (++persist % 7 === 0) trailCloud(tp);
+            if (!scenePaused && cam > g.y + g.h + 30) { scenePaused = true; scene.style.transform = 'translateY(-99999px)'; } // once the globe is off screen, stop its renderer: the GPU is needed here
+          }
+          /* orientation (world: x right, y up, z toward the viewer).
+             Start: nose pointing at the camera. Then it pitches over to look along its path (down the page), banks through the
+             loop, and finally stands up for the landing. */
+          const elev = (Math.PI / 2) * (1 - smooth((tt - 600) / 1700));       // 90° = nose at the camera, 0 = flying in the screen plane
+          const plane = { x: hx, y: -hy };                                      // screen direction (y down) -> world (y up)
+          const upBlend = land;
+          let dx = plane.x * (1 - upBlend), dy = plane.y * (1 - upBlend) + upBlend, dz = 0;
+          const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+          const ce = Math.cos(elev), se = Math.sin(elev);
+          rk.setPose(V3(dx * ce, dy * ce, se), 3.4 * (1 - smooth(tt / 2600)) * (1 - upBlend) + (-0.5) * upBlend);
+          rk.update(dts, 0.15);
+          // depth: it starts far away inside the planet and comes toward the viewer (real perspective, not a zoom)
+          const z = -17 * (1 - easeOut3(tt / 1800));
+          rk.setDepth(z);
+          const flame = (T < IGN ? 0.8 : 1) * (1 + 0.8 * land);
+          rk.setFlame(flame);
+          // place: the canvas is centred on the rocket
+          const sx = P.x - CS / 2, sy = P.y - cam - CS / 2;
+          put(sx + (T < IGN ? (1 - T / IGN) * 1.6 * Math.sin(T * 0.09) : 0), sy);
+          rk.render(now);
+
+          // smoke from the tail
+          if (now - lastEmit > 30 && (T < IGN || tt > 250)) {
+            lastEmit = now;
+            rk.nose(THREE_V);
+            if (Math.abs(THREE_V.z) < 0.88) {
+              const sc = persp(z), tl = (NOZ + 14) * sc;
+              const tp: Pt = { x: P.x - THREE_V.x * tl, y: P.y + THREE_V.y * tl };
+              const zone = nodes[idx].seg === 1 && T >= IGN;
+              const rate = T < IGN ? 1.2 : (zone ? 0.22 : (0.9 + 1.4 * land)) * Math.min(1, 0.4 + sc * 0.6);
+              const k = Math.floor(rate + Math.random());
+              for (let q = 0; q < k; q++) addPart(tp.x, tp.y, false, now, zone ? 0.5 : 1, zone ? 0.2 : 0.5);
+              if (Math.random() < Math.min(0.7, rate * 0.45)) addPart(tp.x, tp.y - 3, true, now);
+              if (T >= IGN && ++persist % 8 === 0) trailCloud(tp);
             }
           }
           drawParts(now, cam);
-          if (T < IGN + FLIGHT) requestAnimationFrame(frame); else resolve();
+          if (T < IGN + FLIGHT) requestAnimationFrame(frame); else { touch = now; resolve(); }
         };
         requestAnimationFrame(frame);
       });
 
       if (abort) {
-        rocket.remove();
         window.scrollTo(0, Math.max(0, Math.min(maxScroll, Lp.y - H * 0.6)));
-        park({ x: Lp.x, y: Lp.y }); pad.classList.add('lit');
-        finish(false); return;
+        cvs.remove();
+        const pdAfter = dr(pad);
+        const LpA: Pt = { x: pdAfter.x + pdAfter.w * 0.5, y: pdAfter.y - NOZ + 3 };
+        park(LpA, rk.snapshot()); pad.classList.add('lit');
+        finish(); return;
       }
 
-      /* touchdown: flash and dust on the pad, engine off, rocket stays */
-      const now = performance.now();
-      for (let k = 0; k < 26; k++) { const side = k % 2 ? 1 : -1; addPart(pd.x + pd.w / 2 + side * Math.random() * 18, pd.y, k % 3 === 0, now, 0.8); const p = parts[parts.length - 1]; if (p) { p.vx = side * (50 + Math.random() * 140); p.vy = -4 - Math.random() * 20; } }
+      /* touchdown: engine cuts out with a flash and dust, and the rocket stays parked on the pad */
+      await new Promise<void>((res) => { const t1 = performance.now(); const f2 = (now: number) => { const u = Math.min(1, (now - t1) / 260); rk.setFlame(1.8 * (1 - u)); rk.update(0.016, 0.15); rk.render(now); drawParts(now, cam); if (u < 1) requestAnimationFrame(f2); else res(); }; requestAnimationFrame(f2); });
+      const now2 = performance.now();
+      for (let k = 0; k < 22; k++) { const side = k % 2 ? 1 : -1; addPart(pd.x + pd.w / 2 + side * Math.random() * 14, pd.y, k % 3 === 0, now2, 0.8, 0.4); const p = parts[parts.length - 1]; if (p) { p.vx = side * (40 + Math.random() * 110); p.vy = -4 - Math.random() * 16; } }
       const flash = document.createElement('i'); flash.className = 'pad-flash';
       flash.style.cssText = `left:${pd.x + pd.w / 2}px;top:${pd.y}px`;
       document.body.appendChild(flash); flash.addEventListener('animationend', () => flash.remove());
-      park({ x: Lp.x, y: Lp.y }); pad.classList.add('lit');
-      rocket.remove();
+      park(Lp, rk.snapshot()); pad.classList.add('lit');
+      cvs.remove();
       const drain = (t: number) => { drawParts(t, window.scrollY); if (parts.length) requestAnimationFrame(drain); };
       requestAnimationFrame(drain);
-      finish(true);
+      finish();
     }
     show(0);
   }

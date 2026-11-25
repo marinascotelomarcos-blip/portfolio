@@ -74,18 +74,7 @@
 .tour.liftoff .tour-globe .scene { transform: scale(.93); opacity: .6; }
 @keyframes lo-shake { 0%, 100% { translate: 0 0; } 25% { translate: -2px 1px; } 75% { translate: 2px -1px; } }
 
-.rocket-svg { position: relative; display: block; }
-.rocket-svg.rocket-fly { position: fixed; left: 0; top: 0; z-index: 120; width: 64px; height: 128px; margin: -57.6px 0 0 -32px; transform-origin: 50% 45%; pointer-events: none; will-change: transform; }
-.rocket-fly.burn .rk-flame { animation: rkFlameBig .08s ease-in-out infinite alternate; }
-.rocket-fly.burn .rk-glow { width: 230%; height: 70%; animation-duration: .08s; }
-@keyframes rkFlameBig { from { transform: scale(1.1, 1.05); } to { transform: scale(1.4, 1.75); } }
-.rocket-svg img { position: absolute; top: 0; left: 8.5%; width: 100%; height: 100%; max-width: none; } /* the drawn rocket's axis sits 8.5% left of the image centre; shift so the box centre is the axis */
-.rocket-svg .rk-body { filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-.rocket-fly .rk-body { filter: none; }
-.rocket-svg .rk-flame { transform-origin: 50% 74%; animation: rkFlame .1s ease-in-out infinite alternate; }
-.rk-glow { position: absolute; left: 50%; top: 80%; width: 150%; height: 45%; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255,160,60,.55), rgba(255,120,40,.18) 60%, transparent); animation: rkGlow .12s ease-in-out infinite alternate; }
-@keyframes rkGlow { from { opacity: .7; transform: translate(-50%, -50%) scale(.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } }
-@keyframes rkFlame { from { transform: scale(.9, .78); } to { transform: scale(1.08, 1.3); } }
+.rocket-gl { position: fixed; left: 0; top: 0; z-index: 120; pointer-events: none; will-change: transform; }
 .puff { position: fixed; z-index: 119; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; pointer-events: none; opacity: .9; background: radial-gradient(circle at 40% 40%, rgba(255,255,255,.9), rgba(196,210,214,.55) 55%, rgba(120,140,148,0) 72%); animation: puff var(--d, 1.2s) ease-out forwards; }
 .spark-f { position: fixed; z-index: 121; width: 7px; height: 7px; margin: -3px 0 0 -3px; border-radius: 50%; pointer-events: none; background: #ffb84a; box-shadow: 0 0 10px 2px rgba(255,140,40,.9); animation: puff var(--d, .5s) ease-out forwards; }
 @keyframes puff { to { transform: translate(var(--dx), var(--dy)) scale(var(--s)); opacity: 0; } }
@@ -114,7 +103,7 @@
 .space-count b { font-size: clamp(3.4rem, 11vw, 6.4rem); line-height: 1; letter-spacing: -0.05em; font-weight: 600; color: var(--teal-ink); }
 .space-count span { color: var(--ink-2); text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; }
 .space::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 2px; height: 56px; background: linear-gradient(var(--teal), transparent); opacity: .8; }
-@media (prefers-reduced-motion: reduce) { .space-stars i, .rk-flame, .rk-glow, .tour.liftoff .tour-globe { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .space-stars i, .tour.liftoff .tour-globe { animation: none !important; } }
 
 /* card area follows the stop on show (no gap above the timeline) */
 .tour .stops { display: grid; overflow: hidden; transition: height .45s var(--ease); }
@@ -122,9 +111,8 @@
 .tour-globe { position: relative; }
 /* rocket parked on the contact row after landing */
 .hb-links { position: relative; padding-top: 112px; }
-.rocket-parked { position: absolute; z-index: 3; width: 64px; height: 128px; margin: -57.6px 0 0 -32px; transform: scale(.8); transform-origin: 50% 45%; pointer-events: none; }
-.rocket-parked .rocket-svg { width: 100%; height: 100%; }
-.rocket-parked .rk-flame, .rocket-parked .rk-glow { display: none; }
+.rocket-parked { position: absolute; z-index: 3; width: 180px; height: 180px; margin: -90px 0 0 -90px; pointer-events: none; }
+.rocket-parked img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 5px 8px rgba(0,0,0,.4)); }
 
 /* ---- Launch charge bar (replaces play/pause) ---- */
 .tour-controls { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -171,15 +159,21 @@
 @keyframes padBlink { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
 .tour-hint { margin-left: 0; }
 
-/* ---- Planet and "Hablemos" as one continuous scene ---- */
-.finale { position: relative; isolation: isolate; overflow: hidden; margin-top: clamp(36px, 6vw, 72px); border: 1px solid #1c3340; border-radius: 14px; background: #05090c; }
-.finale::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60%; z-index: -1; pointer-events: none; background-image: linear-gradient(rgba(59,184,190,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(59,184,190,.09) 1px, transparent 1px); background-size: 28px 28px; -webkit-mask-image: linear-gradient(transparent, #000 75%); mask-image: linear-gradient(transparent, #000 75%); }
-.finale .space { margin: 0; border: 0; border-radius: 0; background: radial-gradient(120% 60% at 50% 0%, #0d2a31 0%, transparent 62%); min-height: 0; overflow: visible; isolation: auto; padding-bottom: clamp(20px, 5vw, 48px); }
-.finale .space::after { display: none; }
-.finale .close.hb { margin: 0; border: 0; border-radius: 0; background: none; padding-top: clamp(20px, 4vw, 40px); overflow: visible; }
-.finale .close::after { display: none; }
-.finale .close.hb::before { right: -10%; top: -10%; }
+/* ---- Earth, planet and "Hablemos" as ONE continuous scene: no boxes, the page itself darkens into space ---- */
+html { overflow-x: clip; }
+.finale { position: relative; isolation: isolate; overflow: clip; margin: clamp(0px, 1vw, 12px) calc(50% - 50vw) -72px; padding: clamp(90px, 18vw, 170px) 0 72px; border: 0; border-radius: 0;
+  background: linear-gradient(to bottom, transparent 0, rgba(12,44,52,.34) 90px, rgba(8,26,32,.72) 190px, rgba(5,14,18,.95) 290px, #05090c 360px); }
+/* the horizon glow of the planet you just left, then stars fading in over it */
+.finale::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 10px; width: min(1300px, 150vw); height: 300px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(59,184,190,.22), rgba(59,184,190,.07) 55%, transparent 75%); }
+.finale > .space-stars { position: absolute; inset: 0; z-index: -1; -webkit-mask-image: linear-gradient(transparent 0, #000 280px); mask-image: linear-gradient(transparent 0, #000 280px); }
+.space-stars i:nth-child(4) { background-image: radial-gradient(2.2px 2.2px at 60px 50px, #fff, transparent), radial-gradient(2px 2px at 210px 170px, #cfeff0, transparent), radial-gradient(2.6px 2.6px at 330px 90px, #fff, transparent); background-size: 420px 280px; animation-duration: 3.2s; animation-delay: -1s; opacity: .9; filter: drop-shadow(0 0 3px rgba(150,230,235,.9)); }
+.finale::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 55%; z-index: -1; pointer-events: none; background-image: linear-gradient(rgba(59,184,190,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(59,184,190,.09) 1px, transparent 1px); background-size: 28px 28px; -webkit-mask-image: linear-gradient(transparent, #000 80%); mask-image: linear-gradient(transparent, #000 80%); }
+.finale .space, .finale .close.hb { position: relative; width: 100%; max-width: var(--max, 1180px); margin: 0 auto; border: 0; border-radius: 0; background: none; overflow: visible; isolation: auto; padding-inline: var(--gutter); box-shadow: none; }
+.finale .space { min-height: 0; padding-top: clamp(10px, 3vw, 30px); padding-bottom: clamp(24px, 5vw, 56px); }
+.finale .space::after, .finale .close::after { display: none; }
+.finale .close.hb { padding-top: clamp(16px, 3vw, 32px); padding-bottom: clamp(48px, 7vw, 90px); }
+.finale .close.hb::before { right: -14%; top: -20%; opacity: .6; }
 .fly-smoke { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 119; pointer-events: none; }
 
 /* while the rocket flies, the page's decorative animations rest so every frame goes to the flight */
-html.flying .bg-fx *, html.flying .ticker-track, html.flying .rk-glow { animation-play-state: paused !important; }
+html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !important; }
