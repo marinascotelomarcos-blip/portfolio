@@ -74,10 +74,13 @@
 .tour.liftoff .tour-globe .scene { transform: scale(.93); opacity: .6; }
 @keyframes lo-shake { 0%, 100% { translate: 0 0; } 25% { translate: -2px 1px; } 75% { translate: 2px -1px; } }
 
-.rocket-fly { position: fixed; z-index: 120; width: 88px; height: 176px; margin: -88px 0 0 -44px; pointer-events: none; transform-origin: 50% 70%; will-change: transform; opacity: 0; }
 .rocket-svg { position: relative; display: block; }
+.rocket-svg.rocket-fly { position: fixed; left: 0; top: 0; z-index: 120; width: 88px; height: 176px; margin: -79.2px 0 0 -44px; transform-origin: 50% 45%; pointer-events: none; will-change: transform; }
+.rocket-svg.rocket-fly.in-orbit { position: absolute; z-index: 3; }
+.rocket-fly.burn .rk-flame { animation: rkFlameBig .08s ease-in-out infinite alternate; }
+.rocket-fly.burn .rk-glow { width: 230%; height: 70%; animation-duration: .08s; }
+@keyframes rkFlameBig { from { transform: scale(1.1, 1.05); } to { transform: scale(1.4, 1.75); } }
 .rocket-svg img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rocket-fly .rocket-svg { width: 100%; height: 100%; }
 .rocket-svg .rk-body { filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .rocket-svg .rk-flame { transform-origin: 50% 74%; animation: rkFlame .1s ease-in-out infinite alternate; }
 .rk-glow { position: absolute; left: 50%; top: 80%; width: 150%; height: 45%; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255,160,60,.55), rgba(255,120,40,.18) 60%, transparent); animation: rkGlow .12s ease-in-out infinite alternate; }
@@ -97,9 +100,13 @@
 @keyframes twinkle { from { opacity: .35; } to { opacity: 1; } }
 .space-limb { position: absolute; z-index: -1; left: 50%; top: -88%; width: 190%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, #05090c 92%, rgba(59,184,190,.22) 96%, rgba(59,184,190,.55) 99%, transparent 100%); filter: blur(1px); }
 .space-in { display: grid; justify-items: center; gap: 14px; max-width: 640px; }
-.space-bay { height: 190px; display: grid; place-items: center; }
-.space-rocket { width: 79px; height: 158px; }
-.space-rocket .rk-flame, .space-rocket .rk-glow { display: none; }
+.space-stage { position: relative; display: grid; place-items: center; width: 100%; height: clamp(250px, 56vw, 300px); margin-bottom: 4px; --pl: clamp(124px, 34vw, 160px); }
+.planet { position: relative; z-index: 2; width: var(--pl); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 30% 26%, #8cecef 0%, #35a6ae 30%, #126069 60%, #062a31 100%); box-shadow: 0 0 70px rgba(59,184,190,.32), inset -22px -16px 38px rgba(0,0,0,.6), inset 6px 6px 16px rgba(255,255,255,.12); }
+.pl-bands { position: absolute; inset: 0; border-radius: 50%; background: repeating-linear-gradient(168deg, transparent 0 13px, rgba(255,255,255,.08) 13px 19px, transparent 19px 30px); mix-blend-mode: soft-light; }
+.pl-ring { position: absolute; left: -26%; right: -26%; top: 40%; height: 20%; border-radius: 50%; border: 3px solid rgba(207,243,244,.55); border-left-color: rgba(207,243,244,.2); border-right-color: rgba(207,243,244,.2); transform: rotate(-12deg); clip-path: inset(50% 0 0 0); filter: drop-shadow(0 0 6px rgba(59,184,190,.5)); }
+.pl-shade { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 74% 80%, rgba(0,0,0,.5), transparent 60%); }
+.space-orbit { position: absolute; left: 50%; top: 50%; width: calc(var(--pl) + 150px); height: calc((var(--pl) + 150px) * .36); border: 1px dashed rgba(111,208,212,.28); border-radius: 50%; transform: translate(-50%, -50%) rotate(-12deg); }
+@media (max-width: 640px) { .space-orbit { width: calc(var(--pl) + 112px); height: calc((var(--pl) + 112px) * .36); } }
 .space-kind { margin: 0; color: var(--teal-ink); letter-spacing: .16em; text-transform: uppercase; font-size: .72rem; }
 .space h2 { margin: 0; font-size: clamp(2.2rem, 6.4vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; text-wrap: balance; }
 .space-lede { margin: 0; color: var(--ink-2); max-width: 44ch; }
@@ -113,11 +120,52 @@
 .tour .stops { display: grid; overflow: hidden; transition: height .45s var(--ease); }
 .tour .stop-card { align-self: start; }
 .tour-globe { position: relative; }
-.countdown { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-weight: 700; font-size: clamp(5rem, 20vw, 9rem); letter-spacing: -.05em; color: var(--teal-ink); text-shadow: 0 0 34px var(--teal), 0 0 6px rgba(255,255,255,.35); opacity: 0; z-index: 3; }
-.countdown.on { animation: cdPop .7s ease-out forwards; }
-@keyframes cdPop { 0% { opacity: 0; transform: scale(1.9); } 22% { opacity: 1; transform: scale(1); } 78% { opacity: 1; transform: scale(.96); } 100% { opacity: 0; transform: scale(.7); } }
 /* rocket parked on the contact row after landing */
 .hb-links { position: relative; padding-top: 128px; }
-.rocket-parked { position: absolute; z-index: 3; width: 88px; height: 176px; transform: scale(.8); transform-origin: 50% 70%; pointer-events: none; }
+.rocket-parked { position: absolute; z-index: 3; width: 88px; height: 176px; margin: -79.2px 0 0 -44px; transform: scale(.8); transform-origin: 50% 45%; pointer-events: none; }
 .rocket-parked .rocket-svg { width: 100%; height: 100%; }
 .rocket-parked .rk-flame, .rocket-parked .rk-glow { display: none; }
+
+/* ---- Launch charge bar (replaces play/pause) ---- */
+.tour-controls { flex-direction: column; align-items: stretch; gap: 10px; }
+.power { display: grid; gap: 8px; }
+.power-top { display: flex; justify-content: space-between; align-items: baseline; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.power-pct { color: var(--teal-ink); font-weight: 500; }
+.power-track { position: relative; display: block; height: 12px; border-radius: 99px; border: 1px solid var(--rule); background: color-mix(in oklab, var(--bg-2) 80%, transparent); overflow: hidden; }
+.power-track i { position: absolute; inset: 0; border-radius: 99px; transform-origin: left; transform: scaleX(0); transition: transform .7s var(--ease); background: linear-gradient(90deg, #0f7077, #3bb8be 55%, #ffb84a); box-shadow: 0 0 14px rgba(59,184,190,.55); }
+.power-track::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 9px, rgba(0,0,0,.28) 9px 11px); pointer-events: none; }
+.power.full .power-track i { animation: powerFull 1s ease-in-out infinite alternate; }
+.power.full .power-pct { color: #ffb84a; }
+@keyframes powerFull { from { filter: brightness(1); } to { filter: brightness(1.45); } }
+.tour.ready .gn[data-next] { border-color: var(--teal); animation: nextReady 1.4s ease-out infinite; }
+@keyframes nextReady { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--teal) 70%, transparent); } 80%, 100% { box-shadow: 0 0 0 14px transparent; } }
+.globe-nav .gn:disabled { opacity: .3; pointer-events: none; }
+
+/* ---- Big countdown ---- */
+.cd-fs { position: fixed; inset: 0; z-index: 250; display: grid; place-items: center; place-content: center; gap: 4px; pointer-events: none; opacity: 0; background: radial-gradient(closest-side at 50% 50%, rgba(5,9,12,.62), rgba(5,9,12,.88)); transition: opacity .35s; text-align: center; }
+.cd-fs.in { opacity: 1; } .cd-fs.out { opacity: 0; transition: opacity .6s; }
+.cd-label { color: #cfeff0; letter-spacing: .3em; text-transform: uppercase; font-size: clamp(.8rem, 3vw, 1.1rem); text-shadow: 0 0 14px rgba(59,184,190,.8); }
+.cd-num { display: block; min-height: 1em; font-size: clamp(11rem, 54vw, 24rem); line-height: .9; font-weight: 800; letter-spacing: -.06em; color: transparent; background: linear-gradient(180deg, #ffffff 10%, #7de7ea 55%, #1f9aa3); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 28px rgba(59,184,190,.95)) drop-shadow(0 0 70px rgba(59,184,190,.55)); }
+.cd-fs.go .cd-num { font-size: clamp(7rem, 34vw, 15rem); background: linear-gradient(180deg, #fff6c9 5%, #ffb84a 55%, #ee6a22); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 30px rgba(255,140,40,.95)) drop-shadow(0 0 80px rgba(255,120,40,.6)); }
+.cd-num.slam { animation: cdSlam .85s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes cdSlam { 0% { opacity: 0; transform: scale(2.6); filter: blur(14px); } 18% { opacity: 1; transform: scale(.94); filter: blur(0); } 30% { transform: scale(1.04); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: .0; transform: scale(.82); } }
+.cd-ring { position: absolute; left: 50%; top: 50%; width: 30vmin; height: 30vmin; margin: -15vmin 0 0 -15vmin; border-radius: 50%; border: 3px solid rgba(111,208,212,.85); opacity: 0; box-shadow: 0 0 30px rgba(59,184,190,.6), inset 0 0 30px rgba(59,184,190,.4); }
+.cd-fs.pulse .cd-ring { animation: cdRing .85s ease-out; }
+.cd-fs.go .cd-ring { border-color: rgba(255,184,74,.9); box-shadow: 0 0 40px rgba(255,140,40,.7); }
+@keyframes cdRing { from { opacity: .9; transform: scale(.3); } to { opacity: 0; transform: scale(3.4); } }
+.fly-skip { position: fixed; z-index: 260; top: max(14px, env(safe-area-inset-top)); right: 14px; padding: 9px 14px; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #cfeff0; background: rgba(5,9,12,.7); border: 1px solid rgba(111,208,212,.5); border-radius: 4px; backdrop-filter: blur(6px); cursor: pointer; }
+
+/* ---- Trail of clouds that stays on the page ---- */
+#rocket-trail { position: absolute; left: 0; top: 0; width: 100%; z-index: 6; pointer-events: none; overflow: hidden; }
+.cloud { position: absolute; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, rgba(255,255,255,.85), rgba(200,214,218,.5) 55%, transparent 72%); opacity: .13; transform: scale(calc(var(--cs, 1) * 1.25)); animation: cloudIn 1.4s ease-out both; }
+@keyframes cloudIn { from { opacity: .55; transform: scale(calc(var(--cs, 1) * .5)); } to { opacity: .13; transform: scale(calc(var(--cs, 1) * 1.25)); } }
+.pad-flash { position: fixed; z-index: 119; width: 190px; height: 70px; margin: -46px 0 0 -95px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(255,214,120,.95), rgba(255,120,40,.55) 55%, transparent); animation: padFlash .8s ease-out forwards; }
+@keyframes padFlash { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
+
+/* ---- Landing pad above the contact panel ---- */
+.hb-pad { position: absolute; left: 84%; top: 119px; width: 124px; height: 9px; transform: translateX(-50%); border-radius: 3px; background: linear-gradient(#cdd8dc, #6a777c 70%, #3a4448); box-shadow: 0 6px 14px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); }
+.hb-pad i { position: absolute; top: 2px; width: 5px; height: 5px; border-radius: 50%; background: #ffb84a; box-shadow: 0 0 8px #ffb84a; animation: padBlink 1.6s ease-in-out infinite; }
+.hb-pad i:first-child { left: 8px; } .hb-pad i:last-child { right: 8px; animation-delay: .8s; }
+.hb-pad.lit i { background: #52c28a; box-shadow: 0 0 10px #52c28a; animation: none; }
+@keyframes padBlink { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+.tour-hint { margin-left: 0; }

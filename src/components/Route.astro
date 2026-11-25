@@ -26,6 +26,8 @@ const items: Item[] = [
   { kind: 'study', when: edu[1].when, title: poz.where, line: edu[1].org, text: edu[1].title, node: poz.where, lat: poz.lat, lon: poz.lon },
   work(0),
 ];
+const powerLabel = lang === 'en' ? 'Launch charge' : 'Carga de despegue';
+const hint = lang === 'en' ? 'Use the arrows: every stop charges the rocket.' : 'Usa las flechas: cada parada carga el cohete.';
 const kindLabel = { study: ui.study, work: ui.work, next: ui.next };
 const stops = items.map((i) => (i.lat !== undefined ? { lat: i.lat, lon: i.lon } : null));
 const kinds = items.map((i) => i.kind);
@@ -47,16 +49,15 @@ const kinds = items.map((i) => i.kind);
     ))}
     </div>
     <div class="tour-controls">
-      <button class="tc" type="button" data-play aria-pressed="false" aria-label={ui.play} data-play-label={ui.play} data-pause-label={ui.pause}>
-        <svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.2v13.6L19 12z" /></svg>
-        <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" /></svg>
-      </button>
-      <span class="tour-hint mono">{ui.hint}</span>
+      <div class="power" data-power role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label={powerLabel}>
+        <span class="power-top mono"><span>{powerLabel}</span><b class="power-pct tnum">0%</b></span>
+        <span class="power-track"><i></i></span>
+      </div>
+      <span class="tour-hint mono">{hint}</span>
     </div>
   </div>
   <div class="tour-globe">
     <div class="scene scene-route" data-scene="route" data-step="0" data-stops={JSON.stringify(stops)} data-kinds={JSON.stringify(kinds)} data-visited={JSON.stringify(VISITED)} aria-hidden="true"><canvas></canvas></div>
-    <div class="countdown" aria-hidden="true"></div>
     <div class="globe-nav">
       <button class="tc gn" type="button" data-prev aria-label={ui.prev}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
@@ -91,16 +92,22 @@ const kinds = items.map((i) => i.kind);
   if (root && trackWrap) {
     const scene = root.querySelector<HTMLElement>('[data-scene]')!;
     const stopsEl = root.querySelector<HTMLElement>('.stops')!;
-    const cdEl = root.querySelector<HTMLElement>('.countdown')!;
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.stop-card'));
     const nodes = Array.from(trackWrap.querySelectorAll<HTMLButtonElement>('.node'));
     const track = trackWrap.querySelector<HTMLElement>('.track')!;
     const line = trackWrap.querySelector<HTMLElement>('.track-line')!;
-    const playBtn = root.querySelector<HTMLButtonElement>('[data-play]')!;
+    const prevBtn = root.querySelector<HTMLButtonElement>('[data-prev]')!;
+    const nextBtn = root.querySelector<HTMLButtonElement>('[data-next]')!;
+    const power = root.querySelector<HTMLElement>('[data-power]')!;
+    const powerFill = power.querySelector<HTMLElement>('.power-track i')!;
+    const powerPct = power.querySelector<HTMLElement>('.power-pct')!;
     const N = nodes.length;
+    const en = document.documentElement.lang.startsWith('en');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let cur = 0, playing = false, visible = false, hovering = false, timer = 0, started = false;
-    let launching = false, launched = false, cdTimers: number[] = [];
+    let cur = 0, visible = false;
+    type Phase = 'idle' | 'count' | 'fly';
+    let phase: Phase = 'idle', abort = false, pending = 0;
+    let overlay: HTMLElement | null = null;
 
     /* The card area is exactly as tall as the stop on show, so no gap opens above the timeline */
     function fit() { stopsEl.style.height = cards[cur].offsetHeight + 'px'; }
@@ -108,7 +115,7 @@ const kinds = items.map((i) => i.kind);
     cards.forEach((c) => sizer.observe(c));
 
     function show(i: number) {
-      cur = (i + N) % N;
+      cur = Math.max(0, Math.min(N - 1, i));
       scene.dataset.step = String(cur);
       cards.forEach((c, k) => { c.hidden = k !== cur; });
       nodes.forEach((n, k) => {
@@ -116,75 +123,79 @@ const kinds = items.map((i) => i.kind);
         n.tabIndex = k === cur ? 0 : -1;
         n.classList.toggle('past', k < cur);
       });
-      line.style.setProperty('--p', String(cur / (N - 1)));
+      const p = cur / (N - 1);
+      line.style.setProperty('--p', String(p));
       line.dataset.kind = nodes[cur].dataset.kind || '';
       track.scrollTo({ left: nodes[cur].offsetLeft - track.clientWidth / 2 + nodes[cur].clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
       fit();
-      cancelCountdown();
-      if (cur === N - 1) armCountdown();
+      /* launch charge: fills as you move along the route and is full on the last stop */
+      powerFill.style.transform = `scaleX(${p})`;
+      powerPct.textContent = Math.round(p * 100) + '%';
+      power.setAttribute('aria-valuenow', String(Math.round(p * 100)));
+      power.classList.toggle('full', cur === N - 1);
+      root!.classList.toggle('ready', cur === N - 1);
+      prevBtn.disabled = cur === 0;
+      if (phase === 'count') cancelCountdown();
+      window.clearTimeout(pending);
+      if (cur === N - 1 && visible && !reduce && phase === 'idle') pending = window.setTimeout(startCountdown, 1000);
     }
-    function tick() {
-      window.clearTimeout(timer);
-      if (playing && visible && !hovering && cur < N - 1) timer = window.setTimeout(() => { show(cur + 1); tick(); }, 3200);
-    }
-    function setPlaying(v: boolean) {
-      playing = v;
-      playBtn.setAttribute('aria-pressed', String(v));
-      playBtn.setAttribute('aria-label', v ? playBtn.dataset.pauseLabel! : playBtn.dataset.playLabel!);
-      tick();
-    }
-    const user = (i: number) => { setPlaying(false); show(i); };
 
     nodes.forEach((n, k) => {
-      n.addEventListener('click', () => user(k));
+      n.addEventListener('click', () => { if (phase !== 'fly') show(k); });
       n.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') { e.preventDefault(); user(cur + 1); nodes[cur].focus(); }
-        if (e.key === 'ArrowLeft') { e.preventDefault(); user(cur - 1); nodes[cur].focus(); }
+        if (phase === 'fly') return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1); nodes[cur].focus(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1); nodes[cur].focus(); }
       });
     });
-    root.querySelector('[data-prev]')!.addEventListener('click', () => user(cur - 1));
-    root.querySelector('[data-next]')!.addEventListener('click', () => user(cur + 1));
-    playBtn.addEventListener('click', () => setPlaying(!playing));
-    [root, trackWrap].forEach((el) => {
-      el.addEventListener('pointerenter', () => { hovering = true; tick(); });
-      el.addEventListener('pointerleave', () => { hovering = false; tick(); });
+    prevBtn.addEventListener('click', () => { if (phase !== 'fly') show(cur - 1); });
+    nextBtn.addEventListener('click', () => {
+      if (phase === 'fly') return;
+      if (cur === N - 1) { window.clearTimeout(pending); if (phase === 'idle' && !reduce) startCountdown(); }
+      else show(cur + 1);
     });
     new IntersectionObserver((es) => {
       visible = es[0].isIntersecting;
-      if (visible && launched && !launching) launched = false;
-      if (!visible && !launching) cancelCountdown();
-      if (visible && !started && !reduce) { started = true; setPlaying(true); } else tick();
-      if (visible && cur === N - 1) armCountdown();
+      if (!visible && phase === 'count') cancelCountdown();
+      if (visible && cur === N - 1 && phase === 'idle' && !reduce) { window.clearTimeout(pending); pending = window.setTimeout(startCountdown, 1000); }
     }, { threshold: 0.35 }).observe(root);
 
-    /* ---- Lift-off ----
-       Reaching the last stop starts 3, 2, 1. Then the rocket leaves the globe, flies to the 2027 screen,
-       hovers while the days count up, and finally lands on the "Escríbeme" row at the bottom. */
+    /* ================= Lift-off =================
+       Full charge starts a big 3, 2, 1. The rocket leaves the globe nose-up, curves over, orbits the 2027 planet
+       (where the days count up), swoops down to the contact panel and lands on its pad, engine firing.
+       It leaves a trail of clouds that stays on the page. */
     const space = document.getElementById('space');
     const tpl = document.getElementById('rocket-tpl') as HTMLTemplateElement | null;
     const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
-    function cancelCountdown() { cdTimers.forEach((t) => window.clearTimeout(t)); cdTimers = []; cdEl.classList.remove('on'); cdEl.textContent = ''; }
-    function armCountdown() {
-      if (reduce || !space || !tpl || launching || launched || !visible || cdTimers.length) return;
-      cdTimers.push(window.setTimeout(() => {
-        setPlaying(false);
-        [3, 2, 1].forEach((n, k) => cdTimers.push(window.setTimeout(() => {
-          cdEl.textContent = String(n); cdEl.classList.remove('on'); void cdEl.offsetWidth; cdEl.classList.add('on');
-          if (n === 1) cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 700));
-        }, k * 700)));
-      }, 2300));
+    const ORG_X = 44, ORG_Y = 79.2, NOZ = 44; // rocket box 88x176; origin 45%; nozzle sits NOZ px (x scale) below the origin
+    const rad = (d: number) => (d * Math.PI) / 180;
+
+    function cancelCountdown() {
+      window.clearTimeout(pending);
+      cdTimers.forEach((t) => window.clearTimeout(t)); cdTimers = [];
+      overlay?.remove(); overlay = null;
+      if (phase === 'count') phase = 'idle';
     }
-    function rocketNode(parked: boolean) {
-      const uid = Math.random().toString(36).slice(2, 7);
+    let cdTimers: number[] = [];
+    function startCountdown() {
+      if (reduce || !space || !tpl || phase !== 'idle') return;
+      phase = 'count';
+      overlay = document.createElement('div');
+      overlay.className = 'cd-fs';
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.innerHTML = `<span class="cd-label mono">${en ? 'Lift-off in' : 'Despegue en'}</span><b class="cd-num"></b><i class="cd-ring"></i>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay?.classList.add('in'));
+      const num = overlay.querySelector<HTMLElement>('.cd-num')!;
+      const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); overlay!.classList.remove('pulse'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.add('pulse'); overlay!.classList.toggle('go', go); };
+      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 200 + k * 850)));
+      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 500)); }, 200 + 3 * 850));
+    }
+
+    function rocketNode() {
       const wrap = document.createElement('div');
-      wrap.innerHTML = (tpl!.content.firstElementChild as Element).outerHTML.replace(/rkg-/g, `rkg-${uid}-`);
-      const svg = wrap.firstElementChild as SVGElement;
-      if (parked) svg.classList.add('is-parked');
-      return svg;
-    }
-    async function go(el: HTMLElement, from: string, to: string, opts: KeyframeAnimationOptions) {
-      const a = el.animate([{ transform: from }, { transform: to }], { ...opts, fill: 'forwards' });
-      await a.finished; el.style.transform = to; a.cancel();
+      wrap.innerHTML = (tpl!.content.firstElementChild as Element).outerHTML;
+      return wrap.firstElementChild as HTMLElement;
     }
     function waitScrollEnd() {
       return new Promise<void>((res) => {
@@ -196,87 +207,179 @@ const kinds = items.map((i) => i.kind);
         window.setTimeout(() => { window.clearInterval(t); res(); }, 5000);
       });
     }
+    const smooth = (u: number) => u * u * (3 - 2 * u);
+    const sine = (u: number) => -(Math.cos(Math.PI * u) - 1) / 2;
+    type Pt = { x: number; y: number };
+    const bez = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => { const v = 1 - u; return { x: v * v * v * a.x + 3 * v * v * u * b.x + 3 * v * u * u * c.x + u * u * u * d.x, y: v * v * v * a.y + 3 * v * v * u * b.y + 3 * v * u * u * c.y + u * u * u * d.y }; };
+    const bezD = (a: Pt, b: Pt, c: Pt, d: Pt, u: number): Pt => { const v = 1 - u; return { x: 3 * v * v * (b.x - a.x) + 6 * v * u * (c.x - b.x) + 3 * u * u * (d.x - c.x), y: 3 * v * v * (b.y - a.y) + 6 * v * u * (c.y - b.y) + 3 * u * u * (d.y - c.y) }; };
+    const headingDeg = (h: Pt) => (Math.atan2(h.x, -h.y) * 180) / Math.PI; // 0 = nose up, 90 = nose right, 180 = nose down
+
     async function launch() {
-      if (!space || !tpl || launching) return;
-      launching = true; launched = true; cancelCountdown(); setPlaying(false);
+      if (!space || !tpl) return;
+      phase = 'fly'; abort = false;
+      overlay?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => ov?.remove(), 700);
       document.querySelector('.rocket-parked')?.remove();
-      const bay = space.querySelector<HTMLElement>('.space-bay')!;
-      const bayRocket = bay.querySelector<HTMLElement>('.rocket-svg');
+      document.getElementById('rocket-trail')?.remove();
+      document.querySelector('.hb-pad')?.classList.remove('lit');
+      const planet = space.querySelector<HTMLElement>('.planet')!;
+      const row = document.querySelector<HTMLElement>('.hb-row.main')!;
+      const links = row.parentElement as HTMLElement;
+      const pad = links.querySelector<HTMLElement>('.hb-pad')!;
+
+      // keep the page still while it plays; "Saltar" ends it
+      const block = (e: Event) => e.preventDefault();
+      window.addEventListener('wheel', block, { passive: false }); window.addEventListener('touchmove', block, { passive: false });
+      const skip = document.createElement('button');
+      skip.type = 'button'; skip.className = 'fly-skip mono'; skip.textContent = en ? 'Skip ↓' : 'Saltar ↓';
+      skip.addEventListener('click', () => { abort = true; });
+      document.body.appendChild(skip);
+
+      // trail layer: clouds placed in document coordinates, so they stay where the rocket flew
+      const trail = document.createElement('div');
+      trail.id = 'rocket-trail';
+      trail.style.height = document.documentElement.scrollHeight + 'px';
+      document.body.appendChild(trail);
+
+      const W = window.innerWidth, H = window.innerHeight;
       const g = scene.getBoundingClientRect();
-      const cx = g.left + g.width / 2, cy = g.top + g.height * 0.52;
-      const rocket = document.createElement('div');
-      rocket.className = 'rocket-fly';
-      rocket.style.left = cx + 'px'; rocket.style.top = cy + 'px';
-      rocket.appendChild(rocketNode(false));
+      const S: Pt = { x: g.left + g.width / 2, y: g.top + g.height * 0.52 };
+      const rocket = rocketNode();
+      rocket.classList.add('rocket-fly');
+      rocket.style.opacity = '0';
       document.body.appendChild(rocket);
       root!.classList.add('liftoff');
-      if (bayRocket) bayRocket.style.visibility = 'hidden';
 
-      let smoking = true, power = 1, last = 0;
-      const puff = (x: number, y: number, fire: boolean) => {
+      let lastRot = 0, lastEmit = 0, rate = 1.2, emitAlways = false, tailOn = true;
+      const unwrap = (r: number) => { while (r - lastRot > 180) r -= 360; while (r - lastRot < -180) r += 360; lastRot = r; return r; };
+      const put = (el: HTMLElement, p: Pt, rot: number, s: number) => { el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${rot}deg) scale(${s})`; };
+      const puff = (x: number, y: number, fire: boolean, big = 1) => {
         const e = document.createElement('i'); e.className = fire ? 'spark-f' : 'puff';
         const a = (Math.random() - 0.5) * 70;
-        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${fire ? 0.2 : 2.4 + Math.random() * 2};--d:${fire ? 0.5 : 0.9 + Math.random() * 0.6}s`;
+        e.style.cssText = `left:${x + (Math.random() - 0.5) * 14}px;top:${y}px;--dx:${a}px;--dy:${(fire ? 40 : 60) + Math.random() * 60}px;--s:${(fire ? 0.2 : 1.5 + Math.random() * 1.4) * big};--d:${fire ? 0.5 : 0.9 + Math.random() * 0.6}s`;
         document.body.appendChild(e); e.addEventListener('animationend', () => e.remove());
       };
-      const loop = (t: number) => {
-        if (!smoking) return;
-        if (t - last > 36) {
-          last = t;
-          const r = rocket.getBoundingClientRect();
-          const tx = r.left + r.width / 2, ty = r.top + r.height * 0.88;
-          const n = Math.floor(power + Math.random());
-          for (let k = 0; k < n; k++) puff(tx, ty, false);
-          if (Math.random() < Math.min(0.7, power * 0.5)) puff(tx, ty - 6, true);
+      let persist = 0;
+      const emit = (P: Pt, rot: number, s: number, t: number) => {
+        if (!tailOn || t - lastEmit < 34) return; lastEmit = t;
+        const d = 62 * s, r = rad(rot);
+        const tx = P.x - d * Math.sin(r), ty = P.y + d * Math.cos(r);
+        const n = Math.floor(rate + Math.random());
+        for (let k = 0; k < n; k++) puff(tx, ty, false);
+        if (Math.random() < Math.min(0.7, rate * 0.5)) puff(tx, ty - 4, true);
+        if (++persist % 3 === 0) { // a cloud that stays
+          const c = document.createElement('i'); c.className = 'cloud';
+          c.style.cssText = `left:${tx + (Math.random() - 0.5) * 18}px;top:${ty + window.scrollY + (Math.random() - 0.5) * 12}px;--cs:${0.9 + Math.random() * 1.1}`;
+          trail.appendChild(c);
         }
-        requestAnimationFrame(loop);
       };
-      requestAnimationFrame(loop);
+      const run = (ms: number, step: (u: number, t: number) => void) => new Promise<void>((res, rej) => {
+        const t0 = performance.now();
+        const f = (t: number) => { if (abort) { rej(new Error('abort')); return; } const u = Math.min(1, (t - t0) / ms); step(u, t); if (u < 1) requestAnimationFrame(f); else res(); };
+        requestAnimationFrame(f);
+      });
+
+      let parked = false;
+      const park = (P: Pt) => {
+        const lk = links.getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = 'rocket-parked';
+        el.style.left = (P.x - lk.left) + 'px'; el.style.top = (P.y - lk.top) + 'px';
+        el.appendChild(rocketNode());
+        links.appendChild(el); parked = true;
+      };
+      const landingPoint = (): Pt => { const pr = pad.getBoundingClientRect(); return { x: pr.left + pr.width / 2, y: pr.top - NOZ * 0.8 }; };
 
       try {
-        // 1. ignition at the globe
-        power = 1.4;
-        rocket.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: 'forwards' });
-        await go(rocket, 'translateY(0) scale(.3)', 'translateY(-4px) scale(.6)', { duration: 700, easing: 'ease-out' });
-        // 2. up to the 2027 screen: page scrolls while the rocket flies to the bay
-        const sr = space.getBoundingClientRect(), br = bay.getBoundingClientRect();
-        const hx = window.innerWidth / 2, hy = br.top - sr.top + br.height / 2;
-        window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
-        power = 0.9;
-        const HOV = `translate(${hx - cx}px, ${hy - cy}px) scale(.9)`;
-        await go(rocket, 'translateY(-4px) scale(.6)', HOV, { duration: 2200, easing: 'cubic-bezier(.45,.05,.2,1)' });
+        /* 1. ignition: nose up, shaking on the globe */
+        const FINAL_SCALE = 0.8;
+        rocket.style.opacity = '1';
+        await run(900, (u, t) => {
+          const sh = (1 - u) * 1.6 * Math.sin(u * 90);
+          rate = 1.6; put(rocket, { x: S.x + sh, y: S.y - 4 * smooth(u) }, 0, 0.5 + 0.12 * u); emit({ x: S.x, y: S.y - 4 * smooth(u) }, 0, 0.6, t);
+        });
+
+        /* 2. up and over: the path starts vertical, curves, and comes down onto the planet's orbit */
+        const sr = space.getBoundingClientRect(), pr = planet.getBoundingClientRect();
+        const C: Pt = { x: pr.left + pr.width / 2 - sr.left, y: pr.top + pr.height / 2 - sr.top };
+        const oa = pr.width / 2 + (W < 640 ? 56 : 84), ob = oa * 0.36, tilt = rad(-12);
+        const orb = (th: number): Pt => { const x = oa * Math.cos(th), y = ob * Math.sin(th); return { x: C.x + x * Math.cos(tilt) - y * Math.sin(tilt), y: C.y + x * Math.sin(tilt) + y * Math.cos(tilt) }; };
+        const orbH = (th: number): Pt => { const x = -oa * Math.sin(th), y = ob * Math.cos(th); return { x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt) }; };
+        const e0 = orb(0), h0 = orbH(0), hl = Math.hypot(h0.x, h0.y);
+        const E: Pt = { x: e0.x + sr.left, y: e0.y };
+        const p1: Pt = { x: S.x - 24, y: S.y - 0.5 * H };
+        const p2: Pt = { x: E.x - (h0.x / hl) * 0.34 * H, y: E.y - (h0.y / hl) * 0.34 * H };
+        window.setTimeout(() => space.scrollIntoView({ behavior: 'smooth', block: 'start' }), 900);
+        const P0: Pt = { x: S.x, y: S.y - 4 };
+        await run(2900, (u, t) => {
+          const k = sine(u), P = bez(P0, p1, p2, E, k), D = bezD(P0, p1, p2, E, k);
+          const rot = unwrap(headingDeg(D)); const s = 0.62 + 0.38 * k;
+          rate = 1.1; put(rocket, P, rot, s); emit(P, rot, s, t);
+        });
         await waitScrollEnd();
-        // 3. hover while the days count up
-        power = 0.1;
-        const bob = rocket.animate([{ transform: HOV }, { transform: `translate(${hx - cx}px, ${hy - cy - 9}px) scale(.9)` }, { transform: HOV }], { duration: 1800, easing: 'ease-in-out' });
-        await bob.finished; bob.cancel();
-        // 4. scroll down to the contact panel
-        const row = document.querySelector<HTMLElement>('.hb-row.main')!;
+
+        /* 3. orbit the planet (the rocket moves into the section so it can pass behind the planet) */
+        const sr2 = space.getBoundingClientRect();
+        rocket.classList.add('in-orbit'); space.appendChild(rocket);
+        const cur0: Pt = { x: E.x - sr2.left, y: E.y - sr2.top }; // where the rocket is, in section coordinates
+        const off: Pt = { x: cur0.x - e0.x, y: cur0.y - e0.y };
+        const TH = Math.PI * 2 * 1.25;
+        let z = 0;
+        await run(3800, (u, t) => {
+          const th = TH * sine(u), q = orb(th), D = orbH(th), f = 1 - smooth(Math.min(1, u / 0.3));
+          const P: Pt = { x: q.x + off.x * f, y: q.y + off.y * f };
+          const rot = unwrap(headingDeg(D)); const s = 0.9 + 0.22 * Math.sin(th);
+          const zz = Math.sin(th) < 0 ? 1 : 3; if (zz !== z) { z = zz; rocket.style.zIndex = String(zz); }
+          rate = 0.9; put(rocket, P, rot, s);
+          const sr3 = space.getBoundingClientRect(); emit({ x: P.x + sr3.left, y: P.y + sr3.top }, rot, s, t);
+        });
+
+        /* 4. back to the page, swoop down while it scrolls to the contact panel */
+        const sr4 = space.getBoundingClientRect();
+        const endTh = TH, X: Pt = { x: orb(endTh).x + sr4.left, y: orb(endTh).y + sr4.top };
+        const hX = orbH(endTh), hxl = Math.hypot(hX.x, hX.y);
+        rocket.classList.remove('in-orbit'); rocket.style.zIndex = ''; document.body.appendChild(rocket);
+        const Wp: Pt = { x: W * 0.3, y: H * 0.3 };
+        const q1: Pt = { x: X.x + (hX.x / hxl) * 170, y: X.y + (hX.y / hxl) * 170 };
+        const q2: Pt = { x: Wp.x, y: Wp.y - 150 };
         const rowDocTop = row.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top: rowDocTop - window.innerHeight * 0.6, behavior: 'smooth' });
-        await sleep(150); await waitScrollEnd();
-        // 5. descend and land on the row, nose up and engine firing
-        power = 0.8;
-        const rr = row.getBoundingClientRect();
-        const lx = rr.left + rr.width * 0.84, ldy = rr.top - 31 - cy; /* the nozzle sits at 70% of the 176px box, which is also the scale origin */
-        const LAND = `translate(${lx - cx}px, ${ldy}px) scale(.8)`;
-        await go(rocket, HOV, LAND, { duration: 1900, easing: 'cubic-bezier(.3,.1,.25,1)' });
-        // 6. touchdown: dust, engine off, and the rocket stays parked on the row
-        smoking = false;
-        const bx = lx, by = rr.top + 4;
-        for (let k = 0; k < 12; k++) { const e = document.createElement('i'); e.className = 'puff'; const side = k % 2 ? 1 : -1; e.style.cssText = `left:${bx}px;top:${by}px;--dx:${side * (24 + Math.random() * 70)}px;--dy:${-4 - Math.random() * 14}px;--s:${2 + Math.random() * 1.6};--d:${0.9 + Math.random() * 0.5}s`; document.body.appendChild(e); e.addEventListener('animationend', () => e.remove()); }
-        const links = row.parentElement as HTMLElement;
-        const lk = links.getBoundingClientRect();
-        const parked = document.createElement('div');
-        parked.className = 'rocket-parked';
-        parked.style.left = (lx - 44 - lk.left) + 'px';
-        parked.style.top = ((cy - 88 + ldy) - lk.top) + 'px';
-        parked.appendChild(rocketNode(true));
-        links.appendChild(parked);
+        window.scrollTo({ top: rowDocTop - H * 0.58, behavior: 'smooth' });
+        await run(1900, (u, t) => {
+          const k = sine(u), P = bez(X, q1, q2, Wp, k), D = bezD(X, q1, q2, Wp, k);
+          const rot = unwrap(headingDeg(D)); const s = 1.12 - 0.22 * k;
+          rate = 1.0; put(rocket, P, rot, s); emit(P, rot, s, t);
+        });
+        await waitScrollEnd();
+
+        /* 5. landing: dive, flip to nose-up, engine roaring, settle on the pad */
+        const L = landingPoint();
+        const r1: Pt = { x: Wp.x, y: Wp.y + 170 }, r2: Pt = { x: L.x, y: L.y - 330 };
+        let burning = false;
+        await run(2800, (u, t) => {
+          const k = 1 - Math.pow(1 - u, 2.4), P = bez(Wp, r1, r2, L, k), D = bezD(Wp, r1, r2, L, k);
+          let rot = headingDeg(D); const fl = smooth(Math.min(1, Math.max(0, (u - 0.38) / 0.4)));
+          rot = unwrap(rot * (1 - fl)); const s = 0.9 - 0.1 * k;
+          if (!burning && u > 0.45) { burning = true; rocket.classList.add('burn'); }
+          rate = 1.2 + 1.6 * fl; put(rocket, P, rot, s); emit(P, rot, s, t);
+        });
+
+        /* 6. touchdown: flash and dust on the pad, engine off, rocket stays */
+        tailOn = false;
+        const pr2 = pad.getBoundingClientRect(), bx = pr2.left + pr2.width / 2, by = pr2.top;
+        const flash = document.createElement('i'); flash.className = 'pad-flash'; flash.style.cssText = `left:${bx}px;top:${by}px`;
+        document.body.appendChild(flash); flash.addEventListener('animationend', () => flash.remove());
+        for (let k = 0; k < 18; k++) { const e = document.createElement('i'); const side = k % 2 ? 1 : -1; e.className = k % 3 ? 'puff' : 'spark-f'; e.style.cssText = `left:${bx + side * Math.random() * 20}px;top:${by}px;--dx:${side * (30 + Math.random() * 90)}px;--dy:${-2 - Math.random() * 18}px;--s:${k % 3 ? 2 + Math.random() * 1.8 : 0.4};--d:${0.7 + Math.random() * 0.6}s`; document.body.appendChild(e); e.addEventListener('animationend', () => e.remove()); }
+        park({ x: L.x, y: L.y });
+        pad.classList.add('lit');
         rocket.remove();
+      } catch (err) {
+        /* "Saltar": jump to the contact panel and park the rocket on the pad right away */
+        rocket.remove();
+        window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - H * 0.58, behavior: 'auto' });
+        if (!parked) { const L2 = landingPoint(); park({ x: L2.x, y: L2.y }); pad.classList.add('lit'); }
       } finally {
-        smoking = false; rocket.remove();
-        root!.classList.remove('liftoff'); launching = false;
+        tailOn = false; rocket.remove(); skip.remove();
+        window.removeEventListener('wheel', block); window.removeEventListener('touchmove', block);
+        root!.classList.remove('liftoff'); phase = 'idle';
         show(0);
       }
     }

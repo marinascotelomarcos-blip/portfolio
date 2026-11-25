@@ -2,7 +2,6 @@
 import Base from '../../layouts/Base.astro';
 import Room from '../../components/Room.astro';
 import Route from '../../components/Route.astro';
-import Rocket from '../../components/Rocket.astro';
 import { T, LANGS, EMAIL, CV, LINKEDIN, type Lang } from '../../lib/content';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
@@ -63,7 +62,10 @@ const h = T[lang].home;
       <div class="space-stars" aria-hidden="true"><i></i><i></i><i></i></div>
       <span class="space-limb" aria-hidden="true"></span>
       <div class="space-in">
-        <div class="space-bay"><Rocket class="space-rocket" /></div>
+        <div class="space-stage" aria-hidden="true">
+          <i class="space-orbit"></i>
+          <div class="planet"><i class="pl-bands"></i><i class="pl-ring"></i><i class="pl-shade"></i></div>
+        </div>
         <p class="mono space-kind">{lang === 'en' ? 'Countdown' : 'Cuenta atrás'}</p>
         <h2 id="space-h">{h.routeNext.headline}</h2>
         <p class="space-lede">{h.routeNext.lede}</p>
@@ -78,6 +80,7 @@ const h = T[lang].home;
         <p>{h.closeText}</p>
       </div>
       <div class="hb-links">
+        <span class="hb-pad" aria-hidden="true"><i></i><i></i></span>
         <a class="hb-row main" href={`mailto:${EMAIL}`}><span class="mono">01</span><b>{h.write}</b><small>{EMAIL}</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
         <a class="hb-row" href={LINKEDIN} target="_blank" rel="noopener noreferrer"><span class="mono">02</span><b>LinkedIn</b><small>marcos-mariñas-cotelo</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
         <a class="hb-row" href={CV} target="_blank" rel="noopener"><span class="mono">03</span><b>{h.cv}</b><small>PDF</small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg></a>
