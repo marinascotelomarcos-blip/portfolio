@@ -1,6 +1,9 @@
 // 3D objects for the portfolio. Plain ES module so it runs both in Astro (bundled) and in a bare test page.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 
 const TEAL = 0x0f7077;
 const INK = 0x0e1c26;
@@ -168,23 +171,29 @@ export function mapPixel(latDeg, lonDeg) { const r = neRow(latDeg); return [NE.s
 
 export async function globeTexture(mapUrl, visited) {
   const W = 2048, H = 1024, S = 2, SW = 1000 * S, SH = 445 * S;
-  const OCEAN = [13, 45, 56];
+  const OCEAN = [9, 36, 48];
   const out = document.createElement('canvas'); out.width = W; out.height = H;
   const g = out.getContext('2d');
-  g.fillStyle = '#0d2d38'; g.fillRect(0, 0, W, H);
+  const sea = (c, w, h) => { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#12404e'); gr.addColorStop(0.5, '#092a37'); gr.addColorStop(1, '#12404e'); c.fillStyle = gr; c.fillRect(0, 0, w, h); };
+  sea(g, W, H);
   try {
     const svg = await (await fetch(mapUrl)).text();
     const src = document.createElement('canvas'); src.width = SW; src.height = SH;
     const sg = src.getContext('2d');
-    sg.fillStyle = '#0d2d38'; sg.fillRect(0, 0, SW, SH);
+    sea(sg, SW, SH);
     sg.setTransform(S, 0, 0, S, 0, 0);
     const re = /<path d="([^"]*)" data-c="([A-Z]{2})"/g; let m;
     const land = [], vis = [];
     while ((m = re.exec(svg))) (visited.includes(m[2]) ? vis : land).push(new Path2D(m[1]));
-    sg.fillStyle = '#4b7b88'; sg.strokeStyle = '#0d2d38'; sg.lineWidth = 0.5;
+    // shallow-water glow: land blurred in teal underneath, then the land itself with a light coast line
+    sg.save(); sg.shadowColor = 'rgba(59,184,190,0.85)'; sg.shadowBlur = 7 * S; sg.fillStyle = '#1d6572';
+    land.forEach((p) => sg.fill(p)); vis.forEach((p) => sg.fill(p)); sg.restore();
+    sg.fillStyle = '#3d7380'; sg.strokeStyle = 'rgba(150,222,226,0.55)'; sg.lineWidth = 0.45; sg.lineJoin = 'round';
     land.forEach((p) => { sg.fill(p); sg.stroke(p); });
-    sg.fillStyle = '#3bb8be'; sg.strokeStyle = '#0c2630';
+    sg.save(); sg.shadowColor = 'rgba(111,224,230,0.9)'; sg.shadowBlur = 6 * S;
+    sg.fillStyle = '#3bb8be'; sg.strokeStyle = '#c4f4f6'; sg.lineWidth = 0.55;
     vis.forEach((p) => { sg.fill(p); sg.stroke(p); });
+    sg.restore();
     const sd = sg.getImageData(0, 0, SW, SH).data;
     const od = g.createImageData(W, H); const o = od.data;
     for (let r = 0; r < H; r++) {
@@ -203,19 +212,50 @@ export async function globeTexture(mapUrl, visited) {
     }
     g.putImageData(od, 0, 0);
   } catch (e) { /* the globe still shows as an empty sphere */ }
-  g.strokeStyle = 'rgba(120,180,190,0.10)'; g.lineWidth = 1;
-  for (let i = 0; i <= 24; i++) { g.beginPath(); g.moveTo(i * (W / 24), 0); g.lineTo(i * (W / 24), H); g.stroke(); }
-  for (let i = 0; i <= 12; i++) { g.beginPath(); g.moveTo(0, i * (H / 12)); g.lineTo(W, i * (H / 12)); g.stroke(); }
+  // graticule: every 15 degrees, equator and prime meridian a touch stronger
+  g.lineWidth = 1;
+  for (let i = 0; i <= 24; i++) { g.strokeStyle = i === 12 ? 'rgba(140,215,222,0.22)' : 'rgba(120,190,200,0.075)'; g.beginPath(); g.moveTo(i * (W / 24), 0); g.lineTo(i * (W / 24), H); g.stroke(); }
+  for (let i = 0; i <= 12; i++) { g.strokeStyle = i === 6 ? 'rgba(140,215,222,0.22)' : 'rgba(120,190,200,0.075)'; g.beginPath(); g.moveTo(0, i * (H / 12)); g.lineTo(W, i * (H / 12)); g.stroke(); }
   return tex(out);
 }
+
+/* Shared globe finish: a fresnel atmosphere (outer glow + bright limb) and soft glow sprites.
+   Normal blending with teal at low alpha so it reads on both the light and the dark page. */
+const ATMO_VS = 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }';
+function atmosphere(R) {
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(new THREE.SphereGeometry(R * 1.16, 64, 48), new THREE.ShaderMaterial({
+    vertexShader: ATMO_VS, side: THREE.BackSide, transparent: true, depthWrite: false,
+    uniforms: { c: { value: new THREE.Color(0x3bb8be) } },
+    fragmentShader: 'uniform vec3 c; varying vec3 vN; varying vec3 vV; void main(){ float f = clamp(-dot(vN, vV), 0.0, 1.0); float i = clamp(f * 2.0, 0.0, 1.0); i = i * i * i; gl_FragColor = vec4(c, i * 0.5); }',
+  }));
+  const limb = new THREE.Mesh(new THREE.SphereGeometry(R * 1.012, 64, 48), new THREE.ShaderMaterial({
+    vertexShader: ATMO_VS, transparent: true, depthWrite: false,
+    uniforms: { c: { value: new THREE.Color(0x8ff0f4) } },
+    fragmentShader: 'uniform vec3 c; varying vec3 vN; varying vec3 vV; void main(){ float f = 1.0 - clamp(dot(vN, vV), 0.0, 1.0); gl_FragColor = vec4(c, pow(f, 3.0) * 0.55); }',
+  }));
+  g.add(outer, limb);
+  return g;
+}
+let glowTex = null;
+function glowSprite(color, size) {
+  if (!glowTex) {
+    const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+    const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 64); glowTex = new THREE.CanvasTexture(c);
+  }
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
+  sp.scale.setScalar(size); return sp;
+}
+function globeMaterial() { return new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.08, color: 0xffffff }); }
+function globeMapReady(mat, opts) { return (t) => { t.anisotropy = 16; mat.map = t; mat.emissiveMap = t; mat.emissive = new THREE.Color(0xffffff); mat.emissiveIntensity = 0.24; mat.needsUpdate = true; opts.requestFrame && opts.requestFrame(); }; }
 function buildGlobe(opts) {
   const root = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05, color: 0xffffff });
+  const mat = globeMaterial();
   const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.25, 96, 64), mat);
   root.add(sphere);
-  globeTexture(opts.mapUrl || '/world.svg', opts.visited || []).then((t) => { mat.map = t; mat.emissiveMap = t; mat.emissive = new THREE.Color(0xffffff); mat.emissiveIntensity = 0.32; mat.needsUpdate = true; opts.requestFrame && opts.requestFrame(); });
-  const halo = new THREE.Mesh(new THREE.SphereGeometry(1.31, 64, 48), new THREE.MeshBasicMaterial({ color: 0x3bb8be, transparent: true, opacity: 0.08, side: THREE.BackSide }));
-  root.add(halo);
+  globeTexture(opts.mapUrl || '/world.svg', opts.visited || []).then(globeMapReady(mat, opts));
+  root.add(atmosphere(1.25));
   sphere.rotation.y = -Math.PI * 0.52; // Europe faces the camera
   root.rotation.z = -0.2; root.rotation.x = 0.28;
   let drag = null, vel = 0.0016;
@@ -357,52 +397,76 @@ const wrapPi = (a) => ((a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI *
 function buildRoute(opts) {
   const root = new THREE.Group();
   const R = 1.25;
-  const mat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
+  const mat = globeMaterial();
   const sphere = new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), mat);
   root.add(sphere);
-  globeTexture(opts.mapUrl || '/world.svg', opts.visited || []).then((t) => { mat.map = t; mat.emissiveMap = t; mat.emissive = new THREE.Color(0xffffff); mat.emissiveIntensity = 0.32; mat.needsUpdate = true; opts.requestFrame && opts.requestFrame(); });
-  root.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 64, 48), new THREE.MeshBasicMaterial({ color: 0x3bb8be, transparent: true, opacity: 0.08, side: THREE.BackSide })));
+  globeTexture(opts.mapUrl || '/world.svg', opts.visited || []).then(globeMapReady(mat, opts));
+  root.add(atmosphere(R));
   const stops = JSON.parse(opts.el.dataset.stops || '[]');
   const kinds = JSON.parse(opts.el.dataset.kinds || '[]');
-  const markers = stops.map((s) => {
+  const WHITE = new THREE.Color(0xffffff);
+  const markers = stops.map((s, idx) => {
     if (!s) return null;
     const g = new THREE.Group();
     const p = latLonToLocal(s.lat, s.lon, R * 1.004);
     g.position.copy(p); sphere.add(g); g.lookAt(p.clone().multiplyScalar(2));
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.062, 40), new THREE.MeshBasicMaterial({ color: 0x3bb8be, side: THREE.DoubleSide, transparent: true, opacity: 0.95, toneMapped: false }));
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.058, 40), new THREE.MeshBasicMaterial({ color: 0x8ff0f4, side: THREE.DoubleSide, transparent: true, opacity: 0.95, toneMapped: false }));
+    // two expanding pulses per city, half a cycle apart
+    const pulses = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.062, 40), new THREE.MeshBasicMaterial({ color: 0x3bb8be, side: THREE.DoubleSide, transparent: true, opacity: 0, toneMapped: false, depthWrite: false })); g.add(m); return m; });
+    const glow = glowSprite(0x3bb8be, 0.2); g.add(glow);
     g.add(dot, ring);
-    return { g, ring, p: latLonToLocal(s.lat, s.lon, 1), lat: s.lat };
+    return { g, ring, pulses, glow, phase: idx * 0.37, p: latLonToLocal(s.lat, s.lon, 1), lat: s.lat };
   });
-  // great-circle arcs between consecutive places (work stops have no place and are skipped)
+  // great-circle arcs: gradient line (teal to pale cyan) + a travelling spark that keeps running on finished legs
   const places = []; stops.forEach((s, i) => { if (s) places.push(i); });
   const arcs = [];
+  const lineMats = [];
   for (let k = 0; k < places.length - 1; k++) {
     const a = markers[places[k]], b = markers[places[k + 1]];
     const va = a.p.clone().normalize(), vb = b.p.clone().normalize(); const ang = va.angleTo(vb); if (ang < 0.01) continue;
-    const n = 64, pos = [];
-    for (let s = 0; s <= n; s++) {
-      const u = s / n;
+    const n = 72, pos = [], col = [], pts = [];
+    const c0 = new THREE.Color(0x1f9aa1), c1 = new THREE.Color(0xb8f7fa);
+    for (let q = 0; q <= n; q++) {
+      const u = q / n;
       const p = va.clone().multiplyScalar(Math.sin((1 - u) * ang) / Math.sin(ang)).add(vb.clone().multiplyScalar(Math.sin(u * ang) / Math.sin(ang)));
-      p.multiplyScalar(R * (1.004 + Math.sin(Math.PI * u) * 0.18 * Math.min(1, ang / 1.2))); pos.push(p.x, p.y, p.z);
+      p.multiplyScalar(R * (1.004 + Math.sin(Math.PI * u) * 0.18 * Math.min(1, ang / 1.2))); pos.push(p.x, p.y, p.z); pts.push(p);
+      const c = c0.clone().lerp(c1, u); col.push(c.r, c.g, c.b);
     }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setDrawRange(0, 0);
-    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, toneMapped: false }));
-    sphere.add(line); arcs.push({ to: places[k + 1], line, n: n + 1, prog: 0 });
+    const geo = new LineGeometry(); geo.setPositions(pos); geo.setColors(col);
+    const lm = new LineMaterial({ vertexColors: true, linewidth: 2.4, transparent: true, opacity: 0.95, toneMapped: false, worldUnits: false, depthWrite: false });
+    const line = new Line2(geo, lm); line.computeLineDistances(); geo.instanceCount = 0;
+    const spark = glowSprite(0xd6fbfc, 0.17); spark.visible = false;
+    sphere.add(line, spark); lineMats.push(lm);
+    arcs.push({ to: places[k + 1], line, geo, spark, pts, segs: n, prog: 0, phase: k * 0.31 });
   }
-  // a dotted orbit with a small traveller going round the world
+  const setRes = () => { const r = opts.el.getBoundingClientRect(); lineMats.forEach((m) => m.resolution.set(Math.max(1, r.width), Math.max(1, r.height))); };
+  // a dotted orbit with a small glowing traveller going round the world
   const orbit = new THREE.Group(); orbit.rotation.set(1.12, 0, 0.4); root.add(orbit);
   const op = []; for (let i = 0; i < 180; i++) { const a = (i / 180) * Math.PI * 2; op.push(Math.cos(a) * 1.62, 0, Math.sin(a) * 1.62); }
   const og = new THREE.BufferGeometry(); og.setAttribute('position', new THREE.Float32BufferAttribute(op, 3));
-  orbit.add(new THREE.Points(og, new THREE.PointsMaterial({ color: 0x3bb8be, size: 0.024, transparent: true, opacity: 0.75, sizeAttenuation: true })));
-  const traveller = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd8553f, toneMapped: false })); orbit.add(traveller);
-  let mo = null, still = false;
+  orbit.add(new THREE.Points(og, new THREE.PointsMaterial({ color: 0x3bb8be, size: 0.02, transparent: true, opacity: 0.55, sizeAttenuation: true })));
+  const traveller = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); orbit.add(traveller);
+  const tglow = glowSprite(0xd8553f, 0.26); traveller.add(tglow);
+  let mo = null, ro = null, still = false;
+  const at = (pts, u) => { const f = Math.min(pts.length - 1, Math.max(0, u * (pts.length - 1))); const i = Math.floor(f); const j = Math.min(pts.length - 1, i + 1); return pts[i].clone().lerp(pts[j], f - i); };
   root.userData.update = (t) => {
     const i = parseInt(opts.el.dataset.step || '0', 10);
     const m = markers[i];
     const work = kinds[i] === 'work';
     const ease = still ? 1 : 0.11;
-    arcs.forEach((a) => { const goal = i >= a.to ? 1 : 0; a.prog += (goal - a.prog) * (still ? 1 : 0.07); a.line.geometry.setDrawRange(0, Math.floor(a.prog * a.n)); });
+    arcs.forEach((a) => {
+      const goal = i >= a.to ? 1 : 0; a.prog += (goal - a.prog) * (still ? 1 : 0.07);
+      const shown = a.prog > 0.995 ? 1 : a.prog;
+      a.geo.instanceCount = Math.floor(shown * a.segs);
+      a.spark.visible = shown > 0.02;
+      if (a.spark.visible) {
+        // while drawing, the spark rides the head; once finished it loops along the whole leg
+        const u = shown < 1 ? shown : (still ? 0.5 : ((t * 0.00035 + a.phase) % 1));
+        a.spark.position.copy(at(a.pts, u));
+        a.spark.material.opacity = shown < 1 ? 1 : 0.75;
+      }
+    });
     if (m) {
       const psi = Math.atan2(-m.p.x, m.p.z);
       sphere.rotation.y += wrapPi(psi - sphere.rotation.y) * ease;
@@ -411,14 +475,22 @@ function buildRoute(opts) {
       sphere.rotation.y += work ? 0.006 : 0.0025;
       root.rotation.x += (0.28 - root.rotation.x) * ease;
     }
-    markers.forEach((mk, k) => { if (!mk) return; const on = k === i; mk.ring.scale.setScalar(on ? 1.7 + Math.sin(t * 0.005) * 0.25 : 0.9); mk.g.scale.setScalar(on ? 1.5 : 1); mk.ring.material.opacity = on ? 0.95 : 0.45; });
+    markers.forEach((mk, k) => {
+      if (!mk) return; const on = k === i;
+      mk.ring.scale.setScalar(on ? 1.5 + Math.sin(t * 0.005) * 0.12 : 0.85); mk.g.scale.setScalar(on ? 1.5 : 1); mk.ring.material.opacity = on ? 0.95 : 0.4;
+      mk.glow.material.opacity = on ? 0.9 : 0.35; mk.glow.scale.setScalar(on ? 0.3 : 0.16);
+      mk.pulses.forEach((pm, q) => {
+        const ph = still ? 0.3 : (((t * 0.0006 * (on ? 1.3 : 0.7)) + mk.phase + q * 0.5) % 1);
+        pm.scale.setScalar(1 + ph * (on ? 3.2 : 2.0)); pm.material.opacity = (1 - ph) * (on ? 0.55 : 0.22);
+      });
+    });
     const ang = (still ? 0.8 : t * 0.0009) + (work ? Math.sin(t * 0.002) * 0.1 : 0);
     traveller.position.set(Math.cos(ang) * 1.62, 0, Math.sin(ang) * 1.62);
   };
   return {
     object: root, camera: { z: 4.9, y: 0, fov: 32 },
-    init(ctx) { still = ctx.still; mo = new MutationObserver(() => ctx.requestFrame()); mo.observe(opts.el, { attributes: true, attributeFilter: ['data-step'] }); },
-    dispose() { mo && mo.disconnect(); },
+    init(ctx) { still = ctx.still; setRes(); ro = new ResizeObserver(() => { setRes(); ctx.requestFrame(); }); ro.observe(opts.el); mo = new MutationObserver(() => ctx.requestFrame()); mo.observe(opts.el, { attributes: true, attributeFilter: ['data-step'] }); },
+    dispose() { mo && mo.disconnect(); ro && ro.disconnect(); },
   };
 }
 
