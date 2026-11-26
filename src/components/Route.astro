@@ -295,8 +295,10 @@ const kinds = items.map((i) => i.kind);
       const pd = dr(pad);
       const Lp: Pt = { x: pd.x + pd.w * 0.5, y: pd.y - NOZ + 3 };
       const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118)); // radius of the loop over the text
-      // the loop starts one radius ABOVE where it used to: its lowest point is now the old start level, so it never dips below it and stays up in the planet area until it descends to land
-      const Q0: Pt = { x: W * 0.8, y: zt - 24 - R };
+      // the loop is anchored to the VIEW the camera holds (zt - 0.18H at the top of the screen): its top is always 48px inside the screen, so the whole circle is on screen
+      const camTopOffset = H * 0.3; // the held view shows the text label 30% down the screen, leaving the planet area above it for the loop
+      const loopTop = Math.max(60, Math.min(104, camTopOffset - 20 - 2 * R)); // the circle's top edge sits this far below the top of the screen, and its bottom stays above the label
+      const Q0: Pt = { x: W * 0.8, y: zt - camTopOffset + loopTop + R };
       const Xe: Pt = { x: W * 0.36, y: zt + zh + 30 };
       const ctrl: Pt[] = [
         S,
@@ -390,16 +392,22 @@ const kinds = items.map((i) => i.kind);
       /* ---- one loop: rocket, camera, smoke ---- */
       let cam = window.scrollY, camVel = 0, tPrev = performance.now();
       const startScroll = window.scrollY;
-      const zoneView = zt - H * 0.18;
+      const zoneView = zt - camTopOffset;
       // where the camera rests on landing: the whole "Hablemos" block in view, pad and rows included (never cut at the bottom)
       const closeEl = document.querySelector<HTMLElement>('.close.hb')!, cl = dr(closeEl);
       const landCam = Math.max(cl.y + cl.h + 16 - H, Math.min(cl.y - 24, Lp.y - H * 0.3));
+      let camFloor = startScroll; // the camera only ever moves DOWN the page: it never goes back up, so there is no up-and-down jolt after the loop
       const camTarget = (idx: number, P: Pt) => {
         const nd = nodes[idx];
         let target: number;
         if (nd.seg === 1) target = zoneView;                                  // over the text: hold it in view
-        else if (nd.seg === 2) { const k = smooth(nd.u * 1.2), t1 = zoneView + (P.y - H * 0.5 - zoneView) * smooth(nd.u / 0.3); target = t1 * (1 - k) + landCam * k; }
+        else if (nd.seg === 2) {                                             // descent: follow the rocket (never above the held view), blending into the landing frame
+          const follow = Math.min(landCam, Math.max(zoneView, P.y - H * 0.55));
+          const k = smooth(nd.u * 1.2);
+          target = follow * (1 - k) + landCam * k;
+        }
         else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // before the text: only ever follows downward
+        target = Math.max(target, camFloor); camFloor = target;
         return Math.max(0, Math.min(maxScroll, target));
       };
       const IGN = 480;
