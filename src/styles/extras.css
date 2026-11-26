@@ -330,3 +330,14 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 .cd-earth.out .cd-puff { animation: cdClear 1.7s ease-out calc(var(--o) * .35s) both; }
 .cd-back.out .cd-puff { animation: cdClear 2.8s ease-out calc(.25s + var(--o) * .9s) both; }
 @keyframes cdClear { from { opacity: .82; transform: scale(1); } to { opacity: 0; transform: translateY(-10%) scale(1.7); } }
+
+/* Desktop hero: a tighter block. The scene is shorter, the figure stands lower (its head may cover a little of the name), the text sits level with the base,
+   and the projects heading comes up closer to "Get to know me". */
+@media (min-width: 900px) {
+  .stage .scene-room { height: clamp(480px, 44vw, 600px); }
+  .stage-fig { bottom: 118px; width: clamp(140px, 13.5vw, 186px); }
+  .stage-fig .fig-tag { bottom: -136px; }
+  .hero-grid { align-items: end; margin-top: 0; }
+  .hero-grid .intro-seq { align-self: end; padding-bottom: clamp(40px, 6vw, 84px); }
+  h2.sec#projects { margin-top: clamp(40px, 4.5vw, 64px); }
+}
