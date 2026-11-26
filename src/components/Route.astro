@@ -297,7 +297,7 @@ const kinds = items.map((i) => i.kind);
       const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118)); // radius of the loop over the text
       // the loop is anchored to the VIEW the camera holds (zt - 0.18H at the top of the screen): its top is always 48px inside the screen, so the whole circle is on screen
       const camTopOffset = H * 0.3; // the held view shows the text label 30% down the screen, leaving the planet area above it for the loop
-      const loopTop = Math.max(60, Math.min(104, camTopOffset - 20 - 2 * R)); // the circle's top edge sits this far below the top of the screen, and its bottom stays above the label
+      const loopTop = Math.max(60, Math.min(118, camTopOffset - 20 - 2 * R)); // the circle's top edge sits this far below the top of the screen, and its bottom stays above the label
       const Q0: Pt = { x: W * 0.8, y: zt - camTopOffset + loopTop + R };
       const Xe: Pt = { x: W * 0.36, y: zt + zh + 30 };
       const ctrl: Pt[] = [
@@ -341,7 +341,7 @@ const kinds = items.map((i) => i.kind);
         const acc = smooth(s / (total * 0.05)), dec = smooth((total - s) / (total * 0.3));
         let v = 0.3 + 0.7 * Math.min(acc, dec);
         const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (5 * w))); // eases in quickly, recovers speed slowly after the loop
-        v *= 1 - 0.6 * bump;
+        v *= 1 - 0.4 * bump;
         return v;
       };
       const tm: number[] = [0];
@@ -396,6 +396,15 @@ const kinds = items.map((i) => i.kind);
       // where the camera rests on landing: the whole "Hablemos" block in view, pad and rows included (never cut at the bottom)
       const closeEl = document.querySelector<HTMLElement>('.close.hb')!, cl = dr(closeEl);
       const landCam = Math.max(cl.y + cl.h + 16 - H, Math.min(cl.y - 24, Lp.y - H * 0.3));
+      // position along the path at a given flight time (used for the camera, which looks a little ahead of the rocket)
+      const posAt = (time: number) => {
+        const t_ = Math.min(FLIGHT, Math.max(0, time)); let lo = 0, hi = n - 1;
+        while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tm[mid] <= t_) lo = mid; else hi = mid; }
+        const f = tm[hi] > tm[lo] ? (t_ - tm[lo]) / (tm[hi] - tm[lo]) : 0;
+        return { idx: f > 0.5 ? hi : lo, x: nodes[lo].p.x + (nodes[hi].p.x - nodes[lo].p.x) * f, y: nodes[lo].p.y + (nodes[hi].p.y - nodes[lo].p.y) * f };
+      };
+      const CAM_LEAD = 380; // ms: the spring that moves the camera trails its target by about this much, so aiming this far ahead cancels the lag
+      const vStart = S.y - startScroll, vLoop = Q0.y - zoneView; // where the rocket sits on screen when it lifts off and where the loop begins
       let camFloor = startScroll; // the camera only ever moves DOWN the page: it never goes back up, so there is no up-and-down jolt after the loop
       const camTarget = (idx: number, P: Pt) => {
         const nd = nodes[idx];
@@ -406,7 +415,7 @@ const kinds = items.map((i) => i.kind);
           const k = smooth(nd.u * 1.2);
           target = follow * (1 - k) + landCam * k;
         }
-        else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // before the text: only ever follows downward
+        else target = P.y - (vStart + (vLoop - vStart) * smooth(nd.u)); // lift-off: the rocket's height on screen glides to where the loop starts, so it arrives there instead of arriving low and being pulled up by the camera
         target = Math.max(target, camFloor); camFloor = target;
         return Math.max(0, Math.min(maxScroll, target));
       };
@@ -432,7 +441,7 @@ const kinds = items.map((i) => i.kind);
             hx = hdg[lo].x + (hdg[hi].x - hdg[lo].x) * f; hy = hdg[lo].y + (hdg[hi].y - hdg[lo].y) * f;
             land = smooth((cum[lo] / total - 0.8) / 0.16);
             // camera: a critically-damped spring that follows the rocket
-            const target = camTarget(idx, P), wc = 5.2;
+            const Pf = posAt(tt + CAM_LEAD), target = camTarget(Pf.idx, { x: Pf.x, y: Pf.y }), wc = 5.2;
             camVel += (wc * wc * (target - cam) - 2 * wc * camVel) * dts; camVel = Math.max(-2600, Math.min(2600, camVel));
             cam = Math.max(0, Math.min(maxScroll, cam + camVel * dts));
             window.scrollTo(0, cam);
