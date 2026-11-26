@@ -221,8 +221,10 @@ const kinds = items.map((i) => i.kind);
 
       html.classList.add('flying');
       const prevBehavior = html.style.scrollBehavior; html.style.scrollBehavior = 'auto'; // the page has smooth scrolling in CSS; the camera must not be smoothed twice
-      const block = (e: Event) => e.preventDefault();
-      window.addEventListener('wheel', block, { passive: false }); window.addEventListener('touchmove', block, { passive: false });
+      // any scroll gesture from the visitor cancels the flight (the page is never held hostage); the rocket just parks on the pad
+      let userScrolled = false;
+      const block = () => { userScrolled = true; abort = true; };
+      window.addEventListener('wheel', block, { passive: true }); window.addEventListener('touchmove', block, { passive: true });
       const skip = document.createElement('button');
       skip.type = 'button'; skip.className = 'fly-skip mono'; skip.textContent = en ? 'Skip ↓' : 'Saltar ↓';
       skip.addEventListener('click', () => { abort = true; });
@@ -441,7 +443,7 @@ const kinds = items.map((i) => i.kind);
       });
 
       if (abort) {
-        window.scrollTo(0, Math.max(0, Math.min(maxScroll, Lp.y - H * 0.6)));
+        if (!userScrolled) window.scrollTo(0, Math.max(0, Math.min(maxScroll, Lp.y - H * 0.6)));
         cvs.remove();
         const pdAfter = dr(pad);
         const LpA: Pt = { x: pdAfter.x + pdAfter.w * 0.5, y: pdAfter.y - NOZ + 3 };

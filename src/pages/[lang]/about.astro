@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import LogoGrid from '../../components/LogoGrid.astro';
 import Credentials from '../../components/Credentials.astro';
+import InventoryLab from '../../components/InventoryLab.astro';
 import { T, LANGS, type Lang } from '../../lib/content';
 import { TOOL_IDS, METHOD_IDS } from '../../lib/logos';
 import { ABOUTX } from '../../lib/aboutx';
@@ -57,6 +58,8 @@ const e = T[lang].eng;
     </div>
 
     <Credentials lang={lang} />
+
+    <InventoryLab lang={lang} />
 
     <h2 class="sec">{a.toolsTitle}</h2>
     <LogoGrid ids={TOOL_IDS} lang={lang} label={a.tools[0].label} row explain />

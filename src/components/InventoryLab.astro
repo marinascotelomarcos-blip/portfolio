@@ -1,0 +1,238 @@
+---
+/* Small interactive piece of analysis: ABC classification and EOQ / reorder point. All numbers are invented; it shows the method. */
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const en = lang === 'en';
+const t = en ? {
+  title: 'How I analyse an inventory',
+  lede: 'Two methods I work with, running on made-up numbers. Move the sliders and watch the decision change.',
+  tabs: ['ABC classification', 'How much to order (EOQ)'],
+  abcHint: 'Change the yearly units of each item. A is where the money is, so that is where the attention goes.',
+  units: 'units / year', cost: 'unit cost',
+  colItem: 'Item',
+  summary: (nA: number, n: number, pctA: number, shareA: number) => `${nA} of ${n} items (${pctA}%) hold ${shareA}% of the value: those are class A.`,
+  eoqHint: 'The order size that minimises ordering plus holding cost, and when to reorder.',
+  sD: 'Yearly demand', sS: 'Cost per order', sH: 'Holding cost per unit and year', sL: 'Supplier lead time', sSS: 'Safety stock',
+  u: { units: 'units', eur: '€', days: 'days' },
+  rEoq: 'Order size (EOQ)', rN: 'Orders per year', rCycle: 'Days between orders', rCost: 'Yearly cost', rRop: 'Reorder point',
+  chart: 'Yearly cost against order size: ordering cost falls, holding cost rises, the total is lowest at the EOQ.',
+  chartLegend: ['ordering', 'holding', 'total'],
+  note: 'Made-up data. No company figures. It only shows the method.',
+  classLabel: 'class',
+} : {
+  title: 'Cómo analizo un inventario',
+  lede: 'Dos métodos que trabajo, con números inventados. Mueve los deslizadores y mira cómo cambia la decisión.',
+  tabs: ['Clasificación ABC', 'Cuánto pedir (EOQ)'],
+  abcHint: 'Cambia las unidades al año de cada artículo. La A es donde está el dinero, así que ahí va la atención.',
+  units: 'uds. / año', cost: 'coste unitario',
+  colItem: 'Artículo',
+  summary: (nA: number, n: number, pctA: number, shareA: number) => `${nA} de ${n} artículos (${pctA} %) concentran el ${shareA} % del valor: son la clase A.`,
+  eoqHint: 'El tamaño de pedido que minimiza coste de pedir más coste de almacenar, y cuándo reponer.',
+  sD: 'Demanda anual', sS: 'Coste por pedido', sH: 'Coste de almacenar por unidad y año', sL: 'Plazo del proveedor', sSS: 'Stock de seguridad',
+  u: { units: 'uds.', eur: '€', days: 'días' },
+  rEoq: 'Tamaño de pedido (EOQ)', rN: 'Pedidos al año', rCycle: 'Días entre pedidos', rCost: 'Coste anual', rRop: 'Punto de pedido',
+  chart: 'Coste anual según el tamaño de pedido: pedir cuesta menos al pedir más, almacenar cuesta más, y el total es mínimo en el EOQ.',
+  chartLegend: ['pedir', 'almacenar', 'total'],
+  note: 'Datos inventados. Ninguna cifra de empresa. Solo enseña el método.',
+  classLabel: 'clase',
+};
+const skus = [
+  { es: 'Correa de nailon', en: 'Nylon strap', u: 1800, c: 9 },
+  { es: 'Caja de titanio', en: 'Titanium case', u: 420, c: 46 },
+  { es: 'Módulo del reloj', en: 'Watch module', u: 380, c: 62 },
+  { es: 'Cristal', en: 'Glass', u: 900, c: 7 },
+  { es: 'Corona', en: 'Crown', u: 1300, c: 3 },
+  { es: 'Tornillería', en: 'Screws', u: 6000, c: 0.4 },
+];
+---
+<section class="lab" data-lab data-lang={lang} aria-labelledby="lab-title">
+  <h2 class="sec" id="lab-title">{t.title}</h2>
+  <p class="prose lab-lede">{t.lede}</p>
+  <div class="lab-card">
+    <div class="lab-tabs" role="tablist">
+      <button class="lab-tab" role="tab" id="lab-t-abc" aria-controls="lab-abc" aria-selected="true" type="button">{t.tabs[0]}</button>
+      <button class="lab-tab" role="tab" id="lab-t-eoq" aria-controls="lab-eoq" aria-selected="false" tabindex="-1" type="button">{t.tabs[1]}</button>
+    </div>
+
+    <div class="lab-panel" id="lab-abc" role="tabpanel" aria-labelledby="lab-t-abc">
+      <p class="lab-hint">{t.abcHint}</p>
+      <ul class="lab-rows">
+        {skus.map((s, i) => (
+          <li class="lab-row" data-i={i} data-cost={s.c}>
+            <span class="lab-name">{en ? s.en : s.es}<small class="mono">{t.cost}: {s.c} €</small></span>
+            <label class="lab-range"><span class="sr-only">{(en ? s.en : s.es)} · {t.units}</span><input type="range" min="0" max={s.u * 3} step={Math.max(1, Math.round(s.u / 60))} value={s.u} /></label>
+            <span class="lab-units tnum mono"></span>
+            <span class="lab-val tnum"></span>
+            <b class="lab-class mono" aria-label={t.classLabel}></b>
+            <span class="lab-bar" aria-hidden="true"><i></i></span>
+          </li>
+        ))}
+      </ul>
+      <svg class="lab-chart" id="lab-pareto" viewBox="0 0 320 130" role="img" aria-label="Pareto"></svg>
+      <p class="lab-summary" aria-live="polite"></p>
+    </div>
+
+    <div class="lab-panel" id="lab-eoq" role="tabpanel" aria-labelledby="lab-t-eoq" hidden>
+      <p class="lab-hint">{t.eoqHint}</p>
+      <div class="lab-eoq">
+        <div class="lab-ctrls">
+          {[['D', t.sD, 200, 6000, 100, 2400, t.u.units], ['S', t.sS, 5, 200, 5, 40, t.u.eur], ['H', t.sH, 0.5, 20, 0.5, 3.5, t.u.eur], ['L', t.sL, 1, 60, 1, 12, t.u.days], ['SS', t.sSS, 0, 400, 10, 60, t.u.units]].map(([k, label, min, max, step, val, unit]) => (
+            <label class="lab-ctrl" data-k={k}>
+              <span class="lab-ctrl-top"><span>{label}</span><b class="tnum mono"><output></output> {unit}</b></span>
+              <input type="range" min={min} max={max} step={step} value={val} />
+            </label>
+          ))}
+        </div>
+        <div class="lab-out">
+          <svg class="lab-chart" id="lab-eoqchart" viewBox="0 0 320 150" role="img" aria-label={t.chart}></svg>
+          <ul class="lab-legend mono"><li><i class="o"></i>{t.chartLegend[0]}</li><li><i class="h"></i>{t.chartLegend[1]}</li><li><i class="t"></i>{t.chartLegend[2]}</li></ul>
+          <dl class="lab-results">
+            <div><dt>{t.rEoq}</dt><dd class="tnum" data-r="eoq"></dd></div>
+            <div><dt>{t.rN}</dt><dd class="tnum" data-r="n"></dd></div>
+            <div><dt>{t.rCycle}</dt><dd class="tnum" data-r="cycle"></dd></div>
+            <div><dt>{t.rCost}</dt><dd class="tnum" data-r="cost"></dd></div>
+            <div class="hot"><dt>{t.rRop}</dt><dd class="tnum" data-r="rop"></dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <p class="lab-note mono">{t.note}</p>
+  </div>
+</section>
+
+<style is:global>
+  .lab-lede { max-width: 60ch; color: var(--ink-2); }
+  .lab-card { margin-top: 18px; padding: clamp(14px, 3vw, 26px); border: 1px solid var(--rule); border-radius: 12px; background: color-mix(in oklab, var(--bg-2) 72%, transparent); }
+  .lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .lab-tab { font: inherit; font-size: .82rem; padding: 9px 16px; min-height: 40px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+  .lab-tab[aria-selected='true'] { background: var(--teal); border-color: var(--teal); color: var(--on-teal); }
+  .lab-tab:not([aria-selected='true']):hover { border-color: var(--teal); color: var(--ink); }
+  .lab-hint { margin: 0 0 14px; color: var(--ink-2); font-size: .95rem; max-width: 60ch; }
+  .lab-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .lab-row { position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) 4.6rem 4.6rem 2rem; align-items: center; gap: 8px 14px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .lab-name { display: grid; line-height: 1.2; font-weight: 520; }
+  .lab-name small { color: var(--ink-2); font-size: .66rem; font-weight: 400; letter-spacing: .04em; }
+  .lab-range input, .lab-ctrl input { width: 100%; accent-color: var(--teal); height: 28px; }
+  .lab-units, .lab-val { text-align: right; font-size: .82rem; }
+  .lab-val { font-weight: 560; }
+  .lab-class { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%; font-size: .78rem; border: 1px solid var(--rule); }
+  .lab-class[data-c='A'] { background: var(--teal); border-color: var(--teal); color: var(--on-teal); }
+  .lab-class[data-c='B'] { border-color: #e0a24a; color: #e0a24a; }
+  .lab-class[data-c='C'] { color: var(--ink-2); }
+  .lab-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; }
+  .lab-bar i { display: block; height: 100%; width: var(--w, 0%); background: var(--teal); opacity: .7; transition: width .25s var(--ease); }
+  .lab-chart { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+  .lab-chart text { font: 8px var(--mono); fill: var(--ink-2); }
+  .lab-summary { margin: 12px 0 0; font-weight: 520; color: var(--teal-ink); }
+  .lab-eoq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(16px, 3vw, 32px); align-items: start; }
+  .lab-ctrls { display: grid; gap: 14px; }
+  .lab-ctrl-top { display: flex; justify-content: space-between; gap: 10px; font-size: .88rem; }
+  .lab-ctrl-top b { font-weight: 500; color: var(--teal-ink); white-space: nowrap; }
+  .lab-ctrl output { font: inherit; }
+  .lab-out .lab-chart { margin-top: 0; }
+  .lab-legend { display: flex; gap: 14px; list-style: none; margin: 6px 0 0; padding: 0; font-size: .68rem; color: var(--ink-2); }
+  .lab-legend i { display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+  .lab-legend .o { background: #e0a24a; } .lab-legend .h { background: #8aa0a8; } .lab-legend .t { background: var(--teal); }
+  .lab-results { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 0; }
+  .lab-results div { padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; }
+  .lab-results div.hot { grid-column: 1 / -1; border-color: var(--teal); background: color-mix(in oklab, var(--teal) 12%, transparent); }
+  .lab-results dt { font-size: .7rem; color: var(--ink-2); letter-spacing: .04em; }
+  .lab-results dd { margin: 2px 0 0; font-size: 1.2rem; font-weight: 600; letter-spacing: -.02em; }
+  .lab-note { margin: 16px 0 0; font-size: .68rem; letter-spacing: .04em; color: var(--ink-2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 720px) {
+    .lab-row { grid-template-columns: minmax(0, 1fr) auto 2.2rem; }
+    .lab-range { grid-column: 1 / 3; grid-row: 2; }
+    .lab-units { grid-column: 3; grid-row: 2; font-size: .68rem; color: var(--ink-2); }
+    .lab-val { text-align: right; }
+    .lab-eoq { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-lab]');
+  if (root) {
+    const lang = root.dataset.lang === 'en' ? 'en' : 'es';
+    const nf = (d = 0) => new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'es-ES', { maximumFractionDigits: d });
+    const n0 = nf(0), n1 = nf(1);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = (tag: string, attrs: Record<string, string | number>, parent?: Element) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, String(attrs[k])); parent?.appendChild(e); return e; };
+
+    /* ---- tabs ---- */
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('.lab-tab'));
+    const panels = [root.querySelector<HTMLElement>('#lab-abc')!, root.querySelector<HTMLElement>('#lab-eoq')!];
+    const pick = (i: number) => { tabs.forEach((b, k) => { b.setAttribute('aria-selected', String(k === i)); b.tabIndex = k === i ? 0 : -1; }); panels.forEach((p, k) => { p.hidden = k !== i; }); };
+    tabs.forEach((b, i) => { b.addEventListener('click', () => pick(i)); b.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const j = (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length; pick(j); tabs[j].focus(); } }); });
+
+    /* ---- ABC ---- */
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('.lab-row'));
+    const pareto = root.querySelector<SVGElement>('#lab-pareto')!;
+    const summary = root.querySelector<HTMLElement>('.lab-summary')!;
+    const names = rows.map((r) => r.querySelector('.lab-name')!.childNodes[0].textContent || '');
+    const t = lang === 'en'
+      ? (a: number, n: number, p: number, s: number) => `${a} of ${n} items (${p}%) hold ${s}% of the value: those are class A.`
+      : (a: number, n: number, p: number, s: number) => `${a} de ${n} artículos (${p} %) concentran el ${s} % del valor: son la clase A.`;
+    function abc() {
+      const items = rows.map((r, i) => { const u = Number(r.querySelector<HTMLInputElement>('input')!.value), c = Number(r.dataset.cost); return { i, u, c, v: u * c }; });
+      const total = items.reduce((s, x) => s + x.v, 0) || 1;
+      const sorted = [...items].sort((a, b) => b.v - a.v);
+      let cum = 0; const cls: string[] = []; const cumArr: number[] = [];
+      sorted.forEach((x) => { cls[x.i] = cum < 0.8 ? 'A' : cum < 0.95 ? 'B' : 'C'; cum += x.v / total; cumArr.push(cum); });
+      const maxv = sorted[0].v || 1;
+      rows.forEach((r, i) => {
+        const x = items[i];
+        r.querySelector<HTMLElement>('.lab-units')!.textContent = n0.format(x.u);
+        r.querySelector<HTMLElement>('.lab-val')!.textContent = n0.format(x.v) + ' €';
+        const b = r.querySelector<HTMLElement>('.lab-class')!; b.textContent = cls[i]; b.dataset.c = cls[i];
+        r.querySelector<HTMLElement>('.lab-bar i')!.style.setProperty('--w', (x.v / maxv * 100) + '%');
+      });
+      // Pareto chart
+      pareto.replaceChildren();
+      const W = 320, H = 130, pl = 24, pr = 8, pt = 8, pb = 22, bw = (W - pl - pr) / sorted.length;
+      [0, 0.5, 0.8, 1].forEach((g) => { const y = pt + (1 - g) * (H - pt - pb); svg('line', { x1: pl, x2: W - pr, y1: y, y2: y, stroke: 'currentColor', 'stroke-opacity': g === 0.8 ? 0.5 : 0.15, 'stroke-dasharray': g === 0.8 ? '3 3' : '0' }, pareto); const tx = svg('text', { x: 2, y: y + 3 }, pareto); tx.textContent = Math.round(g * 100) + '%'; });
+      sorted.forEach((x, k) => {
+        const h = (x.v / maxv) * (H - pt - pb) * 0.62, bx = pl + k * bw + bw * 0.16;
+        const col = cls[x.i] === 'A' ? '#3bb8be' : cls[x.i] === 'B' ? '#e0a24a' : '#8aa0a8';
+        svg('rect', { x: bx, y: H - pb - h, width: bw * 0.68, height: Math.max(1, h), rx: 2, fill: col, opacity: 0.9 }, pareto);
+        const lab = svg('text', { x: bx + bw * 0.34, y: H - 8, 'text-anchor': 'middle' }, pareto); lab.textContent = (names[x.i] || '').split(' ')[0].slice(0, 7);
+      });
+      const pts = sorted.map((_, k) => `${pl + k * bw + bw / 2},${pt + (1 - cumArr[k]) * (H - pt - pb)}`).join(' ');
+      svg('polyline', { points: pts, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.6 }, pareto);
+      sorted.forEach((_, k) => svg('circle', { cx: pl + k * bw + bw / 2, cy: pt + (1 - cumArr[k]) * (H - pt - pb), r: 2.4, fill: 'currentColor' }, pareto));
+      const nA = Object.values(cls).filter((c) => c === 'A').length, shareA = Math.round(sorted.slice(0, nA).reduce((s, x) => s + x.v, 0) / total * 100);
+      summary.textContent = t(nA, rows.length, Math.round(nA / rows.length * 100), shareA);
+    }
+    rows.forEach((r) => r.querySelector('input')!.addEventListener('input', abc));
+    abc();
+
+    /* ---- EOQ / ROP ---- */
+    const get = (k: string) => Number(root.querySelector<HTMLInputElement>(`.lab-ctrl[data-k="${k}"] input`)!.value);
+    const eoqChart = root.querySelector<SVGElement>('#lab-eoqchart')!;
+    const out = (k: string, s: string) => { root.querySelector<HTMLElement>(`[data-r="${k}"]`)!.textContent = s; };
+    const days = lang === 'en' ? 'days' : 'días';
+    function eoq() {
+      const D = get('D'), S = get('S'), H = get('H'), L = get('L'), SS = get('SS');
+      root.querySelectorAll<HTMLElement>('.lab-ctrl').forEach((c) => { const v = Number(c.querySelector('input')!.value); c.querySelector('output')!.textContent = (c.dataset.k === 'H') ? n1.format(v) : n0.format(v); });
+      const Q = Math.sqrt((2 * D * S) / H), cost = (q: number) => (D / q) * S + (q / 2) * H;
+      out('eoq', n0.format(Math.round(Q)) + (lang === 'en' ? ' units' : ' uds.'));
+      out('n', n1.format(D / Q));
+      out('cycle', n0.format(Math.round(365 * Q / D)) + ' ' + days);
+      out('cost', n0.format(Math.round(cost(Q))) + ' €');
+      out('rop', n0.format(Math.round((D / 365) * L + SS)) + (lang === 'en' ? ' units' : ' uds.'));
+      // chart
+      eoqChart.replaceChildren();
+      const W = 320, H2 = 150, pl = 8, pr = 8, pt = 10, pb = 22, qmin = Q * 0.25, qmax = Q * 3;
+      const X = (q: number) => pl + ((q - qmin) / (qmax - qmin)) * (W - pl - pr);
+      const ymax = Math.max(cost(qmin), cost(qmax)) * 1.05;
+      const Y = (c: number) => pt + (1 - c / ymax) * (H2 - pt - pb);
+      const path = (f: (q: number) => number, color: string, w: number) => { let d = ''; for (let i = 0; i <= 60; i++) { const q = qmin + ((qmax - qmin) * i) / 60; d += (i ? 'L' : 'M') + X(q).toFixed(1) + ' ' + Y(Math.min(f(q), ymax)).toFixed(1); } svg('path', { d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round' }, eoqChart); };
+      svg('line', { x1: pl, x2: W - pr, y1: H2 - pb, y2: H2 - pb, stroke: 'currentColor', 'stroke-opacity': 0.25 }, eoqChart);
+      path((q) => (D / q) * S, '#e0a24a', 1.4); path((q) => (q / 2) * H, '#8aa0a8', 1.4); path(cost, '#3bb8be', 2.4);
+      svg('line', { x1: X(Q), x2: X(Q), y1: pt, y2: H2 - pb, stroke: '#3bb8be', 'stroke-dasharray': '3 3', 'stroke-opacity': 0.8 }, eoqChart);
+      svg('circle', { cx: X(Q), cy: Y(cost(Q)), r: 4.2, fill: '#3bb8be', stroke: 'var(--bg)', 'stroke-width': 1.5 }, eoqChart);
+      const lx = svg('text', { x: Math.min(W - 30, Math.max(30, X(Q))), y: H2 - 8, 'text-anchor': 'middle' }, eoqChart); lx.textContent = 'Q = ' + n0.format(Math.round(Q));
+    }
+    root.querySelectorAll('.lab-ctrl input').forEach((i) => i.addEventListener('input', eoq));
+    eoq();
+  }
+</script>
