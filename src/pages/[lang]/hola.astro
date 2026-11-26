@@ -32,6 +32,7 @@ const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
   </head>
   <body class="gate">
     <Backdrop />
+    <div class="gate-motes" aria-hidden="true">{[6, 14, 22, 31, 40, 48, 57, 64, 72, 80, 88, 94, 36, 68].map((x, i) => <i style={`--x:${x}%;--d:${7 + (i % 5) * 1.6}s;--dl:${(i * 0.9).toFixed(1)}s`}></i>)}</div>
     <header class="gate-top">
       <span class="mono gate-mark"><i></i>MMC · {en ? 'ACCESS' : 'ACCESO'}</span>
       <a class="mono gate-lang" href={`/${other}/hola/`} hreflang={other} lang={other}>{en ? 'ES' : 'EN'}</a>
@@ -136,6 +137,55 @@ const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
       @media (prefers-reduced-motion: reduce) {
         .gate-main *, .peek img, .bubble { animation: none !important; transition: none !important; }
       }
+
+      /* ---- Integration: the page-wide background is the page's own, with no box edges. The global "main" gradients painted a visible
+         760px column behind the content; they are off here and replaced by soft, edge-less glows. ---- */
+      .gate-main { background: none !important; }
+      body.gate::before { content: ''; position: fixed; z-index: 0; left: 50%; top: 46%; width: min(1100px, 125vw); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+        background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 18%, transparent), transparent); animation: gate-fade 1.6s var(--ease) both, gate-breathe 7s ease-in-out 1.6s infinite alternate; }
+      body.gate::after { content: ''; position: fixed; z-index: 0; left: 50%; bottom: -26%; width: min(1500px, 170vw); height: 62vh; transform: translateX(-50%); pointer-events: none;
+        background: radial-gradient(ellipse closest-side, color-mix(in oklab, var(--teal) 13%, transparent), transparent); animation: gate-fade 2s var(--ease) .3s both; }
+      @keyframes gate-fade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes gate-breathe { from { opacity: .7; transform: translate(-50%, -50%) scale(.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } }
+      .gate-motes { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+      .gate-motes i { position: absolute; bottom: -12px; left: var(--x); width: 3px; height: 3px; border-radius: 50%; background: var(--teal-ink); box-shadow: 0 0 9px var(--teal); opacity: 0; animation: gate-mote var(--d) linear var(--dl) infinite; }
+      @keyframes gate-mote { 0% { opacity: 0; transform: translateY(0); } 12% { opacity: .85; } 100% { opacity: 0; transform: translateY(-105vh); } }
+      @keyframes gate-rise-l { from { transform: translateY(290px); } to { transform: none; } }
+
+      /* Wide screens: the choice card grows with the screen instead of floating small in the middle of it */
+      @media (min-width: 1000px) {
+        .gate-main { max-width: 920px; gap: 20px; }
+        .gate-status { font-size: .8rem; padding: 8px 18px; margin-bottom: 16px; }
+        .gate-head h1 { font-size: clamp(3.4rem, 5.2vw, 5.2rem); }
+        .gate-list { margin-top: 300px; gap: 12px; }
+        .row { min-height: 82px; padding: 12px 26px; grid-template-columns: 42px minmax(0, 1fr) auto 48px; column-gap: 20px; }
+        .row.main { min-height: 140px; padding: 20px 32px; }
+        .r-txt i { font-size: .72rem; } .r-txt b { font-size: 1.6rem; } .row.main .r-txt b { font-size: clamp(2.1rem, 3.1vw, 3rem); }
+        .r-sub { font-size: .84rem; max-width: 32ch; } .r-a { width: 46px; height: 46px; } .row.main .r-a { width: 56px; height: 56px; }
+        .peek { width: 190px; height: 262px; } .peek img { width: 190px; animation-name: gate-rise-l; }
+        .bubble { max-width: 240px; font-size: 1.12rem; padding: 12px 18px; right: calc(var(--px) + 176px); bottom: calc(100% + 150px); }
+      }
+      /* Wide but short screens (laptops, 16:9 monitors): same layout, scaled to the height so all four rows fit */
+      @media (min-width: 1000px) and (max-height: 900px) {
+        .gate-main { gap: 10px; padding-top: 4px; }
+        .gate-status { margin-bottom: 8px; padding: 6px 16px; }
+        .gate-head h1 { font-size: clamp(2.8rem, 7.4vh, 4.2rem); }
+        .gate-list { margin-top: 232px; gap: 9px; }
+        .row { min-height: 62px; padding: 8px 24px; } .row.main { min-height: 108px; padding: 14px 30px; }
+        .r-txt b { font-size: 1.35rem; } .row.main .r-txt b { font-size: clamp(1.8rem, 4.4vh, 2.5rem); }
+        .r-a { width: 40px; height: 40px; } .row.main .r-a { width: 50px; height: 50px; }
+        .peek { width: 160px; height: 222px; } .peek img { width: 160px; animation-name: gate-rise-m; }
+        .bubble { max-width: 220px; font-size: 1.02rem; padding: 10px 16px; right: calc(var(--px) + 146px); bottom: calc(100% + 124px); }
+      }
+      @media (min-width: 1000px) and (max-height: 760px) {
+        .gate-head h1 { font-size: clamp(2.4rem, 6.6vh, 3.2rem); } .gate-status { margin-bottom: 4px; }
+        .gate-list { margin-top: 204px; gap: 7px; }
+        .row { min-height: 54px; padding: 6px 22px; } .row.main { min-height: 92px; padding: 10px 26px; }
+        .peek { width: 138px; height: 192px; } .peek img { width: 138px; }
+        .bubble { right: calc(var(--px) + 126px); bottom: calc(100% + 104px); }
+      }
+      @keyframes gate-rise-m { from { transform: translateY(240px); } to { transform: none; } }
+      @media (prefers-reduced-motion: reduce) { body.gate::before, body.gate::after, .gate-motes i { animation: none !important; } .gate-motes { display: none; } }
     </style>
     <script is:inline>
       (function () {
