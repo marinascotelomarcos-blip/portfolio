@@ -24,7 +24,7 @@ const en = lang === 'en';
       <span class="base" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="base front" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="motes" aria-hidden="true">{[8,22,36,50,64,78,92,15,70].map((x, i) => <i style={`--x:${x}%;--d:${3.4 + (i % 4) * 0.9}s;--dl:${(i * 0.55).toFixed(2)}s`}></i>)}</span>
-      <a class="fig-tag mono" href={`/${lang}/about/`}>{en ? 'About me' : 'Sobre mí'} →</a>
+      <a class="fig-tag" href={`/${lang}/about/`}><span>{en ? 'Get to know me' : 'Conóceme mejor'}</span><i aria-hidden="true">→</i></a>
     </div>
   </div>
 </div>

@@ -167,31 +167,48 @@ const kinds = items.map((i) => i.kind);
        It is a quiet guide, not the star of the page. */
     const space = document.getElementById('space');
     const CS = 180; // rocket canvas, CSS px
+    const DX = 5.5 * (CS / 180); // the standing rocket's drawing sits 5.5 px left of its canvas centre (measured on the alpha channel): nudge it so it stands centred on the pad
     const rad = (d: number) => (d * Math.PI) / 180;
     let rocketLib: Promise<any> | null = null;
     const loadRocketLib = () => (rocketLib ||= import('../lib/rocket3d.js'));
+
+    /* The rocket (model + WebGL canvas) is built while the numbers run, so lift-off never waits for it */
+    let rocketReady: Promise<{ lib: any; rk: any }> | null = null;
+    const prepareRocket = () => (rocketReady ||= loadRocketLib().then(async (lib) => ({ lib, rk: await lib.createRocket({ size: CS }) })));
+    const dropRocket = () => { const r = rocketReady; rocketReady = null; r?.then(({ rk }) => rk.dispose()).catch(() => {}); };
 
     function cancelCountdown() {
       window.clearTimeout(pending);
       cdTimers.forEach((t) => window.clearTimeout(t)); cdTimers = [];
       overlay?.remove(); overlay = null;
-      if (phase === 'count') phase = 'idle';
+      if (phase === 'count') { phase = 'idle'; dropRocket(); }
     }
     let cdTimers: number[] = [];
     function startCountdown() {
       if (reduce || !space || phase !== 'idle') return;
       phase = 'count';
-      loadRocketLib(); // fetch the 3D code and model while the numbers run
+      prepareRocket().catch(() => {}); // fetch the 3D code and model while the numbers run
+      /* the countdown sits ON the Earth, and the Earth clouds over with smoke until the rocket bursts out of it */
+      const gl = scene.getBoundingClientRect();
+      const side = gl.height;
       overlay = document.createElement('div');
-      overlay.className = 'cd-fs';
+      overlay.className = 'cd-earth';
       overlay.setAttribute('aria-hidden', 'true');
-      overlay.innerHTML = `<span class="cd-label mono">${en ? 'Lift-off in' : 'Despegue en'}</span><b class="cd-num"></b><i class="cd-ring"></i>`;
+      overlay.style.cssText = `left:${gl.left + window.scrollX + gl.width / 2}px;top:${gl.top + window.scrollY + gl.height / 2}px;width:${side}px;height:${side}px`;
+      let puffs = '';
+      const NP = 22;
+      for (let i = 0; i < NP; i++) {
+        const ang = i * 2.399, rr = Math.sqrt((i + 0.6) / NP) * 0.42;
+        const size = 30 + ((i * 7) % 5) * 7;
+        puffs += `<i class="cd-puff" style="--x:${(50 + Math.cos(ang) * rr * 100).toFixed(1)}%;--y:${(50 + Math.sin(ang) * rr * 100).toFixed(1)}%;--s:${size}%;--d:${((i / NP) * 1.7).toFixed(2)}s;--o:${((i * 37) % 10) / 10}"></i>`;
+      }
+      overlay.innerHTML = `${puffs}<div class="cd-core"><b class="cd-num"></b><span class="cd-label mono">${en ? 'Lift-off in' : 'Despegue en'}</span></div>`;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay?.classList.add('in'));
       const num = overlay.querySelector<HTMLElement>('.cd-num')!;
-      const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); overlay!.classList.remove('pulse'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.add('pulse'); overlay!.classList.toggle('go', go); };
-      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 600)));
-      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 300)); }, 150 + 3 * 600));
+      const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.toggle('go', go); };
+      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 700)));
+      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 350)); }, 150 + 3 * 700));
     }
 
     type Pt = { x: number; y: number };
@@ -201,7 +218,7 @@ const kinds = items.map((i) => i.kind);
     async function launch() {
       if (!space) return;
       phase = 'fly'; abort = false;
-      overlay?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => ov?.remove(), 700);
+      overlay?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => ov?.remove(), 3200);
       document.querySelector('.rocket-parked')?.remove();
       document.getElementById('rocket-trail')?.remove();
       document.querySelector('.hb-pad')?.classList.remove('lit');
@@ -213,8 +230,8 @@ const kinds = items.map((i) => i.kind);
 
       // the 3D rocket; if WebGL or the model is unavailable, the page simply scrolls down to 2027
       let lib: any, rk: any;
-      try { lib = await loadRocketLib(); rk = await lib.createRocket({ size: CS }); }
-      catch (e) { phase = 'idle'; show(0); space.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      try { ({ lib, rk } = await prepareRocket()); rocketReady = null; }
+      catch (e) { rocketReady = null; ov?.remove(); phase = 'idle'; show(0); space.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       const V3 = (x: number, y: number, z: number) => ({ x, y, z });
       const THREE_V = rk.nose(); // a THREE.Vector3 we can reuse
       const NOZ = (lib.BODY_LEN / 2) / lib.UNITS_PER_CANVAS * CS; // px from the rocket's centre to its nozzle at normal depth
@@ -294,15 +311,16 @@ const kinds = items.map((i) => i.kind);
       // approach: arrives at Q0 already heading straight down, which is exactly how the loop starts (no kink, no overshoot)
       const appr: Pt[] = [...ctrl, { x: Q0.x, y: Q0.y + 70 }];
       spline(appr, 0, 0, appr.length - 2);
-      // one slow loop over the text, sampled directly (starts and ends heading down, so it joins both neighbours smoothly)
+      // one slow, clean circle over the text: starts and ends at Q0 heading straight down (no sideways drift mixed in, so no cusp)
       const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118));
       const ZS = 90;
       for (let i = 1; i <= ZS; i++) {
-        const u = i / ZS, f = smooth(u), th = Math.PI * 2 * smooth((u - 0.12) / 0.76);
-        nodes.push({ p: { x: Q0.x + (Xe.x - Q0.x) * f + R * (Math.cos(th) - 1), y: Q0.y + (Xe.y - Q0.y) * f + R * Math.sin(th) }, seg: 1, u });
+        const u = i / ZS, th = Math.PI * 2 * smooth(u);
+        nodes.push({ p: { x: Q0.x - R + R * Math.cos(th), y: Q0.y + R * Math.sin(th) }, seg: 1, u });
       }
-      // descent: leaves the loop heading down, then settles vertically onto the pad
-      const desc: Pt[] = [{ x: Xe.x, y: Xe.y - 70 }, Xe, { x: Lp.x - 24, y: Math.max(zb + 110, Lp.y - 0.44 * H) }, { x: Lp.x, y: Lp.y - 0.12 * H }, Lp, { x: Lp.x, y: Lp.y + 60 }];
+      // descent: leaves the loop heading down, sways gently towards the text side, and settles vertically onto the pad
+      const dy = Lp.y - Q0.y;
+      const desc: Pt[] = [{ x: Q0.x, y: Q0.y - 70 }, Q0, { x: Xe.x + (Q0.x - Xe.x) * 0.5, y: Q0.y + dy * 0.42 }, { x: Lp.x - 10, y: Lp.y - Math.min(0.2 * H, dy * 0.25) }, Lp, { x: Lp.x, y: Lp.y + 60 }];
       spline(desc, 2, 1, desc.length - 2);
       const n = nodes.length;
       const cum: number[] = [0];
@@ -314,7 +332,7 @@ const kinds = items.map((i) => i.kind);
       const speedAt = (s: number) => {
         const acc = smooth(s / (total * 0.12)), dec = smooth((total - s) / (total * 0.3));
         let v = 0.07 + 0.93 * Math.min(acc, dec);
-        const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (2 * w)));
+        const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (5 * w))); // eases in quickly, recovers speed slowly after the loop
         v *= 1 - 0.6 * bump;
         return v;
       };
@@ -325,7 +343,7 @@ const kinds = items.map((i) => i.kind);
       // unit direction of travel per node (smoothed over neighbours)
       const hdg: Pt[] = [];
       for (let i = 0; i < n; i++) {
-        const a = nodes[Math.max(0, i - 4)].p, b = nodes[Math.min(n - 1, i + 4)].p;
+        const a = nodes[Math.max(0, i - 7)].p, b = nodes[Math.min(n - 1, i + 7)].p;
         const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
         hdg.push({ x: dx / l, y: dy / l });
       }
@@ -343,7 +361,7 @@ const kinds = items.map((i) => i.kind);
         const lk = dr(links);
         const el = document.createElement('div');
         el.className = 'rocket-parked';
-        el.style.left = (P.x - lk.x) + 'px'; el.style.top = (P.y - lk.y) + 'px';
+        el.style.left = (P.x - lk.x + DX) + 'px'; el.style.top = (P.y - lk.y) + 'px';
         const im = document.createElement('img'); im.src = img; im.alt = ''; im.width = CS; im.height = CS;
         el.appendChild(im);
         links.appendChild(el); parked = true;
@@ -386,7 +404,7 @@ const kinds = items.map((i) => i.kind);
           let P: Pt, idx = 0, tt = 0, land = 0, hx = 0, hy = 1;
           if (T < IGN) {
             P = { x: S.x, y: S.y }; tt = 0;
-            cvs.style.opacity = '1';
+            cvs.style.opacity = String(Math.min(1, T / (IGN * 0.7)));
           } else {
             tt = Math.min(FLIGHT, T - IGN);
             let lo = 0, hi = n - 1;
@@ -427,7 +445,7 @@ const kinds = items.map((i) => i.kind);
           rk.setFlame(flame);
           // place: the canvas is centred on the rocket
           const sx = P.x - CS / 2, sy = P.y - cam - CS / 2;
-          put(sx + (T < IGN ? (1 - T / IGN) * 1.6 * Math.sin(T * 0.09) : 0), sy);
+          put(sx + land * DX + (T < IGN ? (1 - T / IGN) * 1.6 * Math.sin(T * 0.09) : 0), sy);
           rk.render(now);
 
           // smoke from the tail

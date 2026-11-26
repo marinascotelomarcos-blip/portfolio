@@ -111,7 +111,7 @@ export const T: Record<Lang, Dict> = {
     home: {
       name: 'Marcos Mariñas Cotelo',
       headline: 'I turn processes into systems that work.',
-      intro: 'Business engineering student at UIE in A Coruña, finishing in 2027. I come from operations and data, and I build the software around them: a card game my friends play, and a personal system that organises my day.',
+      intro: 'Business engineering student at UIE in A Coruña, finishing in 2027. I come from operations and data, and I build the software around them.',
       projectsTitle: 'Things I have built',
       projects: [
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'An online card game with the Spanish deck. Seven game modes, accounts, a shop and rooms that survive restarts.', status: 'In production', since: 'Since Oct 2026' },
@@ -363,7 +363,7 @@ export const T: Record<Lang, Dict> = {
     home: {
       name: 'Marcos Mariñas Cotelo',
       headline: 'Convierto procesos en sistemas que funcionan.',
-      intro: 'Estudio Ingeniería de la Empresa en la UIE, en A Coruña, y acabo en 2027. Vengo de las operaciones y los datos, y construyo el software que los rodea: un juego de cartas que juegan mis amigos y un sistema personal que organiza mi día.',
+      intro: 'Estudio Ingeniería de la Empresa en la UIE, en A Coruña, y acabo en 2027. Vengo de las operaciones y los datos, y construyo el software que los rodea.',
       projectsTitle: 'Lo que he construido',
       projects: [
         { slug: 'cinco-vidas', name: 'Cinco Vidas', line: 'Un juego de cartas online con baraja española. Siete modos de juego, cuentas, tienda y salas que sobreviven a los reinicios.', status: 'En producción', since: 'Desde oct. 2026' },

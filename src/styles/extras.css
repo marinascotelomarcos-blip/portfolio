@@ -129,15 +129,23 @@
 @keyframes nextReady { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--teal) 70%, transparent); } 80%, 100% { box-shadow: 0 0 0 14px transparent; } }
 .globe-nav .gn:disabled { opacity: .3; pointer-events: none; }
 
-/* ---- Countdown: small and quiet, a pill near the bottom, no dimming of the page ---- */
-.cd-fs { position: fixed; left: 50%; bottom: max(28px, 9vh); transform: translateX(-50%); z-index: 250; display: flex; align-items: baseline; gap: 10px; padding: 7px 14px; border-radius: 999px; pointer-events: none; opacity: 0; background: rgba(5,9,12,.55); border: 1px solid rgba(111,208,212,.28); backdrop-filter: blur(6px); transition: opacity .35s; white-space: nowrap; }
-.cd-fs.in { opacity: 1; } .cd-fs.out { opacity: 0; transition: opacity .5s; }
-.cd-label { color: #9fc9cb; letter-spacing: .2em; text-transform: uppercase; font-size: .62rem; }
-.cd-num { display: inline-block; min-width: 1.4em; text-align: center; font-size: 1.05rem; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; color: #e6fafa; }
-.cd-fs.go .cd-num { color: #ffcf8a; }
-.cd-num.slam { animation: cdTick .6s ease-out both; }
-@keyframes cdTick { 0% { opacity: 0; transform: translateY(5px); } 30% { opacity: 1; transform: none; } 100% { opacity: 1; transform: none; } }
-.cd-ring { display: none; }
+/* ---- Countdown on the Earth: numbers over the globe while smoke clouds it over, then the rocket bursts out ---- */
+.cd-earth { position: absolute; z-index: 125; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .3s; }
+.cd-earth.in { opacity: 1; }
+.cd-puff { position: absolute; left: var(--x); top: var(--y); width: var(--s); aspect-ratio: 1; margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; background: radial-gradient(circle at 42% 38%, rgba(255,255,255,.97), rgba(214,226,230,.72) 46%, rgba(190,205,210,0) 72%); filter: blur(2.5px); opacity: 0; transform: scale(.15); animation: cdPuff 1.6s cubic-bezier(.2,.7,.3,1) var(--d) forwards; }
+@keyframes cdPuff { to { opacity: .9; transform: scale(1); } }
+.cd-core { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; }
+.cd-num { display: block; min-width: 1.4em; text-align: center; font-size: clamp(2.6rem, 9vw, 3.4rem); line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 0 16px rgba(4,36,44,.85), 0 2px 5px rgba(0,0,0,.45); }
+.cd-label { color: #eaf8f9; letter-spacing: .2em; text-transform: uppercase; font-size: .6rem; text-shadow: 0 0 8px rgba(4,36,44,.9); }
+.cd-earth.go .cd-num { color: #ffe0a8; }
+.cd-num.slam { animation: cdTick .7s ease-out both; }
+@keyframes cdTick { 0% { opacity: 0; transform: scale(1.25); } 35% { opacity: 1; transform: none; } 100% { opacity: 1; transform: none; } }
+/* lift-off: the numbers go, the smoke lingers around the nozzle and then thins out and drifts up */
+.cd-earth.out { opacity: 1; }
+.cd-earth.out .cd-core { opacity: 0; transition: opacity .25s; }
+.cd-earth.out .cd-puff { animation: cdClear 2.8s ease-in calc(.35s + var(--o) * .9s) forwards; }
+@keyframes cdClear { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: translateY(-14%) scale(1.5); } }
+@media (prefers-reduced-motion: reduce) { .cd-earth { display: none; } }
 .fly-skip { position: fixed; z-index: 260; top: max(14px, env(safe-area-inset-top)); right: 14px; padding: 9px 14px; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #cfeff0; background: rgba(5,9,12,.7); border: 1px solid rgba(111,208,212,.5); border-radius: 4px; backdrop-filter: blur(6px); cursor: pointer; }
 
 /* ---- Trail of clouds that stays on the page ---- */
@@ -208,3 +216,26 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
   .hb-row.main { min-height: 68px; }
 }
 @media (max-width: 899px) { .room-labels { display: none !important; } } /* the four tiles repeated the projects list */
+
+/* Hero: short intro, quiet "write to me", LinkedIn and CV as icons */
+.hero-actions { justify-content: flex-start; margin-top: 22px; gap: 10px; align-items: center; }
+.hero-actions .btn { border-color: var(--rule); color: var(--ink-2); }
+.hero-actions .btn:hover { color: var(--bg); border-color: var(--ink); }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 46px; height: 46px; padding: 0 13px; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-2); text-decoration: none; font: 600 .78rem/1 var(--mono); letter-spacing: .06em; transition: color .2s, border-color .2s, background .2s; }
+.icon-btn svg { width: 20px; height: 20px; flex: none; }
+.icon-btn:hover { color: var(--teal-ink); border-color: var(--teal); }
+.hero .intro { margin-top: 14px; font-size: .98rem; }
+
+/* "About me": a speech bubble under the figure, with a soft pulse ring (no bouncing) */
+.stage-fig .fig-tag { display: inline-flex; align-items: center; gap: 8px; bottom: -92px; padding: 11px 18px; border-radius: 999px; border: 0; background: var(--teal); color: var(--on-teal); font: 600 .86rem/1 var(--sans, inherit); letter-spacing: -.005em; text-transform: none; box-shadow: 0 10px 28px -10px var(--teal); }
+.stage-fig .fig-tag::before { content: ''; position: absolute; left: 50%; top: -6px; width: 12px; height: 12px; margin-left: -6px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+.stage-fig .fig-tag::after { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--teal); opacity: 0; animation: aboutPing 2.8s ease-out 2.6s infinite; pointer-events: none; }
+.stage-fig .fig-tag i { font-style: normal; transition: transform .25s var(--ease); }
+.stage-fig .fig-tag:hover i, .stage-fig .fig-link:hover ~ .fig-tag i { transform: translateX(3px); }
+@keyframes aboutPing { 0% { opacity: .7; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.35, 1.7); } }
+@media (prefers-reduced-motion: reduce) { .stage-fig .fig-tag::after { animation: none; } }
+.tour-track-wrap { margin-top: 2px; }
+@media (max-width: 640px) {
+  .actions.hero-actions { display: flex; width: auto; flex-wrap: nowrap; gap: 8px; }
+  .hero-actions .btn { padding: 0 16px; min-height: 46px; }
+}
