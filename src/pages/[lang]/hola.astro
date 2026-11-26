@@ -13,7 +13,7 @@ const rows = [
   { n: '03', href: CV, ext: true, k: 'PDF', name: en ? 'My CV' : 'Mi CV', sub: en ? 'In Spanish' : 'En español' },
   { n: '04', href: `mailto:${EMAIL}`, ext: false, k: en ? 'Email' : 'Correo', name: en ? 'Write to me' : 'Escríbeme', sub: EMAIL },
 ].map((c, i) => ({ ...c, i }));
-const bubble = en ? 'Come in and get to know me!' : '¡Entra aquí y conóceme!';
+const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
 ---
 <!doctype html>
 <html lang={en ? 'en' : 'es'} data-mode="dark">

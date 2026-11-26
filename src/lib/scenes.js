@@ -114,11 +114,11 @@ function makeCard(suit, label, backTex) {
 function addLogo(parent, opts) {
   const group = new THREE.Group(); group.position.set(0, 0.95, 0); parent.add(group);
   new THREE.TextureLoader().load('/img/cinco-vidas-logo.webp', (t) => {
-    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter;
     const W = 1.6, H = (W * 512) / 754;
-    for (let i = 0; i < 8; i++) { // stacked layers give the flat logo real thickness
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.08, toneMapped: false, color: i === 0 ? 0xffffff : 0x14222a }));
-      m.position.z = -i * 0.014; group.add(m);
+    for (let i = 0; i < 3; i++) { // a clean front face plus two thin dark layers behind it: just enough depth, never a muddy stack
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.3, toneMapped: false, color: i === 0 ? 0xffffff : 0x0c171c }));
+      m.position.z = -i * 0.016; group.add(m);
     }
     if (opts && opts.requestFrame) opts.requestFrame();
   });
@@ -496,7 +496,7 @@ function buildRoute(opts) {
     traveller.position.set(Math.cos(ang) * 1.62, 0, Math.sin(ang) * 1.62);
   };
   return {
-    object: root, camera: { z: 4.9, y: 0, fov: 32 },
+    object: root, camera: { z: 6.2, y: 0, fov: 32 }, // pulled back: the halo around the globe now has room inside the canvas (CSS makes the canvas taller to keep the globe the same size)
     init(ctx) { still = ctx.still; setRes(); ro = new ResizeObserver(() => { setRes(); ctx.requestFrame(); }); ro.observe(opts.el); mo = new MutationObserver(() => ctx.requestFrame()); mo.observe(opts.el, { attributes: true, attributeFilter: ['data-step'] }); },
     dispose() { mo && mo.disconnect(); ro && ro.disconnect(); },
   };
@@ -681,10 +681,10 @@ function buildRoom(opts) {
 
   // pos: x, y (height), z. top: label height above the object.
   const defs = [
-    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 3.7, -0.6], scale: 0.62, rot: 0.25, top: 1.0, ph: 0.0, a0: 3.5, rx: 3.9, rz: 2.3, sp: 1, glow: 2.6 },
-    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 1.1, 0.8], scale: 1.0, rot: 0.15, top: 1.6, ph: 1.7, a0: 5.1, rx: 3.5, rz: 2.0, sp: 0.85, glow: 2.8 },
-    { id: 'ciclo', make: () => buildWatch(), pos: [3.5, 3.9, 0.3], scale: 1.0, rot: 0.15, top: 1.35, ph: 3.1, a0: 0.4, rx: 3.9, rz: 2.4, sp: 1.1, glow: 2.8 },
-    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.6, -0.4], scale: 0.85, rot: 0, top: 1.45, ph: 4.4, a0: 1.9, rx: 4.1, rz: 2.2, sp: 0.9, glow: 3.0 },
+    { id: 'cards', make: () => buildLogo(opts), pos: [-3.7, 4.3, -0.6], scale: 0.9, rot: 0.25, top: 1.0, ph: 0.0, a0: 3.14, rx: 3.9, rz: 2.3, sp: 1, glow: 2.6 },
+    { id: 'phone', make: () => buildPhone(), pos: [-3.3, 0.9, 0.8], scale: 1.2, rot: 0.15, top: 1.45, ph: 1.7, a0: 3.2, rx: 3.5, rz: 2.0, sp: 0.85, glow: 2.8 },
+    { id: 'ciclo', make: () => buildWatch(), pos: [3.5, 4.4, 0.3], scale: 1.2, rot: 0.15, top: 1.35, ph: 3.1, a0: -0.1, rx: 3.9, rz: 2.4, sp: 1.1, glow: 2.8 },
+    { id: 'globe', make: () => buildGlobe(opts), pos: [3.9, 1.1, -0.4], scale: 1.0, rot: 0, top: 1.4, ph: 4.4, a0: 0.2, rx: 4.1, rz: 2.2, sp: 0.9, glow: 3.0 },
   ];
   const hits = [];
   const st = defs.map((d) => {
@@ -717,7 +717,9 @@ function buildRoom(opts) {
       const goal = s.id === hover ? 1 : 0;
       s.h += (goal - s.h) * (ctx.still ? 1 : 0.16);
       // each object drifts on its own tilted ellipse around Marcos: slow, a little vertical swell, leaning into the turn
-      const an = s.a0 + (ctx.still ? 0 : t * 0.00014 * s.sp);
+      // each object sways on its own side of Marcos and never reaches the strip of the screen his silhouette covers (|x| >= 3.15 world units)
+      if (s.amp === undefined) { const side = Math.cos(s.a0) > 0 ? 0 : Math.PI; s.amp = Math.max(0, Math.min(0.5, Math.acos(Math.min(0.999, 3.15 / s.rx)) - Math.abs(s.a0 - side))); }
+      const an = s.a0 + (ctx.still ? 0 : Math.sin(t * 0.00022 * s.sp + s.ph) * s.amp);
       const fl = ctx.still ? 0 : Math.sin(t * 0.0006 + s.ph) * 0.16 + Math.sin(t * 0.00037 + s.ph * 1.7) * 0.07 + Math.sin(an) * 0.32;
       s.inner.scale.setScalar(s.scale * (1 + 0.12 * s.h)); s.inner.position.y = s.baseY + fl + 0.14 * s.h; s.hit.position.y = s.inner.position.y;
       const breathe = ctx.still ? 1 : 1 + Math.sin(t * 0.0003 + s.ph) * 0.04;

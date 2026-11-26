@@ -228,7 +228,6 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 
 /* "About me": a speech bubble under the figure, with a soft pulse ring (no bouncing) */
 .stage-fig .fig-tag { display: inline-flex; align-items: center; gap: 8px; bottom: -92px; padding: 11px 18px; border-radius: 999px; border: 0; background: var(--teal); color: var(--on-teal); font: 600 .86rem/1 var(--sans, inherit); letter-spacing: -.005em; text-transform: none; box-shadow: 0 10px 28px -10px var(--teal); }
-.stage-fig .fig-tag::before { content: ''; position: absolute; left: 50%; top: -6px; width: 12px; height: 12px; margin-left: -6px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
 .stage-fig .fig-tag::after { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--teal); opacity: 0; animation: aboutPing 2.8s ease-out 2.6s infinite; pointer-events: none; }
 .stage-fig .fig-tag i { font-style: normal; transition: transform .25s var(--ease); }
 .stage-fig .fig-tag:hover i, .stage-fig .fig-link:hover ~ .fig-tag i { transform: translateX(3px); }
@@ -258,3 +257,28 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 .hb-next svg { grid-area: a; width: 44px; height: 44px; padding: 11px; border-radius: 50%; border: 1px solid var(--rule); color: var(--teal-ink); transition: background .25s, color .25s, border-color .25s, transform .25s var(--ease); }
 .hb-next:hover svg, .hb-next:focus-visible svg { background: var(--teal); color: var(--on-teal); border-color: var(--teal); transform: translateX(4px); }
 .hb-next { grid-column: 1 / -1; }
+
+/* Hologram figure: nothing clips it any more. The old reveal kept clip-path: inset(0) on the image, which cut the glow into a hard
+   rectangle and sliced the hair and the shoes. The reveal now wipes upward with room to spare on every side. */
+@keyframes materialize {
+  0% { clip-path: inset(100% -60px -60px -60px); filter: brightness(3) saturate(0) drop-shadow(0 0 22px #3bb8be); }
+  60% { clip-path: inset(-60px -60px -60px -60px); filter: brightness(1.8) saturate(.4) drop-shadow(0 0 22px #3bb8be); }
+  100% { clip-path: inset(-60px -60px -60px -60px); filter: drop-shadow(0 0 12px rgba(59,184,190,.4)); }
+}
+.stage-fig .fig-link, .stage-fig img { overflow: visible; }
+
+/* New base: a full, uncut projector disc under the feet (soft glowing floor + two whole rings + a faint outer halo) */
+.stage-fig .base.front { display: none; }
+.stage-fig .base { width: 300%; aspect-ratio: 6 / 1; z-index: 1; }
+.stage-fig .base::before { content: ''; position: absolute; inset: -30% 6%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 30%, transparent), transparent 72%); filter: blur(6px); }
+.stage-fig .base i { border-width: 1.5px; box-shadow: 0 0 16px 1px color-mix(in oklab, var(--teal) 60%, transparent), inset 0 0 18px color-mix(in oklab, var(--teal) 38%, transparent); }
+.stage-fig .base i:nth-child(1) { width: 100%; height: 100%; border-color: color-mix(in oklab, var(--teal) 70%, #fff 0%); }
+.stage-fig .base i:nth-child(2) { width: 72%; height: 72%; opacity: .85; border-width: 1px; border-color: var(--teal-ink); }
+.stage-fig .base i:nth-child(3) { width: 46%; height: 46%; background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 70%, transparent), color-mix(in oklab, var(--teal) 14%, transparent) 70%, transparent); }
+
+/* Route globe: a taller canvas than its layout box, so the atmosphere and the dotted orbit fade out inside it instead of being cut at the edge */
+.tour-globe .scene-route { height: calc(var(--gh) * 1.27); margin-block: calc(var(--gh) * -0.135); pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent); }
+
+/* No 3D canvas ends in a hard edge: every scene fades into the page at its top and bottom */
+.scene:not(.scene-route) { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); }

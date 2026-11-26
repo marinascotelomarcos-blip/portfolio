@@ -190,7 +190,7 @@ const kinds = items.map((i) => i.kind);
       prepareRocket().catch(() => {}); // fetch the 3D code and model while the numbers run
       /* the countdown sits ON the Earth, and the Earth clouds over with smoke until the rocket bursts out of it */
       const gl = scene.getBoundingClientRect();
-      const side = gl.height;
+      const side = gl.height / 1.27; // the canvas is 27% taller than the globe's own box (see extras.css)
       overlay = document.createElement('div');
       overlay.className = 'cd-earth';
       overlay.setAttribute('aria-hidden', 'true');

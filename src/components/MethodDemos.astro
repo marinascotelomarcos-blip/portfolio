@@ -1,0 +1,430 @@
+---
+/* "Methods in practice": small, hands-on examples of the methods listed above (A3, Lean/5S, MRP, Kanban, demand forecasting).
+   ABC and EOQ/ROP live in InventoryLab, right below. Every number is invented: this shows how I read each method, not any company's data. */
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const en = lang === 'en';
+const L = en ? {
+  title: 'The methods in practice',
+  lede: 'Below are examples of the methods listed above, or my way of reading each one. Click, move the sliders and watch the decision change. All numbers are made up.',
+  jump: 'Jump to',
+  idx: [['a3', 'A3'], ['lean', 'Lean and 5S'], ['mrp', 'MRP'], ['kanban', 'Kanban'], ['abc', 'ABC and EOQ'], ['forecast', 'Forecasting']],
+  note: 'Made-up data. No company figures. It only shows the method.',
+  a3: {
+    name: 'A3 and process improvement', what: 'A one-page problem-solving sheet: understand the situation, find the root cause, agree countermeasures, follow up.',
+    mine: 'My reading: do not fix the symptom. Ask why until the answer is something you can change.',
+    case: 'Case: strap orders leave late', problem: 'About 30% of strap orders leave the warehouse a day late.',
+    ask: 'Ask why', again: 'Ask why again', reset: 'Start over',
+    whys: ['The strap is not there when the order is picked.', 'Real stock does not match the system.', 'Small withdrawals are not recorded.', 'Taking a strap does not require writing it down.', 'There is no single exit point that records every withdrawal.'],
+    root: 'Root cause', rootText: 'No single exit point that records withdrawals.',
+    cm: 'Countermeasures', cmList: ['One exit point with a scanner (5S: a place for everything).', 'Weekly cycle count of class A items.'],
+    target: 'Target', targetText: 'Late orders from 30% to under 5% in 8 weeks.',
+    follow: 'Follow-up', followText: 'Weekly chart of late orders, reviewed on Mondays.',
+  },
+  lean: {
+    name: 'Lean and 5S', what: 'Remove what the customer would not pay for: waiting, searching, rework. 5S keeps the workplace ready to work.',
+    mine: 'My reading: measure how much of the lead time is real work. It is usually a small slice.',
+    case: 'Case: preparing one order', steps: [
+      ['Receive the order', 2, 'va'], ['Wait until someone sees it', 45, 'w'], ['Look for the material', 12, 'w'], ['Assemble', 8, 'va'], ['Wait for the check', 30, 'w'], ['Check', 3, 'va'], ['Pack', 5, 'va'],
+    ],
+    fixes: [
+      ['5S at the station: a place for each thing', 2, 'Look for the material: 12 → 2 min'],
+      ['Visible queue with an automatic alert', 5, 'Wait until someone sees it: 45 → 5 min'],
+      ['Check at the same point, no hand-over', 5, 'Wait for the check: 30 → 5 min'],
+    ],
+    lead: 'Lead time', value: 'Value-adding time', pct: 'Value-added', min: 'min',
+  },
+  mrp: {
+    name: 'MRP', what: 'Material Requirements Planning: from what you will sell, work backwards to what to buy or make, and when to order it.',
+    mine: 'My reading: the date matters as much as the quantity. An order is late the day it should have been placed, not the day it arrives.',
+    case: 'Case: the watch is due in week 6',
+    demand: 'Watches wanted in week 6', stock: 'Modules already in stock',
+    cols: ['Component', 'Per watch', 'Needed', 'In stock', 'To order', 'Order in'],
+    comps: [['Titanium case', 1, 2, 40], ['Watch module', 1, 3, null], ['Nylon strap', 2, 1, 120]],
+    week: 'week', none: 'nothing', lt: 'lead time', weeks: 'Weeks',
+  },
+  kanban: {
+    name: 'Kanban', what: 'Visualise the work and limit how much is in progress. Pull the next item only when there is room.',
+    mine: 'My reading: the limit is the point. A full "in progress" column is a message: finish something before starting something.',
+    case: 'Case: orders in the workshop', cols: ['To do', 'In progress', 'Done'], limit: 'limit', done: 'finished',
+    hint: 'Click a card to move it on. Try to start a fourth one.', blocked: 'Limit reached: finish something before starting another.',
+    reset: 'Reset',
+  },
+  forecast: {
+    name: 'Demand forecasting', what: 'Use the past to estimate the next period. Simple methods first: they are easy to explain and hard to beat by much.',
+    mine: 'My reading: pick the method by its error on the past, not by how clever it sounds.',
+    case: 'Case: monthly sales of one item', method: ['Moving average', 'Exponential smoothing'], window: 'Months averaged', alpha: 'Weight of the latest month (alpha)',
+    real: 'Real', fc: 'Forecast', next: 'Forecast for next month', err: 'Average error', units: 'units',
+    months: ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
+  },
+} : {
+  title: 'Los métodos en práctica',
+  lede: 'Aquí debajo tienes ejemplos de los métodos de arriba, o mi manera de interpretarlos. Pulsa, mueve los deslizadores y mira cómo cambia la decisión. Todos los números son inventados.',
+  jump: 'Ir a',
+  idx: [['a3', 'A3'], ['lean', 'Lean y 5S'], ['mrp', 'MRP'], ['kanban', 'Kanban'], ['abc', 'ABC y EOQ'], ['forecast', 'Previsión']],
+  note: 'Datos inventados. Ninguna cifra de empresa. Solo enseña el método.',
+  a3: {
+    name: 'A3 y mejora de procesos', what: 'Una hoja de una página para resolver un problema: entender la situación, hallar la causa raíz, acordar contramedidas y hacer seguimiento.',
+    mine: 'Cómo lo leo yo: no arreglar el síntoma. Preguntar por qué hasta que la respuesta sea algo que se pueda cambiar.',
+    case: 'Caso: los pedidos de correas salen tarde', problem: 'Cerca del 30 % de los pedidos de correas sale del almacén con un día de retraso.',
+    ask: 'Preguntar por qué', again: 'Preguntar otra vez por qué', reset: 'Empezar de nuevo',
+    whys: ['La correa no está cuando se prepara el pedido.', 'El stock real no coincide con el del sistema.', 'Las salidas pequeñas no se registran.', 'Coger una correa no obliga a apuntarla.', 'No hay un punto de salida único que registre cada salida.'],
+    root: 'Causa raíz', rootText: 'No hay un punto de salida único que registre las salidas.',
+    cm: 'Contramedidas', cmList: ['Un punto de salida con escáner (5S: un sitio para cada cosa).', 'Recuento cíclico semanal de los artículos clase A.'],
+    target: 'Objetivo', targetText: 'Pedidos tardíos del 30 % a menos del 5 % en 8 semanas.',
+    follow: 'Seguimiento', followText: 'Gráfico semanal de pedidos tardíos, revisado los lunes.',
+  },
+  lean: {
+    name: 'Lean y 5S', what: 'Quitar lo que el cliente no pagaría: esperas, búsquedas, repeticiones. Las 5S mantienen el puesto listo para trabajar.',
+    mine: 'Cómo lo leo yo: medir qué parte del plazo es trabajo de verdad. Suele ser una porción pequeña.',
+    case: 'Caso: preparar un pedido', steps: [
+      ['Recibir el pedido', 2, 'va'], ['Esperar a que alguien lo vea', 45, 'w'], ['Buscar el material', 12, 'w'], ['Montar', 8, 'va'], ['Esperar la revisión', 30, 'w'], ['Revisar', 3, 'va'], ['Empaquetar', 5, 'va'],
+    ],
+    fixes: [
+      ['5S en el puesto: un sitio para cada cosa', 2, 'Buscar el material: de 12 a 2 min'],
+      ['Cola visible con aviso automático', 5, 'Esperar a que lo vean: de 45 a 5 min'],
+      ['Revisar en el mismo punto, sin traspaso', 5, 'Esperar la revisión: de 30 a 5 min'],
+    ],
+    lead: 'Plazo total', value: 'Tiempo que aporta valor', pct: 'Valor añadido', min: 'min',
+  },
+  mrp: {
+    name: 'MRP', what: 'Planificación de necesidades de materiales: de lo que vas a vender, hacia atrás hasta lo que comprar o fabricar y cuándo pedirlo.',
+    mine: 'Cómo lo leo yo: la fecha importa tanto como la cantidad. Un pedido va tarde el día que debió hacerse, no el día que llega.',
+    case: 'Caso: el reloj se entrega en la semana 6',
+    demand: 'Relojes que se quieren en la semana 6', stock: 'Módulos que ya hay en stock',
+    cols: ['Componente', 'Por reloj', 'Necesito', 'En stock', 'A pedir', 'Pedir en'],
+    comps: [['Caja de titanio', 1, 2, 40], ['Módulo del reloj', 1, 3, null], ['Correa de nailon', 2, 1, 120]],
+    week: 'semana', none: 'nada', lt: 'plazo', weeks: 'Semanas',
+  },
+  kanban: {
+    name: 'Kanban', what: 'Ver el trabajo y limitar cuánto hay en curso. Se tira del siguiente solo cuando hay hueco.',
+    mine: 'Cómo lo leo yo: el límite es lo importante. Una columna «en curso» llena es un mensaje: acaba algo antes de empezar otra cosa.',
+    case: 'Caso: pedidos en el taller', cols: ['Pendiente', 'En curso', 'Hecho'], limit: 'límite', done: 'terminados',
+    hint: 'Pulsa una tarjeta para avanzarla. Prueba a empezar una cuarta.', blocked: 'Límite alcanzado: acaba algo antes de empezar otra cosa.',
+    reset: 'Reiniciar',
+  },
+  forecast: {
+    name: 'Previsión de demanda', what: 'Usar el pasado para estimar el siguiente periodo. Primero los métodos simples: son fáciles de explicar y cuesta mejorarlos mucho.',
+    mine: 'Cómo lo leo yo: elegir el método por su error en el pasado, no por lo sofisticado que suene.',
+    case: 'Caso: ventas mensuales de un artículo', method: ['Media móvil', 'Suavizado exponencial'], window: 'Meses que se promedian', alpha: 'Peso del último mes (alfa)',
+    real: 'Real', fc: 'Previsión', next: 'Previsión del mes siguiente', err: 'Error medio', units: 'uds.',
+    months: ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
+  },
+};
+const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forecast: L.forecast };
+---
+<section class="md" id="methods-demo" data-md data-lang={lang} aria-labelledby="md-title">
+  <h2 class="sec" id="md-title">{L.title}</h2>
+  <p class="prose md-lede">{L.lede}</p>
+  <nav class="md-jump" aria-label={L.jump}>
+    {L.idx.map(([id, label]) => <a href={id === 'abc' ? '#lab-title' : `#md-${id}`} class="mono">{label}</a>)}
+  </nav>
+
+  <article class="md-card" id="md-a3" data-demo="a3">
+    <header class="md-head"><h3>{L.a3.name}</h3><p>{L.a3.what}</p><p class="md-mine">{L.a3.mine}</p></header>
+    <p class="md-case mono">{L.a3.case}</p>
+    <div class="a3-sheet">
+      <div class="a3-box a3-problem"><b class="mono">{en ? 'Problem' : 'Problema'}</b><p>{L.a3.problem}</p></div>
+      <ol class="a3-whys" aria-live="polite"></ol>
+      <div class="a3-box a3-root" hidden><b class="mono">{L.a3.root}</b><p>{L.a3.rootText}</p></div>
+      <div class="a3-after" hidden>
+        <div class="a3-box"><b class="mono">{L.a3.cm}</b><ul>{L.a3.cmList.map((c) => <li>{c}</li>)}</ul></div>
+        <div class="a3-box"><b class="mono">{L.a3.target}</b><p>{L.a3.targetText}</p></div>
+        <div class="a3-box"><b class="mono">{L.a3.follow}</b><p>{L.a3.followText}</p></div>
+      </div>
+    </div>
+    <div class="md-actions"><button type="button" class="md-btn a3-next">{L.a3.ask}</button><button type="button" class="md-btn ghost a3-reset" hidden>{L.a3.reset}</button></div>
+  </article>
+
+  <article class="md-card" id="md-lean" data-demo="lean">
+    <header class="md-head"><h3>{L.lean.name}</h3><p>{L.lean.what}</p><p class="md-mine">{L.lean.mine}</p></header>
+    <p class="md-case mono">{L.lean.case}</p>
+    <ul class="ln-steps"></ul>
+    <div class="ln-fixes">
+      {L.lean.fixes.map((f, i) => (
+        <label class="ln-fix"><input type="checkbox" data-i={i} /><span><b>{f[0]}</b><small class="mono">{f[2]}</small></span></label>
+      ))}
+    </div>
+    <div class="ln-out">
+      <div><span class="mono">{L.lean.lead}</span><b class="tnum" data-o="lead"></b></div>
+      <div><span class="mono">{L.lean.value}</span><b class="tnum" data-o="value"></b></div>
+      <div class="hot"><span class="mono">{L.lean.pct}</span><b class="tnum" data-o="pct"></b></div>
+    </div>
+  </article>
+
+  <article class="md-card" id="md-mrp" data-demo="mrp">
+    <header class="md-head"><h3>{L.mrp.name}</h3><p>{L.mrp.what}</p><p class="md-mine">{L.mrp.mine}</p></header>
+    <p class="md-case mono">{L.mrp.case}</p>
+    <div class="md-ctrls">
+      <label class="md-ctrl"><span class="md-ctrl-top"><span>{L.mrp.demand}</span><b class="tnum mono"><output data-o="D"></output></b></span><input type="range" min="20" max="400" step="10" value="150" data-k="D" /></label>
+      <label class="md-ctrl"><span class="md-ctrl-top"><span>{L.mrp.stock}</span><b class="tnum mono"><output data-o="S"></output></b></span><input type="range" min="0" max="400" step="10" value="60" data-k="S" /></label>
+    </div>
+    <div class="mrp-table" role="table">
+      <div class="mrp-row head mono" role="row">{L.mrp.cols.map((c) => <span role="columnheader">{c}</span>)}</div>
+      <div class="mrp-body"></div>
+    </div>
+    <div class="mrp-weeks" aria-hidden="true"></div>
+  </article>
+
+  <article class="md-card" id="md-kanban" data-demo="kanban">
+    <header class="md-head"><h3>{L.kanban.name}</h3><p>{L.kanban.what}</p><p class="md-mine">{L.kanban.mine}</p></header>
+    <p class="md-case mono">{L.kanban.case} · <span class="kb-hint">{L.kanban.hint}</span></p>
+    <div class="kb-board">
+      {L.kanban.cols.map((c, i) => (
+        <div class="kb-col" data-col={i}><h4 class="mono">{c}{i === 1 && <small> · {L.kanban.limit} 3</small>}<b class="kb-count tnum"></b></h4><ul class="kb-list"></ul></div>
+      ))}
+    </div>
+    <p class="kb-msg" aria-live="polite"></p>
+    <div class="md-actions"><button type="button" class="md-btn ghost kb-reset">{L.kanban.reset}</button></div>
+  </article>
+
+  <article class="md-card" id="md-forecast" data-demo="forecast">
+    <header class="md-head"><h3>{L.forecast.name}</h3><p>{L.forecast.what}</p><p class="md-mine">{L.forecast.mine}</p></header>
+    <p class="md-case mono">{L.forecast.case}</p>
+    <div class="lab-tabs fc-tabs" role="tablist">
+      {L.forecast.method.map((m, i) => <button class="lab-tab" role="tab" type="button" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-m={i}>{m}</button>)}
+    </div>
+    <div class="md-ctrls">
+      <label class="md-ctrl fc-w"><span class="md-ctrl-top"><span>{L.forecast.window}</span><b class="tnum mono"><output></output></b></span><input type="range" min="2" max="6" step="1" value="3" /></label>
+      <label class="md-ctrl fc-a" hidden><span class="md-ctrl-top"><span>{L.forecast.alpha}</span><b class="tnum mono"><output></output></b></span><input type="range" min="0.1" max="0.9" step="0.1" value="0.4" /></label>
+    </div>
+    <svg class="md-chart fc-chart" viewBox="0 0 320 150" role="img" aria-label={L.forecast.name}></svg>
+    <ul class="lab-legend mono"><li><i class="t"></i>{L.forecast.real}</li><li><i class="o"></i>{L.forecast.fc}</li></ul>
+    <dl class="lab-results">
+      <div class="hot"><dt>{L.forecast.next}</dt><dd class="tnum" data-o="next"></dd></div>
+      <div><dt>{L.forecast.err}</dt><dd class="tnum" data-o="err"></dd></div>
+    </dl>
+  </article>
+  <p class="md-note mono">{L.note}</p>
+  <script type="application/json" id="md-data" is:inline set:html={JSON.stringify(data)}></script>
+</section>
+
+<style is:global>
+  .md-lede { max-width: 62ch; color: var(--ink-2); }
+  .md-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+  .md-jump a { font-size: .72rem; letter-spacing: .06em; padding: 8px 14px; min-height: 36px; display: inline-flex; align-items: center; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-2); text-decoration: none; transition: border-color .2s, color .2s; }
+  .md-jump a:hover { border-color: var(--teal); color: var(--ink); }
+  .md-card { scroll-margin-top: 90px; margin-top: 18px; padding: clamp(16px, 3vw, 28px); border: 1px solid var(--rule); border-radius: 12px; background: color-mix(in oklab, var(--bg-2) 72%, transparent); }
+  .md-head h3 { margin: 0 0 6px; font-size: clamp(1.2rem, 2.4vw, 1.5rem); letter-spacing: -.02em; font-weight: 580; }
+  .md-head p { margin: 0 0 6px; color: var(--ink-2); max-width: 64ch; }
+  .md-head .md-mine { color: var(--teal-ink); }
+  .md-case { margin: 16px 0 12px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .md-case .kb-hint { text-transform: none; letter-spacing: 0; }
+  .md-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .md-btn { font: inherit; font-size: .88rem; font-weight: 560; padding: 10px 18px; min-height: 44px; border-radius: 999px; border: 0; background: var(--teal); color: var(--on-teal); cursor: pointer; transition: background .2s, transform .15s; }
+  .md-btn:hover { background: var(--teal-ink); } .md-btn:active { transform: scale(.98); }
+  .md-btn.ghost { background: transparent; border: 1px solid var(--rule); color: var(--ink-2); font-weight: 500; } .md-btn.ghost:hover { border-color: var(--teal); color: var(--ink); }
+  .md-note { margin: 16px 0 0; font-size: .68rem; letter-spacing: .04em; color: var(--ink-2); }
+  .md-ctrls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 28px; margin-bottom: 14px; }
+  .md-ctrl { display: block; } .md-ctrl[hidden] { display: none; }
+  .md-ctrl-top { display: flex; justify-content: space-between; gap: 10px; font-size: .88rem; }
+  .md-ctrl-top b { font-weight: 500; color: var(--teal-ink); white-space: nowrap; } .md-ctrl output { font: inherit; }
+  .md-ctrl input { width: 100%; accent-color: var(--teal); height: 28px; }
+  .md-chart { display: block; width: 100%; height: auto; overflow: visible; } .md-chart text { font: 8px var(--mono); fill: var(--ink-2); }
+
+  /* A3 */
+  .a3-sheet { display: grid; gap: 10px; }
+  .a3-box { padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; background: color-mix(in oklab, var(--bg) 60%, transparent); }
+  .a3-box b { display: block; margin-bottom: 4px; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--teal-ink); font-weight: 500; }
+  .a3-box p, .a3-box ul { margin: 0; } .a3-box ul { padding-left: 1.1em; } .a3-box li + li { margin-top: 4px; }
+  .a3-problem { border-color: color-mix(in oklab, #d8553f 60%, var(--rule)); } .a3-problem b { color: #e07a66; }
+  .a3-whys { list-style: none; margin: 0; padding: 0 0 0 14px; display: grid; gap: 8px; border-left: 2px dashed var(--rule); }
+  .a3-whys li { position: relative; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 8px; animation: md-in .35s var(--ease) both; }
+  .a3-whys li::before { content: ''; position: absolute; left: -21px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--teal); }
+  .a3-whys li span { display: block; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); font-family: var(--mono); }
+  .a3-root { border-color: var(--teal); background: color-mix(in oklab, var(--teal) 12%, transparent); animation: md-in .4s var(--ease) both; }
+  .a3-after { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; animation: md-in .4s var(--ease) both; } .a3-after[hidden], .a3-root[hidden] { display: none; }
+  @keyframes md-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Lean */
+  .ln-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; width: 100%; min-height: 52px; border-radius: 8px; overflow: hidden; border: 1px solid var(--rule); }
+  .ln-steps li { position: relative; min-width: 0; display: grid; align-content: center; padding: 6px 6px; font-size: .62rem; line-height: 1.15; text-align: center; border-right: 1px solid var(--bg); transition: flex-grow .5s var(--ease), background .3s; overflow: hidden; }
+  .ln-steps li:last-child { border-right: 0; }
+  .ln-steps li.va { background: color-mix(in oklab, var(--teal) 55%, transparent); color: var(--ink); }
+  .ln-steps li.w { background: color-mix(in oklab, #d8553f 34%, transparent); color: var(--ink); }
+  .ln-steps li b { display: block; font-weight: 560; } .ln-steps li span { display: none; }
+  .ln-fixes { display: grid; gap: 8px; margin-bottom: 14px; }
+  .ln-fix { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; min-height: 48px; border: 1px solid var(--rule); border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s; }
+  .ln-fix:has(input:checked) { border-color: var(--teal); background: color-mix(in oklab, var(--teal) 10%, transparent); }
+  .ln-fix input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--teal); flex: none; }
+  .ln-fix b { display: block; font-weight: 540; } .ln-fix small { display: block; color: var(--ink-2); font-size: .66rem; letter-spacing: .03em; margin-top: 2px; }
+  .ln-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ln-out div { padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; }
+  .ln-out div.hot { border-color: var(--teal); background: color-mix(in oklab, var(--teal) 12%, transparent); }
+  .ln-out span { display: block; font-size: .62rem; color: var(--ink-2); letter-spacing: .04em; } .ln-out b { display: block; margin-top: 2px; font-size: 1.2rem; letter-spacing: -.02em; }
+
+  /* MRP */
+  .mrp-table { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .mrp-row { display: grid; grid-template-columns: 1.4fr .7fr .8fr .8fr .8fr 1.1fr; gap: 8px; padding: 10px 12px; align-items: center; border-top: 1px solid var(--rule); font-size: .88rem; }
+  .mrp-row:first-child { border-top: 0; } .mrp-row.head { font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: color-mix(in oklab, var(--bg) 50%, transparent); }
+  .mrp-row .go { font-weight: 600; color: var(--teal-ink); } .mrp-row .no { color: var(--ink-2); }
+  .mrp-weeks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 12px; }
+  .mrp-weeks div { min-height: 56px; padding: 6px; border: 1px dashed var(--rule); border-radius: 6px; font-size: .62rem; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+  .mrp-weeks div.due { border-color: var(--teal); border-style: solid; background: color-mix(in oklab, var(--teal) 10%, transparent); }
+  .mrp-weeks i { font-style: normal; display: block; padding: 2px 5px; border-radius: 4px; background: var(--teal); color: var(--on-teal); font-size: .6rem; font-weight: 600; width: fit-content; }
+
+  /* Kanban */
+  .kb-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .kb-col { padding: 10px; border: 1px solid var(--rule); border-radius: 8px; min-height: 160px; background: color-mix(in oklab, var(--bg) 55%, transparent); transition: border-color .25s; }
+  .kb-col.full { border-color: #e0a24a; }
+  .kb-col h4 { display: flex; align-items: center; gap: 4px; margin: 0 0 10px; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 500; color: var(--ink-2); }
+  .kb-col h4 small { font-size: inherit; opacity: .7; } .kb-count { margin-left: auto; color: var(--teal-ink); font-weight: 500; }
+  .kb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .kb-card { width: 100%; text-align: left; font: inherit; font-size: .82rem; padding: 9px 10px; min-height: 44px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg-2); color: var(--ink); cursor: pointer; transition: border-color .2s, transform .15s; animation: md-in .3s var(--ease) both; }
+  .kb-card:hover { border-color: var(--teal); } .kb-card:active { transform: scale(.98); } .kb-card[disabled] { cursor: default; opacity: .6; }
+  .kb-card.shake { animation: kb-no .35s; }
+  @keyframes kb-no { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .kb-msg { min-height: 1.4em; margin: 12px 0 0; color: #e0a24a; font-weight: 520; font-size: .92rem; }
+
+  /* Forecast */
+  .fc-tabs { margin-bottom: 14px; }
+  @media (max-width: 720px) {
+    .mrp-row.head { display: none; }
+    .mrp-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; padding: 12px; }
+    .mrp-row > span::before { content: attr(data-l); display: block; margin-bottom: 1px; font: 500 .56rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+    .mrp-row > :first-child { grid-column: 1 / -1; font-weight: 580; } .mrp-row > :first-child::before { display: none; }
+    .mrp-row > :last-child { grid-column: 1 / -1; }
+    .kb-board { gap: 6px; } .kb-col { padding: 8px 6px; } .kb-card { font-size: .74rem; padding: 8px 6px; }
+    .ln-out { grid-template-columns: 1fr 1fr; } .ln-out div.hot { grid-column: 1 / -1; }
+    .ln-steps li { font-size: .56rem; padding: 4px 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .a3-whys li, .a3-root, .a3-after, .kb-card { animation: none; } .ln-steps li { transition: none; } }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-md]');
+  if (root) {
+    const D = JSON.parse(document.getElementById('md-data')!.textContent || '{}');
+    const lang: 'en' | 'es' = D.lang === 'en' ? 'en' : 'es';
+    const nf = (d = 0) => new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'es-ES', { maximumFractionDigits: d });
+    const n0 = nf(0), n1 = nf(1);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = (tag: string, attrs: Record<string, string | number>, parent?: Element) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, String(attrs[k])); parent?.appendChild(e); return e; };
+    const q = <T extends Element>(demo: string, sel: string) => root.querySelector<T>(`[data-demo="${demo}"] ${sel}`)!;
+
+    /* ---------- A3: five whys ---------- */
+    {
+      const a = D.a3, list = q<HTMLElement>('a3', '.a3-whys'), next = q<HTMLButtonElement>('a3', '.a3-next'), reset = q<HTMLButtonElement>('a3', '.a3-reset');
+      const rootBox = q<HTMLElement>('a3', '.a3-root'), after = q<HTMLElement>('a3', '.a3-after');
+      let k = 0;
+      const render = () => {
+        list.replaceChildren();
+        for (let i = 0; i < k; i++) { const li = document.createElement('li'); const s = document.createElement('span'); s.textContent = (lang === 'en' ? 'Why ' : 'Por qué ') + (i + 1); const p = document.createElement('p'); p.style.margin = '0'; p.textContent = a.whys[i]; li.append(s, p); list.appendChild(li); }
+        const done = k >= a.whys.length;
+        rootBox.hidden = !done; after.hidden = !done; reset.hidden = k === 0; next.hidden = done;
+        next.textContent = k === 0 ? a.ask : a.again;
+      };
+      next.addEventListener('click', () => { k = Math.min(a.whys.length, k + 1); render(); });
+      reset.addEventListener('click', () => { k = 0; render(); });
+      render();
+    }
+
+    /* ---------- Lean: value-added share of the lead time ---------- */
+    {
+      const l = D.lean, steps = q<HTMLElement>('lean', '.ln-steps'), boxes = Array.from(root.querySelectorAll<HTMLInputElement>('[data-demo="lean"] .ln-fix input'));
+      // which waste step each fix shortens: [step index, minutes after]
+      const effect: [number, number][] = [[2, l.fixes[0][1]], [1, l.fixes[1][1]], [4, l.fixes[2][1]]];
+      const o = (k: string, s: string) => { q<HTMLElement>('lean', `[data-o="${k}"]`).textContent = s; };
+      const draw = () => {
+        const mins: number[] = l.steps.map((s: [string, number, string]) => s[1]);
+        boxes.forEach((b, i) => { if (b.checked) mins[effect[i][0]] = effect[i][1]; });
+        steps.replaceChildren();
+        l.steps.forEach((s: [string, number, string], i: number) => {
+          const li = document.createElement('li'); li.className = s[2]; li.style.flexGrow = String(mins[i]); li.style.flexBasis = '0';
+          li.title = `${s[0]}: ${mins[i]} ${l.min}`;
+          const b = document.createElement('b'); b.textContent = String(mins[i]); const t = document.createElement('div'); t.textContent = mins[i] >= 8 ? s[0] : '';
+          li.append(b, t); steps.appendChild(li);
+        });
+        const total = mins.reduce((a, b) => a + b, 0), value = l.steps.reduce((a: number, s: [string, number, string], i: number) => a + (s[2] === 'va' ? mins[i] : 0), 0);
+        o('lead', `${n0.format(total)} ${l.min}`); o('value', `${n0.format(value)} ${l.min}`); o('pct', `${n0.format(Math.round(value / total * 100))} %`);
+      };
+      boxes.forEach((b) => b.addEventListener('change', draw));
+      draw();
+    }
+
+    /* ---------- MRP: net requirements and order dates ---------- */
+    {
+      const m = D.mrp, body = q<HTMLElement>('mrp', '.mrp-body'), weeks = q<HTMLElement>('mrp', '.mrp-weeks');
+      const inD = q<HTMLInputElement>('mrp', '[data-k="D"]'), inS = q<HTMLInputElement>('mrp', '[data-k="S"]');
+      const run = () => {
+        const dem = Number(inD.value), stockMod = Number(inS.value);
+        q<HTMLElement>('mrp', '[data-o="D"]').textContent = n0.format(dem); q<HTMLElement>('mrp', '[data-o="S"]').textContent = n0.format(stockMod);
+        body.replaceChildren(); const buckets: string[][] = [[], [], [], [], [], []];
+        m.comps.forEach((c: [string, number, number, number | null]) => {
+          const [name, per, lt, st0] = c, need = dem * per, st = st0 === null ? stockMod : st0, net = Math.max(0, need - st);
+          const week = Math.max(1, 6 - lt);
+          const r = document.createElement('div'); r.className = 'mrp-row'; r.setAttribute('role', 'row');
+          const cells = [name, String(per), n0.format(need), n0.format(st), net > 0 ? n0.format(net) : m.none, net > 0 ? `${m.week} ${week} (${m.lt}: ${lt})` : '—'];
+          cells.forEach((t, i) => { const s = document.createElement('span'); s.textContent = t; s.dataset.l = m.cols[i]; if (i === 5) s.className = net > 0 ? 'go' : 'no'; r.appendChild(s); });
+          body.appendChild(r);
+          if (net > 0) buckets[week - 1].push(`${name.split(' ').slice(-1)[0]} ×${n0.format(net)}`);
+        });
+        weeks.replaceChildren();
+        buckets.forEach((b, i) => { const d = document.createElement('div'); if (i === 5) d.className = 'due'; d.append(`${i + 1}${i === 5 ? ' ✓' : ''}`); b.forEach((t) => { const x = document.createElement('i'); x.textContent = t; d.appendChild(x); }); weeks.appendChild(d); });
+      };
+      [inD, inS].forEach((i) => i.addEventListener('input', run)); run();
+    }
+
+    /* ---------- Kanban: a WIP limit that pushes back ---------- */
+    {
+      const k = D.kanban, cols = Array.from(root.querySelectorAll<HTMLElement>('[data-demo="kanban"] .kb-col')), msg = q<HTMLElement>('kanban', '.kb-msg');
+      const LIMIT = 3, label = lang === 'en' ? 'Order' : 'Pedido';
+      let cards: { id: number; col: number }[] = [];
+      const init = () => { cards = [1042, 1043, 1044, 1045, 1046, 1047].map((id, i) => ({ id, col: i < 4 ? 0 : 1 })); msg.textContent = ''; draw(); };
+      const draw = () => {
+        cols.forEach((c, ci) => {
+          const ul = c.querySelector<HTMLElement>('.kb-list')!; ul.replaceChildren();
+          const mine = cards.filter((x) => x.col === ci);
+          mine.forEach((x) => {
+            const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.className = 'kb-card'; b.textContent = `${label} ${x.id}`; b.disabled = ci === 2;
+            b.addEventListener('click', () => {
+              if (x.col === 0 && cards.filter((y) => y.col === 1).length >= LIMIT) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); msg.textContent = k.blocked; return; }
+              x.col = Math.min(2, x.col + 1); msg.textContent = ''; draw();
+            });
+            li.appendChild(b); ul.appendChild(li);
+          });
+          c.querySelector<HTMLElement>('.kb-count')!.textContent = String(mine.length);
+          c.classList.toggle('full', ci === 1 && mine.length >= LIMIT);
+        });
+      };
+      q<HTMLButtonElement>('kanban', '.kb-reset').addEventListener('click', init);
+      init();
+    }
+
+    /* ---------- Forecast: moving average vs exponential smoothing, judged by the past error ---------- */
+    {
+      const f = D.forecast, svgEl = q<SVGElement>('forecast', '.fc-chart');
+      const y = [112, 104, 118, 131, 142, 150, 158, 149, 137, 126, 134, 161];
+      const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-demo="forecast"] .fc-tabs .lab-tab'));
+      const wBox = q<HTMLElement>('forecast', '.fc-w'), aBox = q<HTMLElement>('forecast', '.fc-a');
+      const wIn = wBox.querySelector<HTMLInputElement>('input')!, aIn = aBox.querySelector<HTMLInputElement>('input')!;
+      let method = 0;
+      const run = () => {
+        const w = Number(wIn.value), a = Number(aIn.value);
+        wBox.querySelector('output')!.textContent = String(w); aBox.querySelector('output')!.textContent = n1.format(a);
+        wBox.hidden = method !== 0; aBox.hidden = method !== 1;
+        // forecast[i] = prediction for month i made with data up to month i-1
+        const fc: (number | null)[] = y.map(() => null); let nextF = 0;
+        if (method === 0) { for (let i = w; i <= y.length; i++) { const v = y.slice(i - w, i).reduce((s, x) => s + x, 0) / w; if (i < y.length) fc[i] = v; else nextF = v; } }
+        else { let s = y[0]; for (let i = 1; i < y.length; i++) { fc[i] = s; s = a * y[i] + (1 - a) * s; } nextF = s; }
+        let err = 0, cnt = 0; fc.forEach((v, i) => { if (v !== null) { err += Math.abs(v - y[i]); cnt++; } });
+        q<HTMLElement>('forecast', '[data-o="next"]').textContent = `${n0.format(Math.round(nextF))} ${f.units}`;
+        q<HTMLElement>('forecast', '[data-o="err"]').textContent = `${n1.format(err / cnt)} ${f.units}`;
+        svgEl.replaceChildren();
+        const W = 320, H = 150, pl = 8, pr = 14, pt = 10, pb = 20, n = y.length + 1, lo = 90, hi = 175;
+        const X = (i: number) => pl + (i / (n - 1)) * (W - pl - pr), Y = (v: number) => pt + (1 - (v - lo) / (hi - lo)) * (H - pt - pb);
+        svg('line', { x1: pl, x2: W - pr, y1: H - pb, y2: H - pb, stroke: 'currentColor', 'stroke-opacity': 0.25 }, svgEl);
+        f.months.forEach((mo: string, i: number) => { const t = svg('text', { x: X(i), y: H - 6, 'text-anchor': 'middle' }, svgEl); t.textContent = mo; });
+        const real = y.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
+        svg('path', { d: real, fill: 'none', stroke: '#3bb8be', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }, svgEl);
+        let d = '', started = false; fc.forEach((v, i) => { if (v !== null) { d += `${started ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; started = true; } });
+        d += `${started ? 'L' : 'M'}${X(y.length).toFixed(1)} ${Y(nextF).toFixed(1)}`;
+        svg('path', { d, fill: 'none', stroke: '#e0a24a', 'stroke-width': 1.8, 'stroke-dasharray': '4 3' }, svgEl);
+        svg('circle', { cx: X(y.length), cy: Y(nextF), r: 4.4, fill: '#e0a24a', stroke: 'var(--bg)', 'stroke-width': 1.5 }, svgEl);
+        y.forEach((v, i) => svg('circle', { cx: X(i), cy: Y(v), r: 2.2, fill: '#3bb8be' }, svgEl));
+      };
+      tabs.forEach((b, i) => b.addEventListener('click', () => { method = i; tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; }); run(); }));
+      wIn.addEventListener('input', run); aIn.addEventListener('input', run); run();
+    }
+  }
+</script>
