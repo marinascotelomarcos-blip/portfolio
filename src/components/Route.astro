@@ -294,7 +294,9 @@ const kinds = items.map((i) => i.kind);
       const zt = kindR.y, zb = countR.y + countR.h, zh = zb - zt;
       const pd = dr(pad);
       const Lp: Pt = { x: pd.x + pd.w * 0.5, y: pd.y - NOZ + 3 };
-      const Q0: Pt = { x: W * 0.8, y: zt - 24 };
+      const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118)); // radius of the loop over the text
+      // the loop starts one radius ABOVE where it used to: its lowest point is now the old start level, so it never dips below it and stays up in the planet area until it descends to land
+      const Q0: Pt = { x: W * 0.8, y: zt - 24 - R };
       const Xe: Pt = { x: W * 0.36, y: zt + zh + 30 };
       const ctrl: Pt[] = [
         S,
@@ -317,7 +319,6 @@ const kinds = items.map((i) => i.kind);
       const appr: Pt[] = [...ctrl, { x: Q0.x, y: Q0.y + 70 }];
       spline(appr, 0, 0, appr.length - 2);
       // one slow, clean circle over the text: starts and ends at Q0 heading straight down (no sideways drift mixed in, so no cusp)
-      const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118));
       const ZS = 90;
       for (let i = 1; i <= ZS; i++) {
         const u = i / ZS, th = Math.PI * 2 * smooth(u);
