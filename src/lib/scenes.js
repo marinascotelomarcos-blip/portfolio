@@ -773,6 +773,7 @@ function buildRoom(opts) {
         if (!moved) break;
       }
       b.y = Math.max(b.y, b.h + 4);
+      b.x = Math.max(b.w / 2 + 6, Math.min(w - b.w / 2 - 6, b.x)); // a label is never cut by the edge of the scene
       b.a.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px) translate(-50%,-100%)';
     });
     ctx.el.style.cursor = canvasHover ? 'pointer' : (drag ? 'grabbing' : 'grab');

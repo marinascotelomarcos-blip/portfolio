@@ -282,3 +282,25 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 
 /* No 3D canvas ends in a hard edge: every scene fades into the page at its top and bottom */
 .scene:not(.scene-route) { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); }
+
+/* Background: the glow layer drifts by up to 2% and scales; at inset:0 that exposed a 25px strip with a hard step on the right. Oversized, it never shows an edge. */
+.bg-fx .bg-glow { inset: -12%; }
+
+/* Desktop proportions: the hero text and buttons carry the page, the project list is quieter, and "Get to know me" sits clear of the figure */
+@media (min-width: 900px) {
+  .hero .lede { font-size: clamp(2.2rem, 3.7vw, 3.3rem); line-height: 1.08; max-width: 20ch; }
+  .hero .intro { font-size: clamp(1.1rem, 1.5vw, 1.3rem); line-height: 1.55; max-width: 40ch; margin-top: 20px; color: var(--ink-2); }
+  .hero-actions { margin-top: 32px; gap: 14px; }
+  .hero-actions .btn { min-height: 58px; padding: 0 30px; font-size: 1.08rem; }
+  .icon-btn { min-width: 58px; height: 58px; padding: 0 18px; font-size: .9rem; }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .stage-fig { bottom: 160px; width: clamp(140px, 14.5vw, 200px); }
+  .stage-fig .base { width: 270%; }
+  .stage-fig .fig-tag { bottom: -140px; padding: 15px 30px; font-size: 1.05rem; }
+  .row h3 { font-size: clamp(1.4rem, 2.3vw, 2rem); }
+  .row p { font-size: .98rem; margin-top: 4px; }
+  .ledger .row { padding: clamp(16px, 2vw, 24px) clamp(14px, 2vw, 22px); }
+}
+
+/* Route glow: the old gradient was still lit at the edge of its box (6% wider than the section), which drew a hard vertical step. closest-side makes it reach zero before any edge. */
+.tour::before { background: radial-gradient(ellipse closest-side at 82% 45%, color-mix(in oklab, var(--teal) 18%, transparent), transparent); }
