@@ -15,27 +15,16 @@ const nav = T[lang].nav;
     <div class="hero-grid">
       <div class="intro-seq">
         <p class="lede">{h.headline}</p>
-        <p class="intro">{h.intro}</p>
         <div class="actions" style="justify-content:flex-start;margin-top:28px">
           <a class="btn primary" href={`mailto:${EMAIL}`}>{h.write}</a>
-          <a class="btn" href={CV} download>{h.cv}</a>
-          <a class="btn" href={LINKEDIN} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
         </div>
-        <p class="eng-link"><a href={`/${lang}/about/#eng`}>{T[lang].homeEng} →</a></p>
       </div>
       <Room lang={lang} />
     </div>
 
-    <section class="home-about" id="about">
-      <h2 class="sec first">{nav.about}</h2>
-      <p class="lede">{ab.lede}</p>
-      <p class="prose">{ab.story[0]}</p>
-      <p class="actions" style="justify-content:flex-start;margin-top:20px"><a class="btn primary" href={`/${lang}/about/`}>{lang === 'es' ? 'Conóceme mejor' : 'Get to know me'} →</a><a class="btn" href={`/${lang}/about/#eng`}>{T[lang].homeEng}</a></p>
-    </section>
-
     <h2 class="sec" id="projects">{h.projectsTitle}</h2>
     <ul class="ledger">
-      {h.projects.map((p) => (
+      {h.projects.filter((p) => !p.soon).map((p) => (
         <li style="display:contents">
           {p.soon ? (
             <div class="row soon">
@@ -83,7 +72,6 @@ const nav = T[lang].nav;
 
     <section class="close hb">
       <div class="hb-copy">
-        <p class="mono hb-status"><i></i>{lang === 'en' ? 'Available from January 2027' : 'Disponible desde enero de 2027'}</p>
         <h2>{h.closeTitle}</h2>
         <p>{h.closeText}</p>
       </div>

@@ -107,8 +107,9 @@ const kinds = items.map((i) => i.kind);
     let phase: Phase = 'idle', abort = false, pending = 0;
     let overlay: HTMLElement | null = null;
 
-    /* The card area is exactly as tall as the stop on show, so no gap opens above the timeline */
-    function fit() { stopsEl.style.height = cards[cur].offsetHeight + 'px'; }
+    /* The card area keeps the height of the tallest stop, so the globe, arrows and timeline never jump while you move along the route */
+    function fit() { stopsEl.style.height = Math.max(...cards.map((c) => c.offsetHeight)) + 'px'; }
+    window.addEventListener('resize', fit);
     const sizer = new ResizeObserver(() => fit());
     cards.forEach((c) => sizer.observe(c));
 

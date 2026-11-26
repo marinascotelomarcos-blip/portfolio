@@ -188,3 +188,23 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 /* Home: About section placed right under the hero so it is not buried. */
 .home-about { max-width: 68ch; }
 .home-about .lede { margin-bottom: 14px; }
+
+/* Home tidy-up (2026-11-26): Ruta timeline becomes progress dots, projects and contact get compact. */
+.tour-track-wrap .track { overflow: visible; scroll-snap-type: none; padding: 4px 0 0; }
+.tour-track-wrap .track-in { min-width: 0; justify-content: center; gap: 2px; }
+.tour-track-wrap .track-line { display: none; }
+.tour-track-wrap .node { flex: 0 0 auto; width: 32px; height: 36px; padding: 0; align-items: center; justify-content: center; }
+.tour-track-wrap .node .nw, .tour-track-wrap .node .nn { display: none; }
+.tour-track-wrap .node .dot { margin: 0; width: 10px; height: 10px; border-width: 2px; }
+.tour-track-wrap .node[aria-selected='true'] .dot { transform: scale(1.5); }
+.ledger .row p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 640px) {
+  .row { padding: 18px 0; }
+  .row h3 { font-size: clamp(1.35rem, 6vw, 1.7rem); }
+  .row p { font-size: .92rem; margin-top: 4px; }
+  .hb-links { gap: 8px; }
+  .hb-row { min-height: 52px; padding: 8px 14px; }
+  .hb-row:not(.main) small { display: none; }
+  .hb-row.main { min-height: 68px; }
+}
+@media (max-width: 899px) { .room-labels { display: none !important; } } /* the four tiles repeated the projects list */

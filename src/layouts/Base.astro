@@ -101,7 +101,7 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
       </nav>
     </header>
 
-    <Ticker lang={lang} />
+    {current !== 'home' && <Ticker lang={lang} />}
     <main id="main"><slot /></main>
 
     <div class="statusbar">
