@@ -24,7 +24,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
 ---
 <Base lang={lang} title={page.title} description={page.lede} path={`/projects/${slug}/`} current="projects">
   <div class="wrap hero">
-    <div class:list={['case-head', isCiclo && 'ciclo-head']}>
+    <div class:list={['case-head', isCiclo && 'ciclo-head', !isCV && !isCiclo && 'solo-head']}>
       <div>
         <h1 class="display">{page.title}</h1>
         <p class="lede" style="max-width:30ch">{page.lede}</p>
@@ -41,7 +41,7 @@ const CICLO_REPO = 'https://github.com/marinascotelomarcos-blip/ciclo-watches';
       </div>
       {isCiclo
         ? <CicloVisuals lang={lang} url={CICLO_URL} part="preview" />
-        : <Scene kind={isCV ? 'logo' : 'phone'} class="case-scene" />}
+        : isCV ? <Scene kind="logo" class="case-scene" /> : null}
     </div>
 
     {isCV && (

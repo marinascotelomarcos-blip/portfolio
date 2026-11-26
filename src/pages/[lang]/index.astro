@@ -6,6 +6,8 @@ import { T, LANGS, EMAIL, CV, LINKEDIN, type Lang } from '../../lib/content';
 export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
 const lang = Astro.params.lang as Lang;
 const h = T[lang].home;
+const ab = T[lang].about;
+const nav = T[lang].nav;
 ---
 <Base lang={lang} path="/" current="home">
   <div class="wrap hero">
@@ -23,6 +25,13 @@ const h = T[lang].home;
       </div>
       <Room lang={lang} />
     </div>
+
+    <section class="home-about" id="about">
+      <h2 class="sec first">{nav.about}</h2>
+      <p class="lede">{ab.lede}</p>
+      <p class="prose">{ab.story[0]}</p>
+      <p class="actions" style="justify-content:flex-start;margin-top:20px"><a class="btn primary" href={`/${lang}/about/`}>{lang === 'es' ? 'Conóceme mejor' : 'Get to know me'} →</a><a class="btn" href={`/${lang}/about/#eng`}>{T[lang].homeEng}</a></p>
+    </section>
 
     <h2 class="sec" id="projects">{h.projectsTitle}</h2>
     <ul class="ledger">
@@ -59,7 +68,7 @@ const h = T[lang].home;
     <Route lang={lang} />
 
     <div class="finale">
-      <div class="space-stars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="space-stars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <section class="space" id="space" aria-labelledby="space-h">
       <div class="space-in">
         <div class="space-stage" aria-hidden="true">

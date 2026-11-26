@@ -189,8 +189,8 @@ const kinds = items.map((i) => i.kind);
       requestAnimationFrame(() => overlay?.classList.add('in'));
       const num = overlay.querySelector<HTMLElement>('.cd-num')!;
       const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); overlay!.classList.remove('pulse'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.add('pulse'); overlay!.classList.toggle('go', go); };
-      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 700)));
-      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 380)); }, 150 + 3 * 700));
+      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 600)));
+      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 300)); }, 150 + 3 * 600));
     }
 
     type Pt = { x: number; y: number };
@@ -280,27 +280,29 @@ const kinds = items.map((i) => i.kind);
         { x: S.x + (Q0.x - S.x) * 0.66, y: S.y + (Q0.y - S.y) * 0.62 },
         Q0,
       ];
-      const iZ0 = ctrl.length - 1;
-      // slow loop-the-loop over the text: forward drift plus one full circle with eased ends (so the path stays smooth)
-      const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118));
-      const ZN = 30;
-      for (let i = 1; i <= ZN; i++) {
-        const u = i / ZN, f = smooth(u), th = Math.PI * 2 * smooth((u - 0.12) / 0.76);
-        ctrl.push({ x: Q0.x + (Xe.x - Q0.x) * f + R * (Math.cos(th) - 1), y: Q0.y + (Xe.y - Q0.y) * f + R * Math.sin(th) });
-      }
-      const iZ1 = ctrl.length - 1;
-      ctrl.push({ x: Lp.x - 24, y: Math.max(zb + 110, Lp.y - 0.44 * H) });
-      ctrl.push(Lp);
       type Node = { p: Pt; seg: 0 | 1 | 2; u: number };
       const nodes: Node[] = [];
       const cr = (p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt => { const t2 = t * t, t3 = t2 * t; const f = (a: number, b: number, c: number, d: number) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3); return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) }; };
-      for (let k = 0; k < ctrl.length - 1; k++) {
-        const p0 = ctrl[Math.max(0, k - 1)], p1 = ctrl[k], p2 = ctrl[k + 1], p3 = ctrl[Math.min(ctrl.length - 1, k + 2)];
-        const seg: 0 | 1 | 2 = k < iZ0 ? 0 : (k < iZ1 ? 1 : 2);
-        const samp = seg === 1 ? 5 : 26;
-        const segStart = seg === 0 ? 0 : seg === 1 ? iZ0 : iZ1, segLen = seg === 0 ? iZ0 : seg === 1 ? iZ1 - iZ0 : ctrl.length - 1 - iZ1;
-        for (let i = (k === 0 ? 0 : 1); i <= samp; i++) nodes.push({ p: cr(p0, p1, p2, p3, i / samp), seg, u: Math.min(1, ((k - segStart) + i / samp) / segLen) });
+      // a Catmull-Rom spline through the control points; phantom end points only set the tangent where it joins the loop
+      const spline = (pts: Pt[], seg: 0 | 2, from: number, to: number) => {
+        for (let k = from; k < to; k++) {
+          const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
+          for (let i = (k === from && seg === 0 ? 0 : 1); i <= 26; i++) nodes.push({ p: cr(p0, p1, p2, p3, i / 26), seg, u: Math.min(1, (k - from + i / 26) / (to - from)) });
+        }
+      };
+      // approach: arrives at Q0 already heading straight down, which is exactly how the loop starts (no kink, no overshoot)
+      const appr: Pt[] = [...ctrl, { x: Q0.x, y: Q0.y + 70 }];
+      spline(appr, 0, 0, appr.length - 2);
+      // one slow loop over the text, sampled directly (starts and ends heading down, so it joins both neighbours smoothly)
+      const R = Math.max(46, Math.min(W * 0.15, zh * 0.26, 118));
+      const ZS = 90;
+      for (let i = 1; i <= ZS; i++) {
+        const u = i / ZS, f = smooth(u), th = Math.PI * 2 * smooth((u - 0.12) / 0.76);
+        nodes.push({ p: { x: Q0.x + (Xe.x - Q0.x) * f + R * (Math.cos(th) - 1), y: Q0.y + (Xe.y - Q0.y) * f + R * Math.sin(th) }, seg: 1, u });
       }
+      // descent: leaves the loop heading down, then settles vertically onto the pad
+      const desc: Pt[] = [{ x: Xe.x, y: Xe.y - 70 }, Xe, { x: Lp.x - 24, y: Math.max(zb + 110, Lp.y - 0.44 * H) }, { x: Lp.x, y: Lp.y - 0.12 * H }, Lp, { x: Lp.x, y: Lp.y + 60 }];
+      spline(desc, 2, 1, desc.length - 2);
       const n = nodes.length;
       const cum: number[] = [0];
       for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(nodes[i].p.x - nodes[i - 1].p.x, nodes[i].p.y - nodes[i - 1].p.y));
@@ -309,8 +311,8 @@ const kinds = items.map((i) => i.kind);
       const sZ0 = cum[iz0], sZ1 = cum[iz1];
       // speed along the path: eases out of the launch, glides slowly over the text, eases into the landing
       const speedAt = (s: number) => {
-        const acc = smooth(s / (total * 0.12)), dec = smooth((total - s) / (total * 0.2));
-        let v = 0.1 + 0.9 * Math.min(acc, dec);
+        const acc = smooth(s / (total * 0.12)), dec = smooth((total - s) / (total * 0.3));
+        let v = 0.07 + 0.93 * Math.min(acc, dec);
         const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (2 * w)));
         v *= 1 - 0.6 * bump;
         return v;
@@ -403,8 +405,14 @@ const kinds = items.map((i) => i.kind);
           /* orientation (world: x right, y up, z toward the viewer).
              Start: nose pointing at the camera. Then it pitches over to look along its path (down the page), banks through the
              loop, and finally stands up for the landing. */
-          const elev = (Math.PI / 2) * (1 - smooth((tt - 600) / 1700));       // 90° = nose at the camera, 0 = flying in the screen plane
-          const plane = { x: hx, y: -hy };                                      // screen direction (y down) -> world (y up)
+          const pb = smooth((tt - 600) / 1700);
+          const elev = rad(78) * (1 - pb);                                      // ~78° = nose mostly at the camera (red tip in front), 0 = flying in the screen plane
+          // in-screen direction: starts nose-UP and turns toward the path heading through the right-hand side, so the rocket never shows its tail / looks upside down while lifting off
+          const a1 = Math.atan2(-hy, hx);
+          let da = a1 - Math.PI / 2; while (da > Math.PI) da -= 2 * Math.PI; while (da <= -Math.PI) da += 2 * Math.PI;
+          if (da > 0 && da > Math.PI * 0.98) da -= 2 * Math.PI;                 // pointing straight down: go round the right-hand side
+          const aa = Math.PI / 2 + da * pb;
+          const plane = { x: Math.cos(aa), y: Math.sin(aa) };
           const upBlend = land;
           let dx = plane.x * (1 - upBlend), dy = plane.y * (1 - upBlend) + upBlend, dz = 0;
           const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;

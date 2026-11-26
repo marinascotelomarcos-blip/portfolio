@@ -4,6 +4,13 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const d = T[lang].dash;
 const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
+const ICON: Record<string, string> = {
+  Hoy: 'M4 11l8-6.5L20 11v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z',
+  Listas: 'M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01',
+  Calendario: 'M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM4 10h16M8 3v4M16 3v4',
+  Dinero: 'M4 8a2 2 0 0 1 2-2h12v3M4 8v9a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H6a2 2 0 0 1-2-1zM16 14.5h.01',
+  'Más': 'M6 12h.01M12 12h.01M18 12h.01',
+};
 ---
 <div class="demo" data-demo>
   <div>
@@ -19,12 +26,26 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
     <div class="sticky">
       <div class="app" aria-label={d.demoTitle}>
         <div class="app-screen">
-          <div class="app-status"><span>9:41</span><span>●●●</span></div>
-          <div class="app-body">
+          <div class="app-status"><span>9:41</span><i class="app-island" aria-hidden="true"></i><span class="app-sig" aria-hidden="true"><b></b><b></b><b></b><em></em></span></div>
+          <div class="app-cap" data-cap>
+            <button type="button" class="cap-btn" data-dn-prev aria-label={lang === 'en' ? 'Previous function' : 'Función anterior'}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
+            </button>
+            <div class="cap-txt" aria-live="polite">
+              <small class="tnum" data-dn-count>1 / {d.fns.length}</small>
+              <b data-dn-name>{d.fns[0].name}</b>
+              <span data-dn-line>{d.fns[0].line}</span>
+            </div>
+            <button type="button" class="cap-btn" data-dn-next aria-label={lang === 'en' ? 'Next function' : 'Función siguiente'}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" /></svg>
+            </button>
+          </div>
+          <div class="cap-dots" aria-hidden="true">{d.fns.map((_, i) => <i data-dot class={i === 0 ? 'on' : ''}></i>)}</div>
+          <div class="app-track" data-track>
             {d.fns.map((f, i) => {
               const s = SCREENS[f.id];
               return (
-                <section class="screen" id={`scr-${f.id}`} role="tabpanel" aria-labelledby={`tab-${f.id}`} data-tab={s.tab} hidden={i !== 0}>
+                <section class="screen" id={`scr-${f.id}`} role="tabpanel" aria-labelledby={`tab-${f.id}`} data-tab={s.tab}>
                   <h4>{s.title}</h4>
                   {s.blocks.map((b) => {
                     if (b.t === 'next') return <div class="a-next"><small>{b.label}</small><b>{b.title}</b><span>{b.sub}</span></div>;
@@ -43,24 +64,12 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
             })}
           </div>
           <div class="app-tabs" aria-hidden="true">
-            {tabs.map((tb) => <span data-tabname={tb} aria-current={tb === 'Hoy' ? 'true' : undefined}>{tb}</span>)}
+            {tabs.map((tb) => <span data-tabname={tb} aria-current={tb === 'Hoy' ? 'true' : undefined}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={ICON[tb]} /></svg>{tb}</span>)}
           </div>
+          <i class="app-home" aria-hidden="true"></i>
         </div>
       </div>
-      <div class="demo-nav" data-demo-nav>
-        <button type="button" class="dn-btn" data-dn-prev aria-label={lang === 'en' ? 'Previous function' : 'Función anterior'}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" /></svg>
-        </button>
-        <div class="dn-label" aria-live="polite">
-          <b data-dn-name>{d.fns[0].name}</b>
-          <span data-dn-line>{d.fns[0].line}</span>
-          <small class="mono tnum" data-dn-count>1 / {d.fns.length}</small>
-        </div>
-        <button type="button" class="dn-btn" data-dn-next aria-label={lang === 'en' ? 'Next function' : 'Función siguiente'}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5" /></svg>
-        </button>
-      </div>
-      <p class="demo-note">{d.demoNote}</p>
+      <p class="demo-note">{lang === 'en' ? 'Swipe the phone sideways, or use the arrows.' : 'Desliza el móvil hacia los lados o usa las flechas.'} {d.demoNote}</p>
     </div>
   </div>
 </div>
@@ -68,33 +77,68 @@ const tabs = ['Hoy', 'Listas', 'Calendario', 'Dinero', 'Más'];
   (function () {
     var root = document.querySelector('[data-demo]'); if (!root) return;
     var tabs = [].slice.call(root.querySelectorAll('[role=tab]'));
+    var track = root.querySelector('[data-track]');
+    var screens = [].slice.call(track.children);
     var bar = [].slice.call(root.querySelectorAll('[data-tabname]'));
+    var dots = [].slice.call(root.querySelectorAll('[data-dot]'));
     var nm = root.querySelector('[data-dn-name]'), ln = root.querySelector('[data-dn-line]'), ct = root.querySelector('[data-dn-count]');
-    function cur() { for (var k = 0; k < tabs.length; k++) if (tabs[k].getAttribute('aria-selected') === 'true') return k; return 0; }
-    function show(id, focus) {
-      tabs.forEach(function (t, k) { if (t.dataset.id === id && nm) { nm.textContent = t.querySelector('b').textContent; ln.textContent = t.querySelector('span').textContent; ct.textContent = (k + 1) + ' / ' + tabs.length; } });
-      tabs.forEach(function (t) { var on = t.dataset.id === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
-      root.querySelectorAll('.screen').forEach(function (s) {
-        var on = s.id === 'scr-' + id; s.hidden = !on;
-        if (on) { s.parentNode.scrollTop = 0; bar.forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tabname === s.dataset.tab)); }); }
-      });
+    var n = screens.length, now = 0, lock = 0;
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function render(i) {
+      now = i;
+      var t = tabs[i];
+      nm.textContent = t.querySelector('b').textContent; ln.textContent = t.querySelector('span').textContent; ct.textContent = (i + 1) + ' / ' + n;
+      tabs.forEach(function (x, k) { x.setAttribute('aria-selected', String(k === i)); x.tabIndex = k === i ? 0 : -1; });
+      dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+      bar.forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tabname === screens[i].dataset.tab)); });
     }
-    var pv = root.querySelector('[data-dn-prev]'), nx = root.querySelector('[data-dn-next]');
-    if (pv && nx) {
-      pv.addEventListener('click', function () { show(tabs[(cur() - 1 + tabs.length) % tabs.length].dataset.id); });
-      nx.addEventListener('click', function () { show(tabs[(cur() + 1) % tabs.length].dataset.id); });
+    function go(i, focus) {
+      i = (i + n) % n;
+      lock = Date.now() + 520;
+      render(i);
+      track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+      if (focus) tabs[i].focus({ preventScroll: true });
     }
+    /* Finger swipe: the browser snaps, we only follow where it lands. */
+    track.addEventListener('scroll', function () {
+      if (Date.now() < lock) return;
+      var i = Math.round(track.scrollLeft / track.clientWidth);
+      if (i !== now && i >= 0 && i < n) render(i);
+    }, { passive: true });
+    /* Mouse drag, so it also swipes on a computer. */
+    var drag = null;
+    track.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      drag = { x: e.clientX, left: track.scrollLeft };
+      track.classList.add('dragging');
+    });
+    window.addEventListener('pointermove', function (e) { if (drag) track.scrollLeft = drag.left - (e.clientX - drag.x); });
+    window.addEventListener('pointerup', function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x; drag = null; track.classList.remove('dragging');
+      var i = Math.round(track.scrollLeft / track.clientWidth);
+      if (Math.abs(dx) > 40 && i === now) i = Math.max(0, Math.min(n - 1, now + (dx < 0 ? 1 : -1)));
+      go(i);
+    });
+    root.querySelector('[data-dn-prev]').addEventListener('click', function () { go(now - 1); });
+    root.querySelector('[data-dn-next]').addEventListener('click', function () { go(now + 1); });
+    bar.forEach(function (b) {
+      b.addEventListener('click', function () { for (var k = 0; k < n; k++) if (screens[k].dataset.tab === b.dataset.tabname) { go(k); return; } });
+    });
+    window.addEventListener('resize', function () { track.scrollTo({ left: now * track.clientWidth, behavior: 'auto' }); });
     tabs.forEach(function (t, i) {
-      t.addEventListener('click', function () { show(t.dataset.id); });
-      /* With a mouse, resting on a function switches the phone straight to it; touch and keyboard keep tap / arrow keys. */
-      /* A short pause before switching, cancelled if the pointer leaves, so crossing items on the way to the phone changes nothing. */
+      t.addEventListener('click', function () { go(i); });
+      /* With a mouse, resting on a function switches the phone straight to it; a short pause, cancelled if the pointer leaves. */
       var hoverT = 0;
-      t.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'mouse') return; clearTimeout(hoverT); hoverT = setTimeout(function () { if (t.getAttribute('aria-selected') !== 'true') show(t.dataset.id); }, 140); });
+      t.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'mouse') return; clearTimeout(hoverT); hoverT = setTimeout(function () { if (now !== i) go(i); }, 140); });
       t.addEventListener('pointerleave', function () { clearTimeout(hoverT); });
       t.addEventListener('keydown', function (e) {
-        var n = e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : null;
-        if (n === null) return; e.preventDefault(); n = (n + tabs.length) % tabs.length; show(tabs[n].dataset.id, true);
+        var k = e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : null;
+        if (k === null) return; e.preventDefault(); go(k, true);
       });
+    });
+    root.querySelector('.app').addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') go(now + 1); else if (e.key === 'ArrowLeft') go(now - 1);
     });
   })();
 </script>
