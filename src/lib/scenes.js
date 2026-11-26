@@ -708,6 +708,7 @@ function buildRoom(opts) {
   function place(zoom = 1) { if (!camera) return; camera.position.copy(dir).multiplyScalar(dist * zoom).add(target); camera.lookAt(target); }
   function go(href) { if (ctx.still) { location.href = href; return; } if (!fly) fly = { t0: performance.now(), href }; }
 
+  const M = { t: -1e9, w: 0, h: 0, sz: {}, fig: null, fl: 0, fr2: 0, ft: 0, fb: 0 };
   root.userData.update = (t, ptr) => {
     if (!ctx) return;
     const sway = ctx.still ? 0 : Math.sin(t * 0.00035) * 0.07 + ptr.x * 0.1;
@@ -742,20 +743,26 @@ function buildRoom(opts) {
     }
     place(zoom);
     root.updateMatrixWorld(true); camera.updateMatrixWorld(true);
-    const w = ctx.el.clientWidth, h = ctx.el.clientHeight;
+    // DOM measurements are cached and refreshed a few times a second: reading layout every frame, right after writing the labels' transforms, forced a reflow per frame
+    if (t - M.t > 400) {
+      M.t = t; M.w = ctx.el.clientWidth; M.h = ctx.el.clientHeight;
+      st.forEach((s) => { const a = labels[s.id]; if (a) M.sz[s.id] = [a.offsetWidth, a.offsetHeight]; });
+      M.fig = ctx.el.parentElement && ctx.el.parentElement.querySelector('.stage-fig img');
+      if (M.fig) { const er = ctx.el.getBoundingClientRect(), fr = M.fig.getBoundingClientRect(); M.fl = fr.left - er.left - 8; M.fr2 = fr.right - er.left + 8; M.ft = fr.top - er.top; M.fb = fr.bottom - er.top; }
+    }
+    const w = M.w, h = M.h;
     const boxes = [];
     st.forEach((s) => {
       const a = labels[s.id]; if (!a) return;
       v.set(s.group.position.x, s.inner.position.y + s.top, s.group.position.z).applyMatrix4(root.matrixWorld).project(camera);
-      boxes.push({ a, x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, w: a.offsetWidth, h: a.offsetHeight });
-      a.classList.toggle('hot', s.id === hover);
+      const sz = M.sz[s.id] || [0, 0];
+      boxes.push({ a, x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, w: sz[0], h: sz[1] });
+      const hot = s.id === hover; if (a.classList.contains('hot') !== hot) a.classList.toggle('hot', hot);
     });
     // Labels hang above their object; nudge any that would overlap upward so none is covered.
     // The character stands in front of the room: keep labels off its silhouette too.
-    const fig = ctx.el.parentElement && ctx.el.parentElement.querySelector('.stage-fig img');
-    if (fig) {
-      const er = ctx.el.getBoundingClientRect(), fr = fig.getBoundingClientRect();
-      const fl = fr.left - er.left - 8, fr2 = fr.right - er.left + 8, ft = fr.top - er.top, fb = fr.bottom - er.top;
+    if (M.fig) {
+      const fl = M.fl, fr2 = M.fr2, ft = M.ft, fb = M.fb;
       boxes.forEach((b) => {
         if (b.x + b.w / 2 > fl && b.x - b.w / 2 < fr2 && b.y > ft && b.y - b.h < fb) {
           b.x = b.x < (fl + fr2) / 2 ? fl - b.w / 2 : fr2 + b.w / 2;
@@ -817,9 +824,12 @@ const BUILDERS = { cards: buildCards, logo: buildLogo, globe: buildGlobe, outsid
 export function mount(el, kind, opts = {}) {
   const canvas = el.querySelector('canvas');
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' }); }
+  const rawDpr = window.devicePixelRatio || 1;
+  const dprCap = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || window.innerWidth < 900 ? 1.5 : 2; // phones: fewer pixels to shade, still sharp
+  const dpr = Math.min(rawDpr, dprCap);
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: dpr < 1.75, alpha: true, powerPreference: 'low-power' }); }
   catch (e) { el.hidden = true; return () => {}; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(dpr);
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   renderer.setClearColor(0x000000, 0);
 
@@ -850,8 +860,11 @@ export function mount(el, kind, opts = {}) {
     else { const narrow = camera.aspect < 0.9; const fit = built.camera.fitAspect ? Math.max(1, built.camera.fitAspect / camera.aspect) : (narrow ? 1.18 : 1); camera.position.z = built.camera.z * fit; }
     camera.updateProjectionMatrix();
   }
+  let lastRender = 0;
   function frame(t) {
     raf = 0;
+    if (t - lastRender < 15) { raf = requestAnimationFrame(frame); return; } // 120 Hz screens: render at ~60 fps, not twice as often
+    lastRender = t;
     if (spinnable && !spin) { // inertia after a drag, then a soft return to the front
       pivot.rotation.y += vx; vx *= 0.94;
       if (Math.abs(vx) < 0.0004) { vx = 0; pivot.rotation.y += wrapPi(-pivot.rotation.y) * 0.03; pivot.rotation.x += -pivot.rotation.x * 0.05; }

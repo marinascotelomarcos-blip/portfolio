@@ -39,6 +39,22 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
     <link rel="alternate" hreflang={other} href={`/${other}${path}`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#0a0f12" />
+    {current === 'home' && (
+      <script is:inline define:vars={{ lang }}>
+        /* Gate: anyone arriving at the portfolio home from outside (LinkedIn, a QR, a typed address) goes through the choice page first.
+           Visits from another page of this site, link previews and search bots go straight in. Add ?nogate to skip it. */
+        (function () {
+          try {
+            if (sessionStorage.getItem('mmc-gate') || /[?&]nogate\b/.test(location.search)) return;
+            if (/bot|crawl|spider|slurp|bing|lighthouse|preview|facebookexternalhit|whatsapp|telegram|embed/i.test(navigator.userAgent)) return;
+            var same = false;
+            try { same = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch (e) {}
+            if (same) { sessionStorage.setItem('mmc-gate', '1'); return; }
+            location.replace('/' + lang + '/hola/');
+          } catch (e) {}
+        })();
+      </script>
+    )}
     <script is:inline>
       var m = 'dark'; try { var sv = localStorage.getItem('mmc-mode'); if (sv === 'dark' || sv === 'light') m = sv; } catch (e) {} document.documentElement.dataset.mode = m;
       /* Entrance: the first page of a visit shows an MMC boot screen (about two seconds) while the 3D room draws and the figure is held back,

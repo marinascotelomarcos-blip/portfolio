@@ -180,7 +180,7 @@ const kinds = items.map((i) => i.kind);
     function cancelCountdown() {
       window.clearTimeout(pending);
       cdTimers.forEach((t) => window.clearTimeout(t)); cdTimers = [];
-      overlay?.remove(); overlay = null;
+      overlay?.remove(); (overlay as any)?.bk?.remove(); overlay = null;
       if (phase === 'count') { phase = 'idle'; dropRocket(); }
     }
     let cdTimers: number[] = [];
@@ -195,16 +195,21 @@ const kinds = items.map((i) => i.kind);
       overlay.className = 'cd-earth';
       overlay.setAttribute('aria-hidden', 'true');
       overlay.style.cssText = `left:${gl.left + window.scrollX + gl.width / 2}px;top:${gl.top + window.scrollY + gl.height / 2}px;width:${side}px;height:${side}px`;
-      let puffs = '';
+      let front = '', back = '';
       const NP = 22;
       for (let i = 0; i < NP; i++) {
         const ang = i * 2.399, rr = Math.sqrt((i + 0.6) / NP) * 0.42;
-        const size = 30 + ((i * 7) % 5) * 7;
-        puffs += `<i class="cd-puff" style="--x:${(50 + Math.cos(ang) * rr * 100).toFixed(1)}%;--y:${(50 + Math.sin(ang) * rr * 100).toFixed(1)}%;--s:${size}%;--d:${((i / NP) * 1.7).toFixed(2)}s;--o:${((i * 37) % 10) / 10}"></i>`;
+        const size = 30 + ((i * 7) % 5) * 7, px = 50 + Math.cos(ang) * rr * 100, py = 50 + Math.sin(ang) * rr * 100;
+        const html = `<i class="cd-puff" style="--x:${px.toFixed(1)}%;--y:${py.toFixed(1)}%;--s:${size}%;--d:${((i / NP) * 1.7).toFixed(2)}s;--o:${((i * 37) % 10) / 10}"></i>`;
+        if (py > 54) front += html; else back += html; // the lower puffs hang in FRONT of the rocket, the upper ones behind it: it dives out through the cloud
       }
-      overlay.innerHTML = `${puffs}<div class="cd-core"><b class="cd-num"></b><span class="cd-label mono">${en ? 'Lift-off in' : 'Despegue en'}</span></div>`;
+      overlay.innerHTML = `${front}<i class="cd-flash"></i><div class="cd-core"><b class="cd-num"></b><span class="cd-label mono">${en ? 'Lift-off in' : 'Despegue en'}</span></div>`;
+      const bk = document.createElement('div');
+      bk.className = 'cd-earth cd-back'; bk.setAttribute('aria-hidden', 'true'); bk.style.cssText = overlay.style.cssText; bk.innerHTML = back;
+      (overlay as any).bk = bk;
+      document.body.appendChild(bk);
       document.body.appendChild(overlay);
-      requestAnimationFrame(() => overlay?.classList.add('in'));
+      requestAnimationFrame(() => { overlay?.classList.add('in'); bk.classList.add('in'); });
       const num = overlay.querySelector<HTMLElement>('.cd-num')!;
       const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.toggle('go', go); };
       ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 700)));
@@ -218,7 +223,7 @@ const kinds = items.map((i) => i.kind);
     async function launch() {
       if (!space) return;
       phase = 'fly'; abort = false;
-      overlay?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => ov?.remove(), 6200);
+      const ovBk = (overlay as any)?.bk as HTMLElement | undefined; overlay?.classList.add('out'); ovBk?.classList.add('out'); const ov = overlay; overlay = null; window.setTimeout(() => { ov?.remove(); ovBk?.remove(); }, 6200);
       document.querySelector('.rocket-parked')?.remove();
       document.getElementById('rocket-trail')?.remove();
       document.querySelector('.hb-pad')?.classList.remove('lit');
@@ -293,9 +298,9 @@ const kinds = items.map((i) => i.kind);
       const Xe: Pt = { x: W * 0.36, y: zt + zh + 30 };
       const ctrl: Pt[] = [
         S,
-        { x: S.x + 2, y: S.y + 36 },
-        { x: S.x + 0.14 * W, y: S.y + 0.26 * H },
-        { x: S.x + (Q0.x - S.x) * 0.66, y: S.y + (Q0.y - S.y) * 0.62 },
+        { x: S.x + 1, y: S.y + 40 },                                                   // lifts straight down first
+        { x: S.x + (Q0.x - S.x) * 0.28, y: S.y + Math.min(0.22 * H, (Q0.y - S.y) * 0.3) }, // then peels towards the loop, always moving the same way sideways (no swing out and back)
+        { x: S.x + (Q0.x - S.x) * 0.72, y: S.y + (Q0.y - S.y) * 0.62 },
         Q0,
       ];
       type Node = { p: Pt; seg: 0 | 1 | 2; u: number };
@@ -320,7 +325,7 @@ const kinds = items.map((i) => i.kind);
       }
       // descent: leaves the loop heading down, sways gently towards the text side, and settles vertically onto the pad
       const dy = Lp.y - Q0.y;
-      const desc: Pt[] = [{ x: Q0.x, y: Q0.y - 70 }, Q0, { x: Xe.x + (Q0.x - Xe.x) * 0.5, y: Q0.y + dy * 0.42 }, { x: Lp.x - 10, y: Lp.y - Math.min(0.2 * H, dy * 0.25) }, Lp, { x: Lp.x, y: Lp.y + 60 }];
+      const desc: Pt[] = [{ x: Q0.x, y: Q0.y - 70 }, Q0, { x: Q0.x + (Xe.x - Q0.x) * 0.2, y: Q0.y + dy * 0.4 }, { x: Lp.x - 10, y: Lp.y - Math.min(0.2 * H, dy * 0.25) }, Lp, { x: Lp.x, y: Lp.y + 60 }];
       spline(desc, 2, 1, desc.length - 2);
       const n = nodes.length;
       const cum: number[] = [0];
@@ -330,8 +335,8 @@ const kinds = items.map((i) => i.kind);
       const sZ0 = cum[iz0], sZ1 = cum[iz1];
       // speed along the path: eases out of the launch, glides slowly over the text, eases into the landing
       const speedAt = (s: number) => {
-        const acc = smooth(s / (total * 0.12)), dec = smooth((total - s) / (total * 0.3));
-        let v = 0.07 + 0.93 * Math.min(acc, dec);
+        const acc = smooth(s / (total * 0.05)), dec = smooth((total - s) / (total * 0.3));
+        let v = 0.3 + 0.7 * Math.min(acc, dec);
         const w = total * 0.04, bump = smooth((s - (sZ0 - w)) / (2 * w)) * (1 - smooth((s - (sZ1 - w)) / (5 * w))); // eases in quickly, recovers speed slowly after the loop
         v *= 1 - 0.6 * bump;
         return v;
@@ -396,7 +401,7 @@ const kinds = items.map((i) => i.kind);
         else { const k = smooth((nd.u - 0.7) / 0.3); target = Math.max(startScroll, P.y - H * 0.5) * (1 - k) + zoneView * k; } // before the text: only ever follows downward
         return Math.max(0, Math.min(maxScroll, target));
       };
-      const IGN = 700;
+      const IGN = 480;
       const t0 = performance.now();
       let touch = 0;
       await new Promise<void>((resolve) => {
@@ -407,7 +412,7 @@ const kinds = items.map((i) => i.kind);
           let P: Pt, idx = 0, tt = 0, land = 0, hx = 0, hy = 1;
           if (T < IGN) {
             P = { x: S.x, y: S.y }; tt = 0;
-            cvs.style.opacity = String(Math.min(1, T / (IGN * 0.7)));
+            cvs.style.opacity = String(Math.min(1, T / (IGN * 0.45)));
           } else {
             tt = Math.min(FLIGHT, T - IGN);
             let lo = 0, hi = n - 1;
@@ -442,7 +447,7 @@ const kinds = items.map((i) => i.kind);
           rk.setPose(V3(dx * ce, dy * ce, se), 3.4 * (1 - smooth(tt / 2600)) * (1 - upBlend) + (-0.5) * upBlend);
           rk.update(dts, 0.15);
           // depth: it starts far away inside the planet and comes toward the viewer (real perspective, not a zoom)
-          const z = -17 * (1 - easeOut3(tt / 1800));
+          const z = -6 * (1 - easeOut3(tt / 1200));
           rk.setDepth(z);
           const flame = (T < IGN ? 0.8 : 1) * (1 + 0.8 * land);
           rk.setFlame(flame);

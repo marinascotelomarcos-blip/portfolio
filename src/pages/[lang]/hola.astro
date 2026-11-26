@@ -26,6 +26,7 @@ const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
     <link rel="canonical" href={`${SITE}/${lang}/hola/`} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script is:inline>
+      try { sessionStorage.setItem('mmc-gate', '1'); } catch (e) {} /* they have seen the choice page: the portfolio can open now */
       try { var sv = localStorage.getItem('mmc-mode'); document.documentElement.dataset.mode = sv === 'light' ? 'light' : 'dark'; } catch (e) {}
     </script>
   </head>
