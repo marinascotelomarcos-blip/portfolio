@@ -250,3 +250,11 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
 .eng-more .eng-plus::before, .eng-more .eng-plus::after { background: var(--teal-ink); }
 
 .finale .space-stage { height: clamp(215px, 50vw, 270px); }
+
+/* End of the home page: the way on to the next page (About me) */
+.hb-next { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "k a" "t a"; align-items: center; column-gap: 16px; row-gap: 2px; margin-top: 18px; padding: 16px 4px 4px; border-top: 1px solid var(--rule); color: var(--ink); text-decoration: none; }
+.hb-next span { grid-area: k; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.hb-next b { grid-area: t; font-size: clamp(1.35rem, 5vw, 1.8rem); font-weight: 560; letter-spacing: -0.03em; }
+.hb-next svg { grid-area: a; width: 44px; height: 44px; padding: 11px; border-radius: 50%; border: 1px solid var(--rule); color: var(--teal-ink); transition: background .25s, color .25s, border-color .25s, transform .25s var(--ease); }
+.hb-next:hover svg, .hb-next:focus-visible svg { background: var(--teal); color: var(--on-teal); border-color: var(--teal); transform: translateX(4px); }
+.hb-next { grid-column: 1 / -1; }
