@@ -6,7 +6,7 @@ const { lang } = Astro.props;
 const en = lang === 'en';
 const L = en ? {
   title: 'The methods in practice',
-  lede: 'Below are examples of the methods listed above, or my way of reading each one. Click, move the sliders and watch the decision change. All numbers are made up.',
+  lede: 'Simple examples of the methods above, with made-up numbers.', hint: 'Pick a method to see its example.',
   jump: 'Jump to',
   idx: [['a3', 'A3'], ['lean', 'Lean and 5S'], ['mrp', 'MRP'], ['kanban', 'Kanban'], ['abc', 'ABC and EOQ'], ['forecast', 'Forecasting']],
   note: 'Made-up data. No company figures. It only shows the method.',
@@ -59,7 +59,7 @@ const L = en ? {
   },
 } : {
   title: 'Los métodos en práctica',
-  lede: 'Aquí debajo tienes ejemplos de los métodos de arriba, o mi manera de interpretarlos. Pulsa, mueve los deslizadores y mira cómo cambia la decisión. Todos los números son inventados.',
+  lede: 'Ejemplos sencillos de los métodos de arriba, con números inventados.', hint: 'Elige un método para ver su ejemplo.',
   jump: 'Ir a',
   idx: [['a3', 'A3'], ['lean', 'Lean y 5S'], ['mrp', 'MRP'], ['kanban', 'Kanban'], ['abc', 'ABC y EOQ'], ['forecast', 'Previsión']],
   note: 'Datos inventados. Ninguna cifra de empresa. Solo enseña el método.',
@@ -116,11 +116,12 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
 <section class="md" id="methods-demo" data-md data-lang={lang} aria-labelledby="md-title">
   <h2 class="sec" id="md-title">{L.title}</h2>
   <p class="prose md-lede">{L.lede}</p>
-  <nav class="md-jump" aria-label={L.jump}>
-    {L.idx.map(([id, label]) => <a href={id === 'abc' ? '#lab' : `#md-${id}`} class="mono">{label}</a>)}
-  </nav>
+  <div class="md-box">
+    <div class="md-tabs" role="tablist" aria-label={L.title}></div>
+    <p class="md-hint mono">{L.hint}</p>
+    <div class="md-panels">
 
-  <details class="md-card" id="md-a3" data-demo="a3">
+  <details class="md-card" id="md-a3" data-demo="a3" data-tab={L.idx[0][1]}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{L.a3.name}</h3><p>{L.a3.what}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
     <div class="md-body">
     <p class="md-mine">{L.a3.mine}</p>
@@ -139,7 +140,7 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     </div>
   </details>
 
-  <details class="md-card" id="md-lean" data-demo="lean">
+  <details class="md-card" id="md-lean" data-demo="lean" data-tab={L.idx[1][1]}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{L.lean.name}</h3><p>{L.lean.what}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
     <div class="md-body">
     <p class="md-mine">{L.lean.mine}</p>
@@ -158,7 +159,7 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     </div>
   </details>
 
-  <details class="md-card" id="md-mrp" data-demo="mrp">
+  <details class="md-card" id="md-mrp" data-demo="mrp" data-tab={L.idx[2][1]}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{L.mrp.name}</h3><p>{L.mrp.what}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
     <div class="md-body">
     <p class="md-mine">{L.mrp.mine}</p>
@@ -175,7 +176,7 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     </div>
   </details>
 
-  <details class="md-card" id="md-kanban" data-demo="kanban">
+  <details class="md-card" id="md-kanban" data-demo="kanban" data-tab={L.idx[3][1]}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{L.kanban.name}</h3><p>{L.kanban.what}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
     <div class="md-body">
     <p class="md-mine">{L.kanban.mine}</p>
@@ -190,7 +191,7 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     </div>
   </details>
 
-  <details class="md-card" id="md-forecast" data-demo="forecast">
+  <details class="md-card" id="md-forecast" data-demo="forecast" data-tab={L.idx[5][1]}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{L.forecast.name}</h3><p>{L.forecast.what}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
     <div class="md-body">
     <p class="md-mine">{L.forecast.mine}</p>
@@ -210,11 +211,29 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     </dl>
     </div>
   </details>
+      <slot />
+    </div>
+  </div>
   <p class="md-note mono">{L.note}</p>
   <script type="application/json" id="md-data" is:inline set:html={JSON.stringify(data)}></script>
 </section>
 
 <style is:global>
+  .md > h2.sec { margin-top: clamp(28px, 4vw, 52px); }
+  .md-lab #lab-pareto { max-width: 520px; }
+  .md-box { margin-top: 14px; border: 1px solid var(--rule); border-radius: 12px; background: color-mix(in oklab, var(--bg-2) 60%, transparent); overflow: hidden; }
+  .md-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px clamp(12px, 2.4vw, 18px); }
+  .md-tab { font: inherit; font-size: .84rem; padding: 8px 15px; min-height: 40px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+  .md-tab:hover { border-color: var(--teal); color: var(--ink); }
+  .md-tab[aria-selected='true'] { background: var(--teal); border-color: var(--teal); color: var(--on-teal); font-weight: 560; }
+  .md-hint { margin: 0; padding: 0 clamp(12px, 2.4vw, 18px) 14px; font-size: .68rem; letter-spacing: .04em; color: var(--ink-2); }
+  .md-box.has-on .md-hint { display: none; }
+  .md-box.tabbed .md-card { margin: 0; border: 0; border-top: 1px solid var(--rule); border-radius: 0; background: none; }
+  .md-box.tabbed .md-card:not(.on) { display: none; }
+  .md-box.tabbed .md-sum { pointer-events: none; cursor: default; border: 0 !important; border-radius: 0 !important; padding-bottom: 4px; }
+  .md-box.tabbed .md-chev { display: none; }
+  .md-box.tabbed .md-sum h3 { font-size: 1.02rem; }
+  .md-box.tabbed .md-sum p { -webkit-line-clamp: 3; }
   .md-lede { max-width: 62ch; color: var(--ink-2); }
   .md-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
   .md-jump a { font-size: .72rem; letter-spacing: .06em; padding: 8px 14px; min-height: 36px; display: inline-flex; align-items: center; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-2); text-decoration: none; transition: border-color .2s, color .2s; }
@@ -333,11 +352,22 @@ const data = { lang, a3: L.a3, lean: L.lean, mrp: L.mrp, kanban: L.kanban, forec
     const svg = (tag: string, attrs: Record<string, string | number>, parent?: Element) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, String(attrs[k])); parent?.appendChild(e); return e; };
     const q = <T extends Element>(demo: string, sel: string) => root.querySelector<T>(`[data-demo="${demo}"] ${sel}`)!;
 
-    /* ---------- the index chips open the demo they point to ---------- */
-    root.querySelectorAll<HTMLAnchorElement>('.md-jump a').forEach((a) => a.addEventListener('click', () => {
-      const t = document.querySelector<HTMLDetailsElement>(a.getAttribute('href') || '');
-      if (t && t.tagName === 'DETAILS') t.open = true;
-    }));
+    /* ---------- one block: the methods are tabs and only the chosen example is shown ---------- */
+    {
+      const box = root.querySelector<HTMLElement>('.md-box')!, tabsEl = box.querySelector<HTMLElement>('.md-tabs')!;
+      const cards = Array.from(root.querySelectorAll<HTMLDetailsElement>('details.md-card'));
+      box.classList.add('tabbed');
+      const tabs = cards.map((c, i) => {
+        c.open = true; c.querySelector('summary')!.addEventListener('click', (e) => e.preventDefault());
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'md-tab'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false'); b.textContent = c.dataset.tab || '';
+        b.addEventListener('click', () => show(cards[i].classList.contains('on') ? -1 : i)); tabsEl.appendChild(b); return b;
+      });
+      function show(i: number) {
+        cards.forEach((c, k) => c.classList.toggle('on', k === i)); tabs.forEach((t, k) => t.setAttribute('aria-selected', String(k === i)));
+        box.classList.toggle('has-on', i >= 0);
+      }
+      const fromHash = cards.findIndex((c) => c.id && ('#' + c.id) === location.hash); if (fromHash >= 0) show(fromHash);
+    }
 
     /* ---------- A3: five whys ---------- */
     {

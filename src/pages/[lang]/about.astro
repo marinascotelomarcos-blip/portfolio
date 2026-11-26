@@ -64,8 +64,9 @@ const e = T[lang].eng;
     <LogoGrid ids={TOOL_IDS} lang={lang} label={a.tools[0].label} row explain />
     <LogoGrid ids={METHOD_IDS} lang={lang} label={a.tools[1].label} row explain />
 
-    <MethodDemos lang={lang} />
-    <InventoryLab lang={lang} />
+    <MethodDemos lang={lang}>
+      <InventoryLab lang={lang} embedded />
+    </MethodDemos>
     <div class="end-space" aria-hidden="true"></div>
   </div>
 </Base>

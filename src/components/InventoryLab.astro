@@ -1,7 +1,7 @@
 ---
 /* Small interactive piece of analysis: ABC classification and EOQ / reorder point. All numbers are invented; it shows the method. */
-interface Props { lang: 'es' | 'en' }
-const { lang } = Astro.props;
+interface Props { lang: 'es' | 'en'; embedded?: boolean }
+const { lang, embedded = false } = Astro.props;
 const en = lang === 'en';
 const t = en ? {
   title: 'How I analyse an inventory',
@@ -45,10 +45,9 @@ const skus = [
   { es: 'Tornillería', en: 'Screws', u: 6000, c: 0.4 },
 ];
 ---
-<section class="lab" data-lab data-lang={lang} aria-labelledby="lab-title">
-  <h2 class="sec" id="lab-title">{t.title}</h2>
-  <p class="prose lab-lede">{t.lede}</p>
-  <details class="md-card md-lab" id="lab">
+<section class="lab" data-lab data-lang={lang} aria-label={t.title}>
+  {!embedded && (<><h2 class="sec" id="lab-title">{t.title}</h2><p class="prose lab-lede">{t.lede}</p></>)}
+  <details class="md-card md-lab" id="lab" data-tab={en ? 'ABC and EOQ' : 'ABC y EOQ'}>
     <summary class="md-sum"><span class="md-sum-t"><h3>{en ? 'ABC and EOQ / ROP' : 'ABC y EOQ / ROP'}</h3><p>{en ? 'Rank items by value, then work out how much to order and when.' : 'Clasificar artículos por valor y calcular cuánto pedir y cuándo.'}</p></span><span class="md-chev" aria-hidden="true"></span></summary>
   <div class="lab-card">
     <div class="lab-tabs" role="tablist">
