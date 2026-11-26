@@ -143,7 +143,7 @@
 /* lift-off: the numbers go, the smoke lingers around the nozzle and then thins out and drifts up */
 .cd-earth.out { opacity: 1; }
 .cd-earth.out .cd-core { opacity: 0; transition: opacity .25s; }
-.cd-earth.out .cd-puff { animation: cdClear 2.8s ease-in calc(.35s + var(--o) * .9s) forwards; }
+.cd-earth.out .cd-puff { opacity: .9; transform: scale(1); animation: cdClear 3.4s ease-in calc(1.1s + var(--o) * 1.2s) both; } /* the smoke stays solid while the rocket comes out of it, then thins out */
 @keyframes cdClear { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: translateY(-14%) scale(1.5); } }
 @media (prefers-reduced-motion: reduce) { .cd-earth { display: none; } }
 .fly-skip { position: fixed; z-index: 260; top: max(14px, env(safe-area-inset-top)); right: 14px; padding: 9px 14px; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #cfeff0; background: rgba(5,9,12,.7); border: 1px solid rgba(111,208,212,.5); border-radius: 4px; backdrop-filter: blur(6px); cursor: pointer; }
@@ -166,7 +166,7 @@
 
 /* ---- Earth, planet and "Hablemos" as ONE continuous scene: no boxes, the page itself darkens into space ---- */
 html { overflow-x: clip; }
-.finale { position: relative; isolation: isolate; overflow: clip; margin: clamp(0px, 1vw, 12px) calc(50% - 50vw) -72px; padding: clamp(90px, 18vw, 170px) 0 72px; border: 0; border-radius: 0;
+.finale { position: relative; isolation: isolate; overflow: clip; margin: clamp(0px, 1vw, 12px) calc(50% - 50vw) -72px; padding: clamp(52px, 11vw, 120px) 0 72px; border: 0; border-radius: 0;
   background: linear-gradient(to bottom, transparent 0, rgba(12,44,52,.34) 90px, rgba(8,26,32,.72) 190px, rgba(5,14,18,.95) 290px, #05090c 360px); }
 /* the horizon glow of the planet you just left, then stars fading in over it */
 .finale::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 10px; width: min(1300px, 150vw); height: 300px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(59,184,190,.22), rgba(59,184,190,.07) 55%, transparent 75%); }
@@ -178,7 +178,7 @@ html { overflow-x: clip; }
 .finale .space, .finale .close.hb { position: relative; width: 100%; max-width: var(--max, 1180px); margin: 0 auto; border: 0; border-radius: 0; background: none; overflow: visible; isolation: auto; padding-inline: var(--gutter); box-shadow: none; }
 .finale .space { min-height: 0; padding-top: clamp(10px, 3vw, 30px); padding-bottom: clamp(24px, 5vw, 56px); }
 .finale .space::after, .finale .close::after { display: none; }
-.finale .close.hb { padding-top: clamp(16px, 3vw, 32px); padding-bottom: clamp(48px, 7vw, 90px); }
+.finale .close.hb { padding-top: clamp(16px, 3vw, 32px); padding-bottom: clamp(96px, 13vw, 130px); }
 .finale .close.hb::before { right: -14%; top: -20%; opacity: .6; }
 .fly-smoke { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 119; pointer-events: none; }
 
@@ -239,3 +239,14 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
   .actions.hero-actions { display: flex; width: auto; flex-wrap: nowrap; gap: 8px; }
   .hero-actions .btn { padding: 0 16px; min-height: 46px; }
 }
+
+/* About › "What is Business Engineering": the "more info" control is a solid button, clearly different from the outline topic chips above it */
+.eng-more { margin-top: 22px; }
+.eng-more summary { padding: 5px 18px 5px 5px; border: 0; background: var(--teal); color: var(--on-teal); box-shadow: 0 8px 22px -10px var(--teal); transition: background .2s, box-shadow .2s, transform .15s; }
+.eng-more summary:hover { background: var(--teal-ink); color: var(--on-teal); }
+.eng-more summary:active { transform: scale(.98); }
+.eng-more summary .eng-more-label { font-family: var(--sans); font-size: .9rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.eng-more .eng-plus { background: var(--on-teal); }
+.eng-more .eng-plus::before, .eng-more .eng-plus::after { background: var(--teal-ink); }
+
+.finale .space-stage { height: clamp(215px, 50vw, 270px); }
