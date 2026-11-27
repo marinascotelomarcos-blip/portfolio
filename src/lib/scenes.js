@@ -835,7 +835,7 @@ export function mount(el, kind, opts = {}) {
 
   const scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer);
-  scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = pm.fromScene(new RoomEnvironment(), 0.04, 0.1, 100, { size: 128 }).texture; // 128px cube is plenty for soft studio reflections and builds ~4x faster than the default 256
   scene.environmentIntensity = 0.9;
   const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(2.5, 3, 4); scene.add(key);
   const rim = new THREE.DirectionalLight(0x3bb8be, 1.2); rim.position.set(-3, 1, -2); scene.add(rim);

@@ -191,6 +191,12 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
   .eng-link a { display: inline-block; padding-block: 11px; }
   .gate-lang { min-height: 44px; min-width: 44px; display: inline-grid; place-items: center; }
   .flow-tab, .flow-replay { min-height: 44px; }
+  .sb { min-height: 44px; }
+  .stage-fig .fig-tag { min-height: 44px; display: inline-flex; align-items: center; }
+  .tour-track-wrap .node { width: 40px; height: 44px; }
+  .cap-btn { width: 44px; height: 44px; }
+  .eng-more summary { min-height: 44px; }
+  .md-tab { min-height: 44px; }
 }
 
 /* Home: About section placed right under the hero so it is not buried. */
@@ -340,4 +346,12 @@ html.flying .bg-fx *, html.flying .ticker-track { animation-play-state: paused !
   .hero-grid { align-items: end; margin-top: 0; }
   .hero-grid .intro-seq { align-self: end; padding-bottom: clamp(40px, 6vw, 84px); }
   h2.sec#projects { margin-top: clamp(40px, 4.5vw, 64px); }
+}
+
+/* Touch screens: every control reaches 44px (these sit last so they win over the base sizes above) */
+@media (pointer: coarse) {
+  .globe-nav .tc { width: 44px; height: 44px; }
+  .tour-track-wrap .node { width: min(48px, calc((100vw - 32px) / 8)); height: 44px; } /* 8 dots share the row: 44px+ on a 390px phone, a little less on the smallest */
+  .md-box .md-tab { min-height: 44px; }
+  .sb { min-width: 44px; justify-content: center; }
 }

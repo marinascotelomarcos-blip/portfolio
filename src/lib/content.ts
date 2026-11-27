@@ -307,7 +307,7 @@ export const T: Record<Lang, Dict> = {
       future: { title: 'What is next', text: [
         'The next goal is to take it to the App Store. Today it runs in the browser and can be installed on the home screen; the plan is a proper iOS app.',
         'The code lives on GitHub.',
-      ], github: 'Code on GitHub' },
+      ], github: 'My GitHub' },
       play: 'Play it',
       tryit: { title: 'Try the rule', lede: 'A rule from Cinco Vidas: the dealer bets last and cannot make the bets add up to the number of cards. You are the dealer.', cards: 'Cards this round', others: 'The others bet', you: 'Your bet', bad: 'The {n} is blocked: the bets would add up to {c}, the number of cards.', none: 'Nothing is blocked this round: the others bet {s}, and {c} cards are dealt.', good: 'Allowed. Win exactly {b} {t} and you lose no lives.', trick: 'trick', tricks: 'tricks', again: 'New round' },
     },
@@ -559,7 +559,7 @@ export const T: Record<Lang, Dict> = {
       future: { title: 'Lo que viene', text: [
         'El siguiente objetivo es sacarlo en la App Store. Hoy funciona en el navegador y se puede instalar en la pantalla de inicio; el plan es una app de iOS de verdad.',
         'El código está en GitHub.',
-      ], github: 'Código en GitHub' },
+      ], github: 'Mi GitHub' },
       play: 'Jugar',
       tryit: { title: 'Prueba la regla', lede: 'Una regla de Cinco Vidas: quien reparte apuesta el último y no puede hacer que las apuestas sumen el número de cartas. Tú repartes.', cards: 'Cartas en esta ronda', others: 'Los demás apuestan', you: 'Tu apuesta', bad: 'El {n} está bloqueado: las apuestas sumarían {c}, el número de cartas.', none: 'Nada bloqueado en esta ronda: los demás apuestan {s} y se reparten {c} cartas.', good: 'Permitido. Gana exactamente {b} {t} y no pierdes vidas.', trick: 'baza', tricks: 'bazas', again: 'Otra ronda' },
     },

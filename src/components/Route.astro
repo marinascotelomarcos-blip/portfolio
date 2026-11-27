@@ -136,7 +136,7 @@ const kinds = items.map((i) => i.kind);
       prevBtn.disabled = cur === 0;
       if (phase === 'count') cancelCountdown();
       window.clearTimeout(pending);
-      if (cur === N - 1 && visible && !reduce && phase === 'idle') pending = window.setTimeout(startCountdown, 1000);
+      if (cur === N - 1 && visible && !reduce && phase === 'idle') pending = window.setTimeout(startCountdown, 500);
     }
 
     nodes.forEach((n, k) => {
@@ -156,7 +156,7 @@ const kinds = items.map((i) => i.kind);
     new IntersectionObserver((es) => {
       visible = es[0].isIntersecting;
       if (!visible && phase === 'count') cancelCountdown();
-      if (visible && cur === N - 1 && phase === 'idle' && !reduce) { window.clearTimeout(pending); pending = window.setTimeout(startCountdown, 1000); }
+      if (visible && cur === N - 1 && phase === 'idle' && !reduce) { window.clearTimeout(pending); pending = window.setTimeout(startCountdown, 500); }
     }, { threshold: 0.35 }).observe(root);
 
     /* ================= Lift-off =================
@@ -212,8 +212,8 @@ const kinds = items.map((i) => i.kind);
       requestAnimationFrame(() => { overlay?.classList.add('in'); bk.classList.add('in'); });
       const num = overlay.querySelector<HTMLElement>('.cd-num')!;
       const tick = (txt: string, go = false) => { num.textContent = txt; num.classList.remove('slam'); void num.offsetWidth; num.classList.add('slam'); overlay!.classList.toggle('go', go); };
-      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 150 + k * 700)));
-      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 350)); }, 150 + 3 * 700));
+      ['3', '2', '1'].forEach((t, k) => cdTimers.push(window.setTimeout(() => tick(t), 120 + k * 520)));
+      cdTimers.push(window.setTimeout(() => { tick(en ? 'GO!' : '¡YA!', true); cdTimers.push(window.setTimeout(() => { cdTimers = []; launch(); }, 260)); }, 120 + 3 * 520));
     }
 
     type Pt = { x: number; y: number };
@@ -346,7 +346,7 @@ const kinds = items.map((i) => i.kind);
       };
       const tm: number[] = [0];
       for (let i = 1; i < n; i++) { const s = (cum[i] + cum[i - 1]) / 2; tm.push(tm[i - 1] + (cum[i] - cum[i - 1]) / Math.max(0.04, speedAt(s))); }
-      const FLIGHT = 9200; // ms after the 700 ms ignition
+      const FLIGHT = 6800; // ms after the 700 ms ignition
       const tmk = FLIGHT / tm[n - 1]; for (let i = 0; i < n; i++) tm[i] *= tmk;
       // unit direction of travel per node (smoothed over neighbours)
       const hdg: Pt[] = [];

@@ -142,11 +142,11 @@ const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
          760px column behind the content; they are off here and replaced by soft, edge-less glows. ---- */
       .gate-main { background: none !important; }
       body.gate::before { content: ''; position: fixed; z-index: 0; left: 50%; top: 46%; width: min(1100px, 125vw); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
-        background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 18%, transparent), transparent); animation: gate-fade 1.6s var(--ease) both, gate-breathe 7s ease-in-out 1.6s infinite alternate; }
+        background: radial-gradient(closest-side, color-mix(in oklab, var(--teal) 18%, transparent), transparent); animation: gate-fade 1.6s var(--ease) both, gate-breathe 7s ease-in-out 1.6s infinite alternate; will-change: opacity; }
       body.gate::after { content: ''; position: fixed; z-index: 0; left: 50%; bottom: -26%; width: min(1500px, 170vw); height: 62vh; transform: translateX(-50%); pointer-events: none;
         background: radial-gradient(ellipse closest-side, color-mix(in oklab, var(--teal) 13%, transparent), transparent); animation: gate-fade 2s var(--ease) .3s both; }
       @keyframes gate-fade { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes gate-breathe { from { opacity: .7; transform: translate(-50%, -50%) scale(.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } }
+      @keyframes gate-breathe { from { opacity: .72; } to { opacity: 1; } } /* opacity only: a compositor-only animation, no re-rasterising of the big glow */
       .gate-motes { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
       .gate-motes i { position: absolute; bottom: -12px; left: var(--x); width: 3px; height: 3px; border-radius: 50%; background: var(--teal-ink); box-shadow: 0 0 9px var(--teal); opacity: 0; animation: gate-mote var(--d) linear var(--dl) infinite; }
       @keyframes gate-mote { 0% { opacity: 0; transform: translateY(0); } 12% { opacity: .85; } 100% { opacity: 0; transform: translateY(-105vh); } }
@@ -185,6 +185,7 @@ const bubble = en ? 'Want me to show you around?' : '¿Te enseño lo que hago?';
         .bubble { right: calc(var(--px) + 126px); bottom: calc(100% + 104px); }
       }
       @keyframes gate-rise-m { from { transform: translateY(240px); } to { transform: none; } }
+      @media (pointer: coarse) { .gate-lang { min-height: 44px; min-width: 44px; display: inline-grid; place-items: center; } }
       @media (prefers-reduced-motion: reduce) { body.gate::before, body.gate::after, .gate-motes i { animation: none !important; } .gate-motes { display: none; } }
     </style>
     <script is:inline>

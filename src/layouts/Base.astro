@@ -164,9 +164,18 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
         var x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y, shown = false; var tgt = null, lastX = -1, lastY = -1;
         /* Hover state is re-read every frame: the 3D scenes set their pointer cursor one frame after the move. */
         function hot() { var t = tgt; if (!t || !t.closest) return false; var sc = t.closest('[data-scene]'); return !!(t.closest('a, button, [data-station], [data-tile], .holo, .node, .chip, summary, label') || (sc && sc.style.cursor === 'pointer')); }
-        addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!shown) { shown = true; rx = x; ry = y; rt.classList.add('on'); xy.classList.add('on'); document.documentElement.classList.add('rt-active'); } tgt = e.target; }, { passive: true });
+        var running = false, settle = 0, hov = false;
+        function kick() { settle = 4; if (!running) { running = true; requestAnimationFrame(loop); } }
+        addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!shown) { shown = true; rx = x; ry = y; rt.classList.add('on'); xy.classList.add('on'); document.documentElement.classList.add('rt-active'); } tgt = e.target; kick(); }, { passive: true });
         document.addEventListener('pointerleave', function () { shown = false; rt.classList.remove('on'); xy.classList.remove('on'); document.documentElement.classList.remove('rt-active'); });
-        (function loop() { rt.classList.toggle('hover', hot()); rx += (x - rx) * 0.5; ry += (y - ry) * 0.5; var lx = Math.round(x), ly = Math.round(y); if (lx !== lastX || ly !== lastY) { lastX = lx; lastY = ly; xy.textContent = 'x:' + String(lx).padStart(4, '0') + ' y:' + String(ly).padStart(4, '0'); } rt.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)'; xy.style.transform = 'translate3d(' + (rx + 22) + 'px,' + (ry + 18) + 'px,0)'; requestAnimationFrame(loop); })();
+        /* The loop only runs while the cursor is moving or still catching up (a few frames after it stops, so the hover state settles); an idle page does no work here. */
+        function loop() {
+          var h = hot(); if (h !== hov) { hov = h; rt.classList.toggle('hover', h); }
+          rx += (x - rx) * 0.5; ry += (y - ry) * 0.5;
+          var lx = Math.round(x), ly = Math.round(y); if (lx !== lastX || ly !== lastY) { lastX = lx; lastY = ly; xy.textContent = 'x:' + String(lx).padStart(4, '0') + ' y:' + String(ly).padStart(4, '0'); }
+          rt.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)'; xy.style.transform = 'translate3d(' + (rx + 22) + 'px,' + (ry + 18) + 'px,0)';
+          if (Math.abs(x - rx) > 0.1 || Math.abs(y - ry) > 0.1 || settle-- > 0) requestAnimationFrame(loop); else running = false;
+        }
       })();
     </script>
     <script is:inline define:vars={{ labels: { reading: t.bar.reading, system: t.bar.system } }}>
@@ -204,9 +213,12 @@ const ogImage = `${SITE}/img/og-${lang}.png`;
             if (!e.isIntersecting) return;
             io.unobserve(e.target);
             const el = e.target as HTMLElement;
-            import('../lib/scenes.js')
+            const start = () => import('../lib/scenes.js')
               .then(({ mount }) => mount(el, el.dataset.scene as string, { visited: JSON.parse(el.dataset.visited || '[]'), mapUrl: '/world.svg', portrait: el.dataset.portrait || '' }))
               .catch(() => { el.hidden = true; });
+            /* Scenes start when the browser is idle (with a short deadline), so building a 3D scene never blocks first paint, a tap or a scroll */
+            const ric = (window as any).requestIdleCallback;
+            if (ric) ric(start, { timeout: 500 }); else setTimeout(start, 80);
           });
         }, { rootMargin: '200px' });
         els.forEach((el) => io.observe(el));
